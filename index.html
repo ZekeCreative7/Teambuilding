@@ -22,6 +22,20 @@
       --radius: 8px;
     }
 
+    .validation-warnings {
+      background: #fff8e6;
+      border: 1px solid #f0c060;
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #7a4f00;
+    }
+
+    .validation-warnings p {
+      margin: 4px 0;
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -1115,6 +1129,43 @@
       return kpis[0] || "세션 목적에 맞는 관찰 가능한 결과를 만든다.";
     }
 
+    function buildFacilitatorScript(data, activity, mainKpi) {
+      const lines = [];
+
+      // Opening line — framed by goal
+      const goalLabel = data.goal ? `"${data.goal}"` : "오늘의 목적";
+      lines.push(`오늘 세션의 주제는 ${goalLabel}입니다.`);
+
+      // Tone/safety framing
+      if (data.safetyLevel === "낮음" || data.safetyLevel === "잘 모르겠음") {
+        lines.push("공유하고 싶지 않은 내용은 언제든지 넘겨도 괜찮습니다. 정답을 맞히는 자리가 아닙니다.");
+      } else if (data.mood === "솔직한 대화가 가능하게") {
+        lines.push("오늘은 서로 솔직하게 말할 수 있는 자리를 만들겠습니다. 판단하거나 평가하는 시간이 아닙니다.");
+      } else if (data.mood === "따뜻하고 안전하게") {
+        lines.push("오늘 나오는 이야기는 평가가 아니라 서로를 더 잘 이해하기 위한 것입니다.");
+      } else {
+        lines.push("오늘은 정답을 맞히는 것이 아니라, 함께 일할 때 필요한 조건을 더 선명하게 보는 자리입니다.");
+      }
+
+      // Power structure note
+      if (data.powerStructure && (data.powerStructure.includes("리더") || data.powerStructure.includes("임원") || data.powerStructure.includes("평가"))) {
+        lines.push("직급과 관계없이 모든 분의 의견이 동등하게 다뤄집니다. 상위 직급분들도 마지막 순서로 공유해주시겠습니다.");
+      }
+
+      // Resistance note
+      if (data.resistance === "높음") {
+        lines.push(`오늘 세션이 끝나면 ${activity.artifact ? `"${activity.artifact}"` : "실행 가능한 약속 하나"}가 남습니다. 바로 현장에서 쓸 수 있도록 설계했습니다.`);
+      }
+
+      // Core activity intro
+      lines.push(`활동 이름은 "${activity.name}"입니다. ${activity.core}`);
+
+      // KPI anchor
+      lines.push(`마무리 때는 오늘의 KPI인 "${mainKpi}"를 기준으로 바로 시도할 수 있는 작은 약속을 하나씩 남기겠습니다.`);
+
+      return lines.join("\n");
+    }
+
     function followUpPlan(followUp, kpi) {
       if (followUp === "담당자와 기한까지 정함") return `${kpi}를 기준으로 담당자, 첫 행동, 점검 일자를 확정합니다.`;
       if (followUp === "팀 문서로 남김") return "완성된 약속과 키워드를 팀 문서에 남기고 다음 회의 안건으로 연결합니다.";
@@ -1132,6 +1183,22 @@
 
     function collectData() {
       return Object.fromEntries(ids.map((id) => [id, value(id)]));
+    }
+
+    function validateData(data) {
+      const warnings = [];
+      const people = Number(data.people);
+      const duration = Number(data.duration);
+      if (!data.people || isNaN(people) || people < 1 || !Number.isInteger(people)) {
+        warnings.push("참여 인원을 1명 이상 정수로 입력해주세요. (기본값 10명으로 계산됩니다.)");
+      }
+      if (!data.duration || isNaN(duration) || duration < 5 || !Number.isInteger(duration)) {
+        warnings.push("소요 시간을 5분 이상 정수로 입력해주세요. (기본값 50분으로 계산됩니다.)");
+      }
+      if (!data.goal) {
+        warnings.push("목적을 입력하면 활동과 진행자 멘트가 더 정확하게 생성됩니다.");
+      }
+      return warnings;
     }
 
     function buildCalibrationPrompt(data, context) {
@@ -1258,9 +1325,12 @@ ${customText}
         slots
       });
 
+      const warnings = validateData(data);
+      const facilitatorScript = buildFacilitatorScript(data, activity, mainKpi);
       const safeAvoid = escapeHtml(data.avoid || "없음");
 
       document.getElementById("outputView").innerHTML = `
+        ${warnings.length ? `<div class="validation-warnings">${warnings.map((w) => `<p>⚠ ${escapeHtml(w)}</p>`).join("")}</div>` : ""}
         <article class="preview">
           <div class="preview-main">
             <p class="preview-label">${escapeHtml(programTone)} program</p>
@@ -1328,9 +1398,7 @@ ${customText}
 
           <section class="section wide">
             <h3>진행자 멘트</h3>
-            <div class="script">오늘 세션의 목적은 정답을 맞히는 것이 아니라, 우리가 함께 일할 때 필요한 조건을 더 선명하게 보는 것입니다.
-공유하고 싶지 않은 내용은 넘겨도 괜찮습니다.
-대신 오늘 정한 KPI에 맞춰, 끝날 때는 바로 시도할 수 있는 작은 약속을 하나 남기겠습니다.</div>
+            <div class="script">${escapeHtml(facilitatorScript)}</div>
           </section>
 
           <section class="section wide">
