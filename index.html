@@ -1,0 +1,1453 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Session Studio</title>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --surface: #ffffff;
+      --surface-2: #fbfbfd;
+      --ink: #1d1d1f;
+      --muted: #6e6e73;
+      --quiet: #86868b;
+      --line: rgba(0, 0, 0, 0.12);
+      --line-strong: rgba(0, 0, 0, 0.18);
+      --blue: #0071e3;
+      --blue-dark: #005bb8;
+      --green: #1d7f48;
+      --orange: #b35b00;
+      --shadow: 0 22px 55px rgba(0, 0, 0, 0.08);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .page {
+      width: min(1480px, 100%);
+      margin: 0 auto;
+      padding: 0 28px 42px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(245, 245, 247, 0.78);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .brand-mark {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      background: #1d1d1f;
+      position: relative;
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 1.5px solid #ffffff;
+      border-radius: 50%;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .top-actions a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .top-actions .mini-cta {
+      min-height: 30px;
+      padding: 0 14px;
+      border-radius: 999px;
+      color: #ffffff;
+      background: var(--blue);
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 28px;
+      align-items: end;
+      padding: 56px 0 26px;
+    }
+
+    .hero-kicker {
+      margin: 0 0 12px;
+      color: var(--blue);
+      font-size: 17px;
+      font-weight: 750;
+    }
+
+    .hero h1 {
+      margin: 0;
+      max-width: 900px;
+      font-size: clamp(44px, 6.3vw, 88px);
+      line-height: 1.01;
+      font-weight: 780;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 22px;
+      line-height: 1.34;
+      font-weight: 560;
+    }
+
+    .product {
+      display: grid;
+      grid-template-columns: minmax(360px, 430px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .config,
+    .preview,
+    .section {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .config {
+      position: sticky;
+      top: 72px;
+      max-height: calc(100vh - 92px);
+      overflow: auto;
+      padding: 18px;
+    }
+
+    .config-title {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .config-title h2,
+    .preview h2,
+    .section h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    .config-title h2 {
+      font-size: 24px;
+      line-height: 1.15;
+      font-weight: 760;
+    }
+
+    .status-pill {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #eef7f2;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      padding: 4px;
+      margin-bottom: 18px;
+      border-radius: var(--radius);
+      background: #f0f0f2;
+    }
+
+    .tab {
+      min-height: 36px;
+      border-radius: 7px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .tab[aria-selected="true"] {
+      color: var(--ink);
+      background: #ffffff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10);
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .field {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 7px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    label small {
+      color: var(--quiet);
+      font-weight: 650;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 43px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      outline: none;
+      color: var(--ink);
+      background: var(--surface-2);
+      padding: 10px 12px;
+      transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    select {
+      appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--quiet) 50%),
+        linear-gradient(135deg, var(--quiet) 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) 18px,
+        calc(100% - 13px) 18px;
+      background-repeat: no-repeat;
+      background-size: 5px 5px;
+      padding-right: 34px;
+    }
+
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(0, 113, 227, 0.82);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.13);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .custom-row,
+    .kpi-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) 42px;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .kpi-row {
+      grid-template-columns: minmax(0, 1fr) 42px;
+    }
+
+    .icon-button {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius);
+      color: var(--muted);
+      background: #eeeeef;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .primary-button,
+    .secondary-button {
+      width: 100%;
+      min-height: 46px;
+      border-radius: var(--radius);
+      font-weight: 760;
+      transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+    }
+
+    .primary-button {
+      color: #ffffff;
+      background: var(--blue);
+    }
+
+    .primary-button:hover {
+      background: var(--blue-dark);
+      transform: translateY(-1px);
+    }
+
+    .secondary-button {
+      color: var(--blue);
+      background: #ffffff;
+      border: 1px solid rgba(0, 113, 227, 0.26);
+    }
+
+    .secondary-button:hover,
+    .icon-button:hover {
+      background: rgba(0, 113, 227, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .output {
+      min-width: 0;
+    }
+
+    .preview {
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .preview-main {
+      padding: 42px;
+      min-height: 340px;
+      display: grid;
+      align-content: center;
+      background: #ffffff;
+    }
+
+    .preview-label {
+      margin: 0 0 12px;
+      color: var(--blue);
+      font-size: 15px;
+      font-weight: 760;
+    }
+
+    .preview h2 {
+      max-width: 880px;
+      font-size: clamp(40px, 5.2vw, 76px);
+      line-height: 1.03;
+      font-weight: 790;
+    }
+
+    .preview p {
+      margin: 18px 0 0;
+      max-width: 780px;
+      color: var(--muted);
+      font-size: clamp(19px, 1.8vw, 26px);
+      line-height: 1.34;
+      font-weight: 560;
+    }
+
+    .preview-footer {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      background: #f9f9fb;
+    }
+
+    .metric {
+      min-height: 92px;
+      padding: 16px;
+      border-right: 1px solid var(--line);
+    }
+
+    .metric:last-child {
+      border-right: 0;
+    }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink);
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .section {
+      box-shadow: none;
+      padding: 24px;
+    }
+
+    .section.wide {
+      grid-column: 1 / -1;
+    }
+
+    .section h3 {
+      margin-bottom: 14px;
+      font-size: 21px;
+      line-height: 1.2;
+      font-weight: 760;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .slot {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      gap: 14px;
+      padding: 15px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+    }
+
+    .time {
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 820;
+      white-space: nowrap;
+    }
+
+    .slot strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 15px;
+    }
+
+    .slot span,
+    li {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    li + li {
+      margin-top: 8px;
+    }
+
+    .script {
+      padding: 18px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+      color: rgba(29, 29, 31, 0.88);
+      line-height: 1.72;
+      white-space: pre-line;
+    }
+
+    .prompt-card {
+      display: grid;
+      gap: 14px;
+    }
+
+    .prompt-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .prompt-head h3 {
+      margin-bottom: 0;
+    }
+
+    .copy-button {
+      flex: 0 0 auto;
+      min-height: 34px;
+      padding: 0 13px;
+      border-radius: 999px;
+      color: #ffffff;
+      background: var(--ink);
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .copy-button:hover {
+      background: #3a3a3c;
+    }
+
+    .prompt-box {
+      max-height: 440px;
+      overflow: auto;
+      margin: 0;
+      padding: 18px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: var(--radius);
+      background: #111113;
+      color: #f5f5f7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.64;
+      white-space: pre-wrap;
+    }
+
+    .badge-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #ffffff;
+      color: rgba(29, 29, 31, 0.82);
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .risk {
+      color: var(--orange);
+    }
+
+    @media (max-width: 1080px) {
+      .hero,
+      .product {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding-top: 38px;
+      }
+
+      .config {
+        position: relative;
+        top: auto;
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 740px) {
+      .page {
+        padding: 0 16px 28px;
+      }
+
+      .top-actions a:not(.mini-cta) {
+        display: none;
+      }
+
+      .hero {
+        gap: 14px;
+        padding: 30px 0 18px;
+      }
+
+      .hero h1 {
+        font-size: 44px;
+      }
+
+      .hero-copy {
+        font-size: 19px;
+      }
+
+      .tabs {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .row,
+      .custom-row,
+      .section-grid,
+      .slot,
+      .preview-footer {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-main {
+        padding: 28px 22px;
+        min-height: 280px;
+      }
+
+      .metric {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric:last-child {
+        border-bottom: 0;
+      }
+
+      .prompt-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <nav class="topbar" aria-label="상단 탐색">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Session Studio</span>
+      </div>
+      <div class="top-actions">
+        <a href="#product">Configurator</a>
+        <a href="#outputView">Program</a>
+        <a class="mini-cta" href="#product">Start</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <p class="hero-kicker">Team Building Agent</p>
+        <h1>팀의 맥락을 읽고, 세션을 설계합니다.</h1>
+      </div>
+      <p class="hero-copy">목적, 관계, 안전감, 참여 저항, 공유 방식을 조합해 바로 진행 가능한 프로그램을 만듭니다.</p>
+    </header>
+
+    <section class="product" id="product" aria-label="세션 생성기">
+      <aside class="config">
+        <div class="config-title">
+          <h2>Session variables</h2>
+          <span class="status-pill"><span class="status-dot"></span>Live</span>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="변수 카테고리">
+          <button class="tab" type="button" role="tab" aria-selected="true" data-tab="basic">기본</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-tab="context">맥락</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-tab="design">디자인</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-tab="safety">안전</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-tab="outcome">성과</button>
+        </div>
+
+        <form id="sessionForm">
+          <section class="panel active" data-panel="basic">
+            <div class="field">
+              <label for="goal">목적 <small>Primary</small></label>
+              <textarea id="goal">새 프로젝트 시작 전 팀원들이 서로의 협업 방식을 이해하고, 함께 일하는 원칙을 정렬한다.</textarea>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label for="people">참여 인원</label>
+                <input id="people" type="number" min="3" max="60" value="10">
+              </div>
+              <div class="field">
+                <label for="duration">소요 시간</label>
+                <input id="duration" type="number" min="20" max="180" value="50">
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="place">진행 환경</label>
+              <select id="place">
+                <option>오프라인 회의실</option>
+                <option>온라인</option>
+                <option>하이브리드</option>
+                <option>넓은 워크숍 공간</option>
+              </select>
+            </div>
+          </section>
+
+          <section class="panel" data-panel="context">
+            <div class="field">
+              <label for="relationship">참여자 관계</label>
+              <select id="relationship">
+                <option>어느 정도 아는 사이</option>
+                <option>처음 만남</option>
+                <option>오래 함께 일한 팀</option>
+                <option>부서가 섞여 있음</option>
+                <option>직급이 섞여 있음</option>
+                <option>갈등이나 거리감이 있음</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="teamStage">팀 발달 단계</label>
+              <select id="teamStage">
+                <option>역할과 관계를 맞추는 중</option>
+                <option>새로 형성됨</option>
+                <option>갈등이나 긴장이 있음</option>
+                <option>운영은 안정적이나 개선이 필요함</option>
+                <option>성과는 좋지만 리프레시가 필요함</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label for="safetyLevel">심리적 안전감</label>
+                <select id="safetyLevel">
+                  <option>보통</option>
+                  <option>낮음</option>
+                  <option>높음</option>
+                  <option>잘 모르겠음</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="resistance">참여 저항</label>
+                <select id="resistance">
+                  <option>약간 있음</option>
+                  <option>낮음</option>
+                  <option>높음</option>
+                  <option>잘 모르겠음</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="powerStructure">권력 구조</label>
+              <select id="powerStructure">
+                <option>리더 1명 포함</option>
+                <option>동료 중심</option>
+                <option>임원/상위 직급 포함</option>
+                <option>평가 관계가 있음</option>
+                <option>고객/외부인이 섞여 있음</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="state">팀 상태</label>
+              <select id="state">
+                <option>조심스럽고 말이 많지 않음</option>
+                <option>어색함</option>
+                <option>에너지가 낮음</option>
+                <option>말이 많은 편</option>
+                <option>피로도가 높음</option>
+                <option>의견 충돌이 있음</option>
+              </select>
+            </div>
+          </section>
+
+          <section class="panel" data-panel="design">
+            <div class="field">
+              <label for="mood">원하는 분위기</label>
+              <select id="mood">
+                <option>활발하지만 부담스럽지 않게</option>
+                <option>가볍고 웃긴 분위기</option>
+                <option>차분하지만 몰입감 있게</option>
+                <option>솔직한 대화가 가능하게</option>
+                <option>게임처럼 경쟁적으로</option>
+                <option>따뜻하고 안전하게</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label for="intensity">활동 강도</label>
+                <select id="intensity">
+                  <option>중간</option>
+                  <option>낮음</option>
+                  <option>높음</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="movement">움직임</label>
+                <select id="movement">
+                  <option>가능</option>
+                  <option>제한적</option>
+                  <option>불가능</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="sharingMode">공유 방식</label>
+              <select id="sharingMode">
+                <option>소그룹 공유</option>
+                <option>페어 공유</option>
+                <option>전체 공유</option>
+                <option>익명 공유</option>
+                <option>개인 작성만</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="output">산출물 형식</label>
+              <input id="output" value="팀 협업 원칙, 실행 약속, 후속 점검 항목">
+            </div>
+          </section>
+
+          <section class="panel" data-panel="safety">
+            <div class="field">
+              <label for="topicSensitivity">주제 민감도</label>
+              <select id="topicSensitivity">
+                <option>보통</option>
+                <option>낮음</option>
+                <option>높음</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="facilitatorSkill">진행자 숙련도</label>
+              <select id="facilitatorSkill">
+                <option>몇 번 해봄</option>
+                <option>처음 진행</option>
+                <option>숙련됨</option>
+                <option>전문 퍼실리테이터</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="avoid">피하고 싶은 것</label>
+              <textarea id="avoid">유치한 게임, 사적인 질문, 강의식 진행</textarea>
+            </div>
+          </section>
+
+          <section class="panel" data-panel="outcome">
+            <div class="field">
+              <label>세션 KPI (Outcome) <small>기본 4개</small></label>
+              <div id="kpiList">
+                <div class="kpi-row">
+                  <input class="kpi-input" value="참여자 80% 이상이 팀의 협업 원칙을 명확히 이해한다." aria-label="KPI 1">
+                  <button class="icon-button" type="button" title="삭제" aria-label="KPI 삭제">x</button>
+                </div>
+                <div class="kpi-row">
+                  <input class="kpi-input" value="세션 종료 시 실행 가능한 팀 약속 3개 이상을 도출한다." aria-label="KPI 2">
+                  <button class="icon-button" type="button" title="삭제" aria-label="KPI 삭제">x</button>
+                </div>
+                <div class="kpi-row">
+                  <input class="kpi-input" value="모든 참여자가 최소 1회 이상 소그룹 대화에 참여한다." aria-label="KPI 3">
+                  <button class="icon-button" type="button" title="삭제" aria-label="KPI 삭제">x</button>
+                </div>
+                <div class="kpi-row">
+                  <input class="kpi-input" value="다음 회의에서 점검할 후속 액션 1개를 확정한다." aria-label="KPI 4">
+                  <button class="icon-button" type="button" title="삭제" aria-label="KPI 삭제">x</button>
+                </div>
+              </div>
+              <button class="secondary-button" type="button" id="addKpi">KPI 추가</button>
+            </div>
+
+            <div class="field">
+              <label for="followUp">후속 실행</label>
+              <select id="followUp">
+                <option>다음 회의에서 점검</option>
+                <option>세션 안에서만 마무리</option>
+                <option>팀 문서로 남김</option>
+                <option>담당자와 기한까지 정함</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>추가 변수 <small>Optional</small></label>
+              <div id="customVariables"></div>
+              <button class="secondary-button" type="button" id="addVariable">변수 추가</button>
+            </div>
+          </section>
+
+          <div class="button-row">
+            <button class="primary-button" type="submit">프로그램 생성</button>
+          </div>
+        </form>
+      </aside>
+
+      <section class="output" id="outputView" aria-live="polite"></section>
+    </section>
+  </main>
+
+  <script>
+    const activityMap = {
+      "서로 알아가기": {
+        name: "겹치는 점, 다른 점",
+        core: "가벼운 업무 선호 질문으로 짝 대화를 시작하고, 공통점과 차이점을 소그룹에서 패턴으로 묶습니다.",
+        artifact: "팀 공통 관심사와 대화 출발점"
+      },
+      "심리적 안전감 형성": {
+        name: "나의 협업 사용설명서",
+        core: "각자가 편하게 일하는 방식, 어려운 상황, 도움받고 싶은 방식을 작성한 뒤 선택적으로 공유합니다.",
+        artifact: "개인별 협업 사용설명서"
+      },
+      "협업 방식 정렬": {
+        name: "우리의 협업 사용설명서",
+        core: "개인별 업무 스타일을 먼저 적고, 소그룹에서 공통 패턴을 묶은 뒤 팀의 협업 원칙으로 정리합니다.",
+        artifact: "팀 협업 원칙"
+      },
+      "커뮤니케이션 개선": {
+        name: "오해 줄이기 실험실",
+        core: "자주 생기는 커뮤니케이션 오해 상황을 적고, 더 나은 요청 문장과 확인 문장으로 바꿉니다.",
+        artifact: "커뮤니케이션 약속"
+      },
+      "갈등 완화": {
+        name: "기대와 행동 맞추기",
+        core: "사람이 아니라 상황과 행동에 초점을 맞춰 서로 기대하는 행동을 적고 합의 가능한 약속을 고릅니다.",
+        artifact: "합의 행동 목록"
+      },
+      "아이디어 발산": {
+        name: "제약 뒤집기 아이데이션",
+        core: "제약 조건을 일부러 부여한 뒤 짧은 라운드로 아이디어를 만들고 가능성과 임팩트 기준으로 추립니다.",
+        artifact: "우선순위 아이디어 목록"
+      },
+      "프로젝트 킥오프": {
+        name: "성공 장면과 리스크 맵",
+        core: "프로젝트가 성공한 미래 장면을 먼저 그린 뒤 방해 요인과 필요한 협업 행동을 역산합니다.",
+        artifact: "KPI와 리스크 대응"
+      },
+      "회고와 리셋": {
+        name: "유지, 중단, 시작",
+        core: "최근 팀 경험을 돌아보며 유지할 것, 중단할 것, 새로 시작할 것을 분리하고 다음 행동을 정합니다.",
+        artifact: "팀 리셋 액션"
+      }
+    };
+
+    const toneMap = {
+      "가볍고 웃긴 분위기": "낮은 부담의 선택형 질문으로 시작하고, 공유는 짧은 라운드로 빠르게 돌립니다.",
+      "활발하지만 부담스럽지 않게": "개인 작성, 페어 대화, 짧은 이동을 섞어 에너지는 올리되 노출 부담은 낮춥니다.",
+      "차분하지만 몰입감 있게": "말하기 전 생각할 시간을 주고, 전체 공유보다 소그룹 공유를 중심에 둡니다.",
+      "솔직한 대화가 가능하게": "익명 작성과 선택적 공유를 넣어 안전감을 먼저 확보합니다.",
+      "게임처럼 경쟁적으로": "제한시간과 미션감을 주되 결과물 품질 기준을 함께 둡니다.",
+      "따뜻하고 안전하게": "인정, 감사, 도움 요청을 중심 질문으로 두고 비교나 평가를 줄입니다."
+    };
+
+    const ids = [
+      "goal", "people", "duration", "place", "relationship", "teamStage", "safetyLevel",
+      "resistance", "powerStructure", "state", "mood", "intensity", "movement",
+      "sharingMode", "output", "topicSensitivity", "facilitatorSkill", "avoid",
+      "followUp"
+    ];
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function value(id) {
+      return document.getElementById(id).value.trim();
+    }
+
+    function splitTime(total) {
+      const opening = Math.max(3, Math.round(total * 0.10));
+      const warmup = Math.max(5, Math.round(total * 0.16));
+      const core = Math.max(10, Math.round(total * 0.44));
+      const share = Math.max(5, Math.round(total * 0.20));
+      const close = Math.max(3, total - opening - warmup - core - share);
+      return [opening, warmup, core, share, close];
+    }
+
+    function timeSlots(parts) {
+      let cursor = 0;
+      return parts.map((minutes) => {
+        const start = cursor;
+        cursor += minutes;
+        return `${start}~${cursor}분`;
+      });
+    }
+
+    function toolsFor(place) {
+      if (place === "온라인") return ["공유 문서", "타이머", "화상회의 소그룹 방", "온라인 보드"];
+      if (place === "하이브리드") return ["공유 문서", "화이트보드", "포스트잇", "온라인 보드"];
+      return ["포스트잇", "펜", "화이트보드", "타이머"];
+    }
+
+    function movementPlan(movement) {
+      if (movement === "가능") return "방 안에서 위치를 바꾸는 선택 라인 활동을 넣어 초반 에너지를 올립니다.";
+      if (movement === "제한적") return "자리 이동 대신 손들기, 카드 선택, 페어 전환으로 리듬을 만듭니다.";
+      return "모든 활동을 착석형으로 바꾸고, 쓰기와 짧은 페어 대화로 다이나믹함을 만듭니다.";
+    }
+
+    function intensityPlan(intensity) {
+      if (intensity === "낮음") return "질문 난이도를 낮추고 공개 공유를 최소화합니다.";
+      if (intensity === "높음") return "제한시간, 선택 압축, 그룹 간 비교를 넣어 몰입도를 높입니다.";
+      return "쓰기, 대화, 정렬을 균형 있게 섞어 부담과 몰입을 함께 관리합니다.";
+    }
+
+    function sharingPlan(sharingMode, safetyLevel, powerStructure) {
+      if (safetyLevel === "낮음" || powerStructure.includes("평가") || powerStructure.includes("임원")) {
+        return "익명 작성 또는 페어 공유를 우선하고, 전체 공유는 패턴만 다룹니다.";
+      }
+      if (sharingMode === "전체 공유") return "개인 발언은 짧게 제한하고, 진행자가 키워드를 묶어 과도한 노출을 줄입니다.";
+      if (sharingMode === "개인 작성만") return "개인 기록을 중심으로 진행하고, 최종 산출물은 선택된 키워드만 모읍니다.";
+      return `${sharingMode}를 기본 단위로 사용해 참여 부담과 대화 밀도를 조절합니다.`;
+    }
+
+    function safetyNotes(data) {
+      const notes = [];
+      if (data.safetyLevel === "낮음" || data.safetyLevel === "잘 모르겠음") {
+        notes.push("처음부터 깊은 자기노출을 요구하지 않고, 선택형 질문과 익명 작성으로 시작합니다.");
+      }
+      if (data.powerStructure.includes("리더") || data.powerStructure.includes("임원") || data.powerStructure.includes("평가")) {
+        notes.push("리더와 상위 직급자는 전체 공유에서 마지막에 말하게 합니다.");
+      }
+      if (data.relationship.includes("처음") || data.teamStage.includes("새로")) {
+        notes.push("사적인 질문보다 업무 선호, 협업 방식, 가벼운 선택 질문을 사용합니다.");
+      }
+      if (data.relationship.includes("갈등") || data.state.includes("충돌") || data.teamStage.includes("갈등")) {
+        notes.push("과거 원인 추궁보다 앞으로 필요한 행동과 기대에 집중합니다.");
+      }
+      if (data.topicSensitivity === "높음") {
+        notes.push("민감한 내용은 사람 이름 없이 상황, 영향, 필요한 행동 순서로 다룹니다.");
+      }
+      if (data.resistance === "높음") {
+        notes.push("오프닝에서 실무 연결성과 세션 후 산출물을 먼저 보여줍니다.");
+      }
+      if (data.facilitatorSkill === "처음 진행") {
+        notes.push("복잡한 디브리핑보다 질문 수를 줄이고, 라운드별 안내문을 명확히 둡니다.");
+      }
+      if (!notes.length) notes.push("공유는 선택권을 주고, 진행자는 평가 없이 키워드만 정리합니다.");
+      return notes;
+    }
+
+    function riskFlags(data) {
+      const risks = [];
+      if (data.safetyLevel === "낮음") risks.push("안전감 낮음");
+      if (data.resistance === "높음") risks.push("참여 저항 높음");
+      if (data.topicSensitivity === "높음") risks.push("민감 주제");
+      if (data.powerStructure.includes("평가") || data.powerStructure.includes("임원")) risks.push("권력 거리");
+      if (!risks.length) risks.push("표준 리스크");
+      return risks;
+    }
+
+    function inferActivity(goal) {
+      const normalized = goal.replace(/\s/g, "");
+      const rules = [
+        ["서로 알아가기", ["알아가기", "친해", "관계", "라포", "아이스브레이킹"]],
+        ["심리적 안전감 형성", ["심리적안전", "안전감", "신뢰", "솔직"]],
+        ["협업 방식 정렬", ["협업", "일하는방식", "원칙", "정렬", "워크스타일"]],
+        ["커뮤니케이션 개선", ["커뮤니케이션", "소통", "피드백", "오해"]],
+        ["갈등 완화", ["갈등", "긴장", "불화", "거리감"]],
+        ["아이디어 발산", ["아이디어", "브레인스토밍", "기획", "발산"]],
+        ["프로젝트 킥오프", ["프로젝트", "킥오프", "시작", "런칭"]],
+        ["회고와 리셋", ["회고", "리셋", "돌아보", "개선"]]
+      ];
+      const match = rules.find(([, keywords]) => keywords.some((keyword) => normalized.includes(keyword)));
+      if (match) return activityMap[match[0]];
+
+      return {
+        name: "맞춤형 팀빌딩 세션",
+        core: "입력한 목적을 기준으로 개인 작성, 소그룹 대화, 전체 정렬을 거쳐 실행 가능한 팀 약속으로 연결합니다.",
+        artifact: "목적과 KPI에 맞춘 맞춤형 세션 산출물"
+      };
+    }
+
+    function readKpis() {
+      return [...document.querySelectorAll(".kpi-input")]
+        .map((input) => input.value.trim())
+        .filter(Boolean);
+    }
+
+    function primaryKpi(kpis) {
+      return kpis[0] || "세션 목적에 맞는 관찰 가능한 결과를 만든다.";
+    }
+
+    function followUpPlan(followUp, kpi) {
+      if (followUp === "담당자와 기한까지 정함") return `${kpi}를 기준으로 담당자, 첫 행동, 점검 일자를 확정합니다.`;
+      if (followUp === "팀 문서로 남김") return "완성된 약속과 키워드를 팀 문서에 남기고 다음 회의 안건으로 연결합니다.";
+      if (followUp === "다음 회의에서 점검") return "다음 회의에서 5분만 사용해 실행 여부와 조정점을 확인합니다.";
+      return "세션 마지막에 개인별 한 줄 다짐을 남기고 현장에서 마무리합니다.";
+    }
+
+    function readCustomVariables() {
+      return [...document.querySelectorAll(".custom-row")].map((row) => {
+        const key = row.querySelector(".custom-key").value.trim();
+        const val = row.querySelector(".custom-value").value.trim();
+        return key && val ? `${key}: ${val}` : "";
+      }).filter(Boolean);
+    }
+
+    function collectData() {
+      return Object.fromEntries(ids.map((id) => [id, value(id)]));
+    }
+
+    function buildCalibrationPrompt(data, context) {
+      const customText = context.custom.length
+        ? context.custom.map((item) => `- ${item}`).join("\n")
+        : "- 없음";
+      const kpiText = context.kpis.length
+        ? context.kpis.map((item, index) => `${index + 1}. ${item}`).join("\n")
+        : "1. 세션 목적에 맞는 관찰 가능한 결과를 만든다.";
+
+      return `너는 팀빌딩 프로그램을 설계하는 시니어 퍼실리테이터이자 조직심리학자, 커뮤니케이션 전문가다.
+
+아래 조건을 바탕으로 현재 세션 초안을 비판적으로 검토하고, 실제 현장에서 바로 운영 가능한 더 높은 완성도의 프로그램으로 고도화해줘.
+
+중요한 원칙:
+- 단순히 재미있는 활동을 추천하지 말고, 목적과 팀 맥락에 맞는 설계 이유를 밝혀줘.
+- 참여자가 쉽게 참여하고, 심리적으로 안전하며, 진행자가 명확하게 전달할 수 있게 만들어줘.
+- 리더/상위 직급/평가 관계가 있을 경우 발언 순서, 익명성, 공유 범위를 조정해줘.
+- 민감한 주제는 사람 평가가 아니라 상황, 기대, 행동, 합의 중심으로 다뤄줘.
+- 50분 내외 세션이라면 활동 수를 과도하게 늘리지 말고 흐름을 선명하게 만들어줘.
+- 결과물은 진행자가 그대로 읽고 실행할 수 있을 만큼 구체적으로 작성해줘.
+- 세션의 처음부터 끝까지 하나의 일관된 프레이밍과 스토리텔링으로 이어져야 해. 오프닝, 워밍업, 핵심 활동, 공유, 마무리가 따로 노는 느낌이 아니라 하나의 자연스러운 여정처럼 연결되게 설계해줘.
+
+[입력 변수]
+- 목적: ${data.goal}
+- 참여 인원: ${data.people}명
+- 소요 시간: ${data.duration}분
+- 진행 환경: ${data.place}
+- 참여자 관계: ${data.relationship}
+- 팀 발달 단계: ${data.teamStage}
+- 심리적 안전감: ${data.safetyLevel}
+- 권력 구조: ${data.powerStructure}
+- 참여 저항: ${data.resistance}
+- 팀 상태: ${data.state}
+- 원하는 분위기: ${data.mood}
+- 활동 강도: ${data.intensity}
+- 움직임 가능 여부: ${data.movement}
+- 공유 방식: ${data.sharingMode}
+- 산출물 형식: ${data.output}
+- 주제 민감도: ${data.topicSensitivity}
+- 진행자 숙련도: ${data.facilitatorSkill}
+- 피하고 싶은 것: ${data.avoid || "없음"}
+- 후속 실행: ${data.followUp}
+
+[KPI / Outcome]
+${kpiText}
+
+[추가 변수]
+${customText}
+
+[현재 세션 초안]
+- 세션 이름: ${context.activity.name}
+- 핵심 활동: ${context.activity.core}
+- 권장 소그룹 크기: ${context.groupSize}
+- 프로그램 톤: ${context.programTone}
+- 주요 리스크: ${context.risks.join(", ")}
+- 기본 시간표:
+  1. 오프닝 ${context.slots[0]}
+  2. 워밍업 ${context.slots[1]}
+  3. 핵심 활동 ${context.slots[2]}
+  4. 공유와 정렬 ${context.slots[3]}
+  5. 마무리 ${context.slots[4]}
+
+요청 결과물:
+1. 세션 이름과 한 줄 콘셉트
+2. 이 조건에서 이 세션이 적합한 이유
+3. 세션 전체를 관통하는 프레이밍과 스토리라인
+4. 1분 단위까지는 아니어도 되는 현실적인 시간표
+5. 각 활동의 진행 방법
+6. 진행자가 실제로 읽을 수 있는 오프닝/전환/마무리 멘트
+7. 참여 저항, 낮은 안전감, 권력 구조, 민감 주제에 대한 안전장치
+8. 준비물과 공간 세팅
+9. 실패할 수 있는 지점과 대응법
+10. 세션 후 남길 산출물 템플릿
+11. KPI 달성 여부를 확인하는 방법
+12. 더 가볍게/더 깊게/온라인으로 바꾸는 변형안
+
+마지막에는 "다음 캘리브레이션 질문"을 3개만 제안해줘. 질문은 더 좋은 세션을 만들기 위해 꼭 필요한 것만 물어봐줘.`;
+    }
+
+    async function copyTextToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+
+    function render() {
+      const data = collectData();
+      const people = Number(data.people) || 10;
+      const duration = Number(data.duration) || 50;
+      const activity = inferActivity(data.goal);
+      const parts = splitTime(duration);
+      const slots = timeSlots(parts);
+      const tools = toolsFor(data.place);
+      const safety = safetyNotes(data);
+      const risks = riskFlags(data);
+      const custom = readCustomVariables();
+      const kpis = readKpis();
+      const mainKpi = primaryKpi(kpis);
+      const groupSize = people <= 8 ? "2~3명" : people <= 14 ? "3~4명" : "4~5명";
+      const programTone = data.safetyLevel === "낮음" || data.topicSensitivity === "높음"
+        ? "안전 우선"
+        : data.intensity === "높음"
+          ? "고몰입"
+          : "균형형";
+      const calibrationPrompt = buildCalibrationPrompt(data, {
+        activity,
+        custom,
+        kpis,
+        groupSize,
+        programTone,
+        risks,
+        slots
+      });
+
+      const safeAvoid = escapeHtml(data.avoid || "없음");
+
+      document.getElementById("outputView").innerHTML = `
+        <article class="preview">
+          <div class="preview-main">
+            <p class="preview-label">${escapeHtml(programTone)} program</p>
+            <h2>${escapeHtml(activity.name)}</h2>
+            <p>${people}명, ${duration}분. 입력한 목적을 중심으로 첫 번째 KPI인 "${escapeHtml(mainKpi)}"에 도달하는 세션입니다.</p>
+          </div>
+          <div class="preview-footer">
+            <div class="metric"><strong>${people}</strong><span>Participants</span></div>
+            <div class="metric"><strong>${duration}</strong><span>Minutes</span></div>
+            <div class="metric"><strong>${escapeHtml(groupSize)}</strong><span>Group size</span></div>
+            <div class="metric"><strong>${escapeHtml(parts[2])}</strong><span>Core minutes</span></div>
+          </div>
+        </article>
+
+        <div class="section-grid">
+          <section class="section wide">
+            <h3>프로그램 타임라인</h3>
+            <div class="timeline">
+              <div class="slot">
+                <div class="time">${slots[0]}</div>
+                <div><strong>오프닝</strong><span>목적, KPI, 공유 원칙을 짧게 정렬합니다. 참여 저항이 있으면 실무 연결성을 먼저 보여줍니다.</span></div>
+              </div>
+              <div class="slot">
+                <div class="time">${slots[1]}</div>
+                <div><strong>워밍업</strong><span>${escapeHtml(movementPlan(data.movement))}</span></div>
+              </div>
+              <div class="slot">
+                <div class="time">${slots[2]}</div>
+                <div><strong>핵심 활동: ${escapeHtml(activity.name)}</strong><span>${escapeHtml(activity.core)} 소그룹은 ${escapeHtml(groupSize)} 단위로 운영합니다.</span></div>
+              </div>
+              <div class="slot">
+                <div class="time">${slots[3]}</div>
+                <div><strong>공유와 정렬</strong><span>${escapeHtml(sharingPlan(data.sharingMode, data.safetyLevel, data.powerStructure))}</span></div>
+              </div>
+              <div class="slot">
+                <div class="time">${slots[4]}</div>
+                <div><strong>마무리</strong><span>${escapeHtml(followUpPlan(data.followUp, mainKpi))}</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h3>설계 톤</h3>
+            <ul>
+              <li>${escapeHtml(toneMap[data.mood])}</li>
+              <li>${escapeHtml(intensityPlan(data.intensity))}</li>
+              <li>제외 요소: ${safeAvoid}</li>
+            </ul>
+          </section>
+
+          <section class="section">
+            <h3>안전장치</h3>
+            <ul>${safety.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
+          </section>
+
+          <section class="section">
+            <h3>준비물</h3>
+            <ul>${tools.map((tool) => `<li>${escapeHtml(tool)}</li>`).join("")}</ul>
+          </section>
+
+          <section class="section">
+            <h3>리스크 신호</h3>
+            <div class="badge-line">${risks.map((risk) => `<span class="tag ${risk === "표준 리스크" ? "" : "risk"}">${escapeHtml(risk)}</span>`).join("")}</div>
+          </section>
+
+          <section class="section wide">
+            <h3>진행자 멘트</h3>
+            <div class="script">오늘 세션의 목적은 정답을 맞히는 것이 아니라, 우리가 함께 일할 때 필요한 조건을 더 선명하게 보는 것입니다.
+공유하고 싶지 않은 내용은 넘겨도 괜찮습니다.
+대신 오늘 정한 KPI에 맞춰, 끝날 때는 바로 시도할 수 있는 작은 약속을 하나 남기겠습니다.</div>
+          </section>
+
+          <section class="section wide">
+            <h3>KPI / Outcome</h3>
+            <ul>
+              ${(kpis.length ? kpis : [mainKpi]).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+            </ul>
+          </section>
+
+          <section class="section wide">
+            <h3>최종 산출물</h3>
+            <ul>
+              <li>${escapeHtml(activity.artifact)}</li>
+              <li>${escapeHtml(data.output)}</li>
+              <li>${escapeHtml(followUpPlan(data.followUp, mainKpi))}</li>
+              ${custom.map((item) => `<li>추가 변수 반영: ${escapeHtml(item)}</li>`).join("")}
+            </ul>
+          </section>
+
+          <section class="section wide prompt-card">
+            <div class="prompt-head">
+              <h3>GPT 캘리브레이션 프롬프트</h3>
+              <button class="copy-button" type="button" data-copy-prompt>Copy prompt</button>
+            </div>
+            <pre class="prompt-box" id="calibrationPrompt">${escapeHtml(calibrationPrompt)}</pre>
+          </section>
+        </div>
+      `;
+    }
+
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const target = tab.dataset.tab;
+        document.querySelectorAll(".tab").forEach((item) => {
+          item.setAttribute("aria-selected", String(item === tab));
+        });
+        document.querySelectorAll(".panel").forEach((panel) => {
+          panel.classList.toggle("active", panel.dataset.panel === target);
+        });
+      });
+    });
+
+    document.getElementById("sessionForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      render();
+      document.getElementById("outputView").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    ids.forEach((id) => {
+      document.getElementById(id).addEventListener("input", render);
+      document.getElementById(id).addEventListener("change", render);
+    });
+
+    document.getElementById("addVariable").addEventListener("click", () => {
+      const row = document.createElement("div");
+      row.className = "custom-row";
+      row.innerHTML = `
+        <input class="custom-key" placeholder="변수명" aria-label="추가 변수명">
+        <input class="custom-value" placeholder="값" aria-label="추가 변수 값">
+        <button class="icon-button" type="button" title="삭제" aria-label="추가 변수 삭제">x</button>
+      `;
+      row.querySelector("button").addEventListener("click", () => {
+        row.remove();
+        render();
+      });
+      row.querySelectorAll("input").forEach((input) => input.addEventListener("input", render));
+      document.getElementById("customVariables").appendChild(row);
+    });
+
+    function bindKpiRow(row) {
+      row.querySelector(".kpi-input").addEventListener("input", render);
+      row.querySelector("button").addEventListener("click", () => {
+        row.remove();
+        render();
+      });
+    }
+
+    function addKpi(value = "") {
+      const row = document.createElement("div");
+      row.className = "kpi-row";
+      row.innerHTML = `
+        <input class="kpi-input" value="${escapeHtml(value)}" placeholder="측정하거나 관찰할 수 있는 Outcome을 입력하세요" aria-label="추가 KPI">
+        <button class="icon-button" type="button" title="삭제" aria-label="KPI 삭제">x</button>
+      `;
+      bindKpiRow(row);
+      document.getElementById("kpiList").appendChild(row);
+      row.querySelector(".kpi-input").focus();
+      render();
+    }
+
+    document.querySelectorAll(".kpi-row").forEach(bindKpiRow);
+
+    document.getElementById("addKpi").addEventListener("click", () => {
+      addKpi();
+    });
+
+    document.getElementById("outputView").addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-copy-prompt]");
+      if (!button) return;
+
+      const prompt = document.getElementById("calibrationPrompt").textContent;
+      const original = button.textContent;
+      try {
+        await copyTextToClipboard(prompt);
+        button.textContent = "Copied";
+        setTimeout(() => {
+          button.textContent = original;
+        }, 1400);
+      } catch {
+        button.textContent = "Copy failed";
+        setTimeout(() => {
+          button.textContent = original;
+        }, 1400);
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
