@@ -369,6 +369,25 @@
 
     label small { color: var(--quiet); font-weight: 600; font-size: 11px; }
 
+    .label-hint {
+      font-weight: 600;
+      font-size: 10px;
+      color: var(--quiet);
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 1px 7px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .field-note {
+      margin: 2px 0 0;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--quiet);
+    }
+
     input, select, textarea {
       width: 100%;
       min-height: 40px;
@@ -942,6 +961,68 @@
     .tone-item:last-child { border-bottom: 0; padding-bottom: 0; }
     .tone-icon { font-size: 16px; flex: 0 0 auto; margin-top: 1px; }
 
+    /* ── ROADMAP (다중 세션) ── */
+    .roadmap { display: flex; flex-direction: column; gap: 0; }
+    .roadmap-item { display: flex; gap: 14px; }
+    .roadmap-rail {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 0 0 auto;
+    }
+    .roadmap-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(135deg, var(--purple), var(--blue));
+      box-shadow: 0 2px 8px rgba(108, 99, 255, 0.3);
+    }
+    .roadmap-line {
+      flex: 1;
+      width: 2px;
+      min-height: 18px;
+      margin: 4px 0;
+      background: linear-gradient(var(--purple), var(--line));
+      opacity: 0.4;
+    }
+    .roadmap-body { flex: 1; padding-bottom: 18px; }
+    .roadmap-item:last-child .roadmap-body { padding-bottom: 0; }
+    .roadmap-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 3px;
+    }
+    .roadmap-focus { font-size: 14px; font-weight: 760; color: var(--ink); letter-spacing: -0.01em; }
+    .roadmap-sched {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--purple);
+      background: var(--purple-light);
+      border-radius: 999px;
+      padding: 2px 9px;
+      white-space: nowrap;
+    }
+    .roadmap-desc { font-size: 12.5px; line-height: 1.55; color: var(--ink-2); margin: 0; }
+    .roadmap-note {
+      margin: 14px 0 0;
+      padding: 11px 13px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--ink-2);
+    }
+
     /* ── BOARD (보관함) ── */
     .board {
       margin-top: 60px;
@@ -1199,7 +1280,7 @@
                     <input id="people" type="number" min="3" max="60" value="10">
                   </div>
                   <div class="field">
-                    <label for="duration">소요 시간</label>
+                    <label for="duration">세션 시간 <span class="label-hint">회당</span></label>
                     <input id="duration" type="number" min="20" max="180" value="50">
                   </div>
                 </div>
@@ -1212,6 +1293,27 @@
                     <option>넓은 워크숍 공간</option>
                   </select>
                 </div>
+              </div>
+
+              <div class="field-group">
+                <div class="field-group-label">세션 구성 <div class="field-group-label-line"></div></div>
+                <div class="row">
+                  <div class="field">
+                    <label for="sessionCount">세션 개수 <span class="label-hint">회차</span></label>
+                    <input id="sessionCount" type="number" min="1" max="10" value="1">
+                  </div>
+                  <div class="field">
+                    <label for="cadence">진행 주기</label>
+                    <select id="cadence">
+                      <option>연속 진행 (한 번에)</option>
+                      <option>하루 1회</option>
+                      <option>주 1회</option>
+                      <option>격주 1회</option>
+                      <option>월 1회</option>
+                    </select>
+                  </div>
+                </div>
+                <p class="field-note">세션 개수를 2 이상으로 두면 회차별 흐름(도입 → 심화 → 정착)과 주기에 맞춘 로드맵을 함께 설계해.</p>
               </div>
             </section>
 
@@ -1520,7 +1622,7 @@
     };
 
     const ids = [
-      "goal", "people", "duration", "place", "relationship", "teamStage", "safetyLevel",
+      "goal", "people", "duration", "sessionCount", "cadence", "place", "relationship", "teamStage", "safetyLevel",
       "resistance", "powerStructure", "state", "mood", "intensity", "movement",
       "sharingMode", "output", "topicSensitivity", "facilitatorSkill", "avoid", "followUp"
     ];
@@ -1703,7 +1805,13 @@
         warnings.push("참여 인원을 1명 이상 정수로 입력해주세요. (기본값 10명으로 계산됩니다.)");
       }
       if (!data.duration || isNaN(duration) || duration < 5 || !Number.isInteger(duration)) {
-        warnings.push("소요 시간을 5분 이상 정수로 입력해주세요. (기본값 50분으로 계산됩니다.)");
+        warnings.push("세션 시간(회당)을 5분 이상 정수로 입력해주세요. (기본값 50분으로 계산됩니다.)");
+      }
+      if (data.sessionCount) {
+        const sessionCount = Number(data.sessionCount);
+        if (isNaN(sessionCount) || sessionCount < 1 || !Number.isInteger(sessionCount)) {
+          warnings.push("세션 개수는 1 이상의 정수로 입력해주세요. (기본값 1회로 계산됩니다.)");
+        }
       }
       if (!data.goal) {
         warnings.push("목적을 입력하면 활동과 진행자 멘트가 더 정확하게 생성됩니다.");
@@ -1756,11 +1864,14 @@
 - 50분 내외 세션이라면 활동 수를 과도하게 늘리지 말고 흐름을 선명하게 만들어줘.
 - 결과물은 진행자가 그대로 읽고 실행할 수 있을 만큼 구체적으로 작성해줘.
 - 세션의 처음부터 끝까지 하나의 일관된 프레이밍과 스토리텔링으로 이어져야 해.
+- 세션이 2회 이상이면 각 회차의 목표를 다르게 설계하되(도입 → 심화 → 정착), 회차 사이를 연결하는 흐름과 진행 주기에 맞는 사이 과제/리캡을 반드시 넣어줘.
 
 [입력 변수]
 - 목적: ${data.goal}
 - 참여 인원: ${data.people}명
-- 소요 시간: ${data.duration}분
+- 세션 시간(회당): ${data.duration}분
+- 세션 개수: ${Math.max(1, Math.round(Number(data.sessionCount) || 1))}회
+- 진행 주기: ${data.cadence || "연속 진행 (한 번에)"}
 - 진행 환경: ${data.place}
 - 참여자 관계: ${data.relationship}
 - 팀 발달 단계: ${data.teamStage}
@@ -1829,12 +1940,55 @@ ${customText}
       textarea.remove();
     }
 
+    function cadenceSchedule(cadence, index) {
+      const n = index + 1;
+      switch (cadence) {
+        case "하루 1회":  return `${n}일차`;
+        case "주 1회":    return `${n}주차`;
+        case "격주 1회":  return `${(n - 1) * 2 + 1}주차`;
+        case "월 1회":    return `${n}개월차`;
+        default:          return `Session ${n}`;
+      }
+    }
+
+    function cadenceNote(cadence, count) {
+      if (count <= 1) return "";
+      switch (cadence) {
+        case "연속 진행 (한 번에)":
+          return "세션 사이에 5~10분 휴식을 두고, 직전 세션의 결과물을 다음 세션의 출발점으로 자연스럽게 이어줍니다.";
+        case "하루 1회":
+          return "매일 같은 시간대에 진행하고, 전날 합의한 액션 한 가지를 다음 세션 도입부에서 짧게 점검합니다.";
+        case "주 1회":
+          return "한 주 동안 실천할 약속을 한 가지만 남기고, 다음 주 세션 오프닝에서 실행 경험을 공유하며 시작합니다.";
+        case "격주 1회":
+          return "2주 간격이므로 직전 세션의 핵심 합의를 다시 상기시키는 5분 리캡으로 연결성을 유지합니다.";
+        case "월 1회":
+          return "간격이 길기 때문에 매 세션 도입에 지난 회차 요약과 변화 점검을 넣어 맥락을 다시 세웁니다.";
+        default:
+          return "";
+      }
+    }
+
+    function sessionFocus(index, count, activity) {
+      if (count <= 1) return { label: activity.name, desc: activity.core };
+      if (index === 0) {
+        return { label: "도입 — 관계와 안전감", desc: `서로를 알아가고 참여 규칙을 세우며 ${activity.name}의 토대를 만듭니다.` };
+      }
+      if (index === count - 1) {
+        return { label: "정착 — 합의와 실행", desc: `누적된 논의를 팀의 약속과 액션으로 확정하고 ${activity.artifact}를 완성합니다.` };
+      }
+      return { label: `심화 ${index} — 핵심 작업`, desc: `${activity.core} 앞 회차의 결과물을 발전시켜 구체화합니다.` };
+    }
+
     function render() {
       updateProgress();
 
       const data = collectData();
       const people = Number(data.people) || 10;
       const duration = Number(data.duration) || 50;
+      const sessionCount = Math.max(1, Math.min(10, Math.round(Number(data.sessionCount) || 1)));
+      const cadence = data.cadence || "연속 진행 (한 번에)";
+      const totalMin = sessionCount * duration;
       const activity = inferActivity(data.goal);
       const parts = splitTime(duration);
       const slots = timeSlots(parts);
@@ -1857,24 +2011,31 @@ ${customText}
       const safeAvoid = escapeHtml(data.avoid || "없음");
       const tone = toneMap[data.mood] || { icon: "🎯", text: data.mood };
 
-      const slotDefs = [
-        { step: 1, cls: "step-1", name: "오프닝",       desc: `목적, KPI, 공유 원칙을 짧게 정렬합니다. 참여 저항이 있으면 실무 연결성을 먼저 보여줍니다.` },
-        { step: 2, cls: "step-2", name: "워밍업",       desc: movementPlan(data.movement) },
-        { step: 3, cls: "step-3", name: `핵심 활동 — ${activity.name}`, desc: `${activity.core} 소그룹은 ${groupSize} 단위로 운영합니다.` },
-        { step: 4, cls: "step-4", name: "공유와 정렬",   desc: sharingPlan(data.sharingMode, data.safetyLevel, data.powerStructure) },
-        { step: 5, cls: "step-5", name: "마무리",       desc: followUpPlan(data.followUp, mainKpi) }
-      ];
+      const cadenceGuide = cadenceNote(cadence, sessionCount);
 
-      document.getElementById("outputView").innerHTML = `
-        ${warnings.length ? `<div class="validation-warnings">${warnings.map((w) => `<p>⚠ ${escapeHtml(w)}</p>`).join("")}</div>` : ""}
+      const sessionSummary = sessionCount > 1
+        ? `${people}명 · ${sessionCount}회 × ${duration}분 (총 ${totalMin}분) · "${escapeHtml(mainKpi)}"`
+        : `${people}명 · ${duration}분 · "${escapeHtml(mainKpi)}"에 도달하는 세션`;
 
-        <article class="preview">
-          <div class="preview-main">
-            <p class="preview-label"><span class="preview-label-dot"></span>${escapeHtml(programTone)} program</p>
-            <h2>${escapeHtml(activity.name)}</h2>
-            <p>${people}명 · ${duration}분 · "${escapeHtml(mainKpi)}"에 도달하는 세션</p>
-          </div>
-          <div class="preview-footer">
+      const metricsHtml = sessionCount > 1
+        ? `
+            <div class="metric">
+              <span class="metric-value">${people}</span>
+              <span class="metric-label">Participants</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">${sessionCount}</span>
+              <span class="metric-label">Sessions</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">${duration}</span>
+              <span class="metric-label">Min / session</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">${totalMin}</span>
+              <span class="metric-label">Total min</span>
+            </div>`
+        : `
             <div class="metric">
               <span class="metric-value">${people}</span>
               <span class="metric-label">Participants</span>
@@ -1890,16 +2051,66 @@ ${customText}
             <div class="metric">
               <span class="metric-value">${parts[2]}</span>
               <span class="metric-label">Core min</span>
+            </div>`;
+
+      const roadmapHtml = sessionCount > 1
+        ? `
+          <section class="section wide">
+            <div class="section-header">
+              <div class="section-icon" style="background:var(--purple-light);color:var(--purple)">🗺️</div>
+              <h3>세션 로드맵 · ${escapeHtml(cadence)}</h3>
             </div>
+            <div class="roadmap">
+              ${Array.from({ length: sessionCount }, (_, i) => {
+                const focus = sessionFocus(i, sessionCount, activity);
+                return `
+                <div class="roadmap-item">
+                  <div class="roadmap-rail">
+                    <div class="roadmap-num">${i + 1}</div>
+                    ${i < sessionCount - 1 ? '<div class="roadmap-line"></div>' : ''}
+                  </div>
+                  <div class="roadmap-body">
+                    <div class="roadmap-head">
+                      <span class="roadmap-focus">${escapeHtml(focus.label)}</span>
+                      <span class="roadmap-sched">${escapeHtml(cadenceSchedule(cadence, i))} · ${duration}분</span>
+                    </div>
+                    <p class="roadmap-desc">${escapeHtml(focus.desc)}</p>
+                  </div>
+                </div>`;
+              }).join("")}
+            </div>
+            ${cadenceGuide ? `<p class="roadmap-note">🔗 ${escapeHtml(cadenceGuide)}</p>` : ""}
+          </section>`
+        : "";
+
+      const slotDefs = [
+        { step: 1, cls: "step-1", name: "오프닝",       desc: `목적, KPI, 공유 원칙을 짧게 정렬합니다. 참여 저항이 있으면 실무 연결성을 먼저 보여줍니다.` },
+        { step: 2, cls: "step-2", name: "워밍업",       desc: movementPlan(data.movement) },
+        { step: 3, cls: "step-3", name: `핵심 활동 — ${activity.name}`, desc: `${activity.core} 소그룹은 ${groupSize} 단위로 운영합니다.` },
+        { step: 4, cls: "step-4", name: "공유와 정렬",   desc: sharingPlan(data.sharingMode, data.safetyLevel, data.powerStructure) },
+        { step: 5, cls: "step-5", name: "마무리",       desc: followUpPlan(data.followUp, mainKpi) }
+      ];
+
+      document.getElementById("outputView").innerHTML = `
+        ${warnings.length ? `<div class="validation-warnings">${warnings.map((w) => `<p>⚠ ${escapeHtml(w)}</p>`).join("")}</div>` : ""}
+
+        <article class="preview">
+          <div class="preview-main">
+            <p class="preview-label"><span class="preview-label-dot"></span>${escapeHtml(programTone)} program</p>
+            <h2>${escapeHtml(activity.name)}</h2>
+            <p>${sessionSummary}</p>
+          </div>
+          <div class="preview-footer">${metricsHtml}
           </div>
         </article>
 
         <div class="section-grid">
+          ${roadmapHtml}
 
           <section class="section wide">
             <div class="section-header">
               <div class="section-icon" style="background:var(--blue-light);color:var(--blue)">🗓️</div>
-              <h3>프로그램 타임라인</h3>
+              <h3>프로그램 타임라인${sessionCount > 1 ? ` · 각 세션 ${duration}분 기준` : ""}</h3>
             </div>
             <div class="timeline">
               ${slotDefs.map((s) => `
@@ -2104,7 +2315,13 @@ ${customText}
         kpis,
         custom: readCustomRaw(),
         prompt: promptEl ? promptEl.textContent : "",
-        meta: { people: Number(data.people) || 10, duration: Number(data.duration) || 50, activity: activity.name }
+        meta: {
+          people: Number(data.people) || 10,
+          duration: Number(data.duration) || 50,
+          sessionCount: Math.max(1, Math.round(Number(data.sessionCount) || 1)),
+          cadence: data.cadence || "연속 진행 (한 번에)",
+          activity: activity.name
+        }
       };
       const hist = loadHistory();
       hist.unshift(rec);
@@ -2167,6 +2384,7 @@ ${customText}
             <div class="board-card-meta">
               <span>👥 ${(rec.meta && rec.meta.people) || "-"}명</span>
               <span>⏱ ${(rec.meta && rec.meta.duration) || "-"}분</span>
+              ${rec.meta && rec.meta.sessionCount > 1 ? `<span>🔁 ${rec.meta.sessionCount}회</span>` : ""}
               <span>🎯 ${(rec.kpis && rec.kpis.length) || 0} KPI</span>
             </div>
             <div class="board-card-actions">
