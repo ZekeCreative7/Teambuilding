@@ -388,6 +388,42 @@
       color: var(--quiet);
     }
 
+    .multi { display: flex; flex-direction: column; gap: 9px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      width: auto;
+      min-height: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1.5px solid var(--line-strong);
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: var(--ink-2);
+      padding: 7px 13px;
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1.15;
+      letter-spacing: -0.005em;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+    .chip::before {
+      content: "+";
+      font-weight: 800;
+      font-size: 13px;
+      line-height: 1;
+      opacity: 0.5;
+    }
+    .chip:hover { border-color: var(--blue); color: var(--ink); }
+    .chip.selected {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(0, 85, 212, 0.28);
+    }
+    .chip.selected::before { content: "✓"; opacity: 1; }
+    .multi-other { font-size: 12.5px; }
+
     input, select, textarea {
       width: 100%;
       min-height: 40px;
@@ -1321,25 +1357,33 @@
               <div class="field-group">
                 <div class="field-group-label">관계 & 단계 <div class="field-group-label-line"></div></div>
                 <div class="field">
-                  <label for="relationship">참여자 관계</label>
-                  <select id="relationship">
-                    <option>어느 정도 아는 사이</option>
-                    <option>처음 만남</option>
-                    <option>오래 함께 일한 팀</option>
-                    <option>부서가 섞여 있음</option>
-                    <option>직급이 섞여 있음</option>
-                    <option>갈등이나 거리감이 있음</option>
-                  </select>
+                  <label>참여자 관계 <span class="label-hint">중복 선택</span></label>
+                  <div class="multi" data-multi="relationship">
+                    <div class="chips">
+                      <button type="button" class="chip selected" aria-pressed="true" data-value="어느 정도 아는 사이">어느 정도 아는 사이</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="처음 만남">처음 만남</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="오래 함께 일한 팀">오래 함께 일한 팀</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="부서가 섞여 있음">부서가 섞여 있음</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="직급이 섞여 있음">직급이 섞여 있음</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="갈등이나 거리감이 있음">갈등이나 거리감이 있음</button>
+                    </div>
+                    <input type="text" class="multi-other" placeholder="기타 (직접 입력)" aria-label="참여자 관계 기타 입력">
+                  </div>
+                  <input type="hidden" id="relationship">
                 </div>
                 <div class="field">
-                  <label for="teamStage">팀 발달 단계</label>
-                  <select id="teamStage">
-                    <option>역할과 관계를 맞추는 중</option>
-                    <option>새로 형성됨</option>
-                    <option>갈등이나 긴장이 있음</option>
-                    <option>운영은 안정적이나 개선이 필요함</option>
-                    <option>성과는 좋지만 리프레시가 필요함</option>
-                  </select>
+                  <label>팀 발달 단계 <span class="label-hint">중복 선택</span></label>
+                  <div class="multi" data-multi="teamStage">
+                    <div class="chips">
+                      <button type="button" class="chip selected" aria-pressed="true" data-value="역할과 관계를 맞추는 중">역할과 관계를 맞추는 중</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="새로 형성됨">새로 형성됨</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="갈등이나 긴장이 있음">갈등이나 긴장이 있음</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="운영은 안정적이나 개선이 필요함">운영은 안정적이나 개선이 필요함</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="성과는 좋지만 리프레시가 필요함">성과는 좋지만 리프레시가 필요함</button>
+                    </div>
+                    <input type="text" class="multi-other" placeholder="기타 (직접 입력)" aria-label="팀 발달 단계 기타 입력">
+                  </div>
+                  <input type="hidden" id="teamStage">
                 </div>
               </div>
 
@@ -1366,25 +1410,34 @@
                   </div>
                 </div>
                 <div class="field">
-                  <label for="powerStructure">권력 구조</label>
-                  <select id="powerStructure">
-                    <option>리더 1명 포함</option>
-                    <option>동료 중심</option>
-                    <option>임원/상위 직급 포함</option>
-                    <option>평가 관계가 있음</option>
-                    <option>고객/외부인이 섞여 있음</option>
-                  </select>
+                  <label>권력 구조 <span class="label-hint">중복 선택</span></label>
+                  <div class="multi" data-multi="powerStructure">
+                    <div class="chips">
+                      <button type="button" class="chip selected" aria-pressed="true" data-value="리더 1명 포함">리더 1명 포함</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="동료 중심">동료 중심</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="임원/상위 직급 포함">임원/상위 직급 포함</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="평가 관계가 있음">평가 관계가 있음</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="고객/외부인이 섞여 있음">고객/외부인이 섞여 있음</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="리더들만 참여">리더들만 참여</button>
+                    </div>
+                    <input type="text" class="multi-other" placeholder="기타 (직접 입력)" aria-label="권력 구조 기타 입력">
+                  </div>
+                  <input type="hidden" id="powerStructure">
                 </div>
                 <div class="field">
-                  <label for="state">현재 팀 상태</label>
-                  <select id="state">
-                    <option>조심스럽고 말이 많지 않음</option>
-                    <option>어색함</option>
-                    <option>에너지가 낮음</option>
-                    <option>말이 많은 편</option>
-                    <option>피로도가 높음</option>
-                    <option>의견 충돌이 있음</option>
-                  </select>
+                  <label>현재 팀 상태 <span class="label-hint">중복 선택</span></label>
+                  <div class="multi" data-multi="state">
+                    <div class="chips">
+                      <button type="button" class="chip selected" aria-pressed="true" data-value="조심스럽고 말이 많지 않음">조심스럽고 말이 많지 않음</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="어색함">어색함</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="에너지가 낮음">에너지가 낮음</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="말이 많은 편">말이 많은 편</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="피로도가 높음">피로도가 높음</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="의견 충돌이 있음">의견 충돌이 있음</button>
+                    </div>
+                    <input type="text" class="multi-other" placeholder="기타 (직접 입력)" aria-label="현재 팀 상태 기타 입력">
+                  </div>
+                  <input type="hidden" id="state">
                 </div>
               </div>
             </section>
@@ -1393,15 +1446,19 @@
               <div class="field-group">
                 <div class="field-group-label">분위기 & 에너지 <div class="field-group-label-line"></div></div>
                 <div class="field">
-                  <label for="mood">원하는 분위기</label>
-                  <select id="mood">
-                    <option>활발하지만 부담스럽지 않게</option>
-                    <option>가볍고 웃긴 분위기</option>
-                    <option>차분하지만 몰입감 있게</option>
-                    <option>솔직한 대화가 가능하게</option>
-                    <option>게임처럼 경쟁적으로</option>
-                    <option>따뜻하고 안전하게</option>
-                  </select>
+                  <label>원하는 분위기 <span class="label-hint">중복 선택</span></label>
+                  <div class="multi" data-multi="mood">
+                    <div class="chips">
+                      <button type="button" class="chip selected" aria-pressed="true" data-value="활발하지만 부담스럽지 않게">활발하지만 부담스럽지 않게</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="가볍고 웃긴 분위기">가볍고 웃긴 분위기</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="차분하지만 몰입감 있게">차분하지만 몰입감 있게</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="솔직한 대화가 가능하게">솔직한 대화가 가능하게</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="게임처럼 경쟁적으로">게임처럼 경쟁적으로</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="따뜻하고 안전하게">따뜻하고 안전하게</button>
+                    </div>
+                    <input type="text" class="multi-other" placeholder="기타 (직접 입력)" aria-label="원하는 분위기 기타 입력">
+                  </div>
+                  <input type="hidden" id="mood">
                 </div>
                 <div class="row">
                   <div class="field">
@@ -1503,13 +1560,17 @@
               <div class="field-group">
                 <div class="field-group-label">후속 실행 <div class="field-group-label-line"></div></div>
                 <div class="field">
-                  <label for="followUp">후속 실행 방식</label>
-                  <select id="followUp">
-                    <option>다음 회의에서 점검</option>
-                    <option>세션 안에서만 마무리</option>
-                    <option>팀 문서로 남김</option>
-                    <option>담당자와 기한까지 정함</option>
-                  </select>
+                  <label>후속 실행 방식 <span class="label-hint">중복 선택</span></label>
+                  <div class="multi" data-multi="followUp">
+                    <div class="chips">
+                      <button type="button" class="chip selected" aria-pressed="true" data-value="다음 회의에서 점검">다음 회의에서 점검</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="세션 안에서만 마무리">세션 안에서만 마무리</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="팀 문서로 남김">팀 문서로 남김</button>
+                      <button type="button" class="chip" aria-pressed="false" data-value="담당자와 기한까지 정함">담당자와 기한까지 정함</button>
+                    </div>
+                    <input type="text" class="multi-other" placeholder="기타 (직접 입력)" aria-label="후속 실행 방식 기타 입력">
+                  </div>
+                  <input type="hidden" id="followUp">
                 </div>
               </div>
 
@@ -1638,6 +1699,13 @@
 
     function value(id) { return document.getElementById(id).value.trim(); }
 
+    function pickTone(mood) {
+      const selected = String(mood).split(",").map((s) => s.trim()).filter(Boolean);
+      const match = selected.find((m) => toneMap[m]);
+      if (match) return toneMap[match];
+      return { icon: "🎯", text: mood || "선택한 분위기에 맞춰 진행 톤을 조절합니다." };
+    }
+
     function splitTime(total) {
       const opening = Math.max(3, Math.round(total * 0.10));
       const warmup  = Math.max(5, Math.round(total * 0.16));
@@ -1750,9 +1818,10 @@
     }
 
     function followUpPlan(followUp, kpi) {
-      if (followUp === "담당자와 기한까지 정함") return `${kpi}를 기준으로 담당자, 첫 행동, 점검 일자를 확정합니다.`;
-      if (followUp === "팀 문서로 남김") return "완성된 약속과 키워드를 팀 문서에 남기고 다음 회의 안건으로 연결합니다.";
-      if (followUp === "다음 회의에서 점검") return "다음 회의에서 5분만 사용해 실행 여부와 조정점을 확인합니다.";
+      const f = String(followUp);
+      if (f.includes("담당자")) return `${kpi}를 기준으로 담당자, 첫 행동, 점검 일자를 확정합니다.`;
+      if (f.includes("팀 문서")) return "완성된 약속과 키워드를 팀 문서에 남기고 다음 회의 안건으로 연결합니다.";
+      if (f.includes("다음 회의")) return "다음 회의에서 5분만 사용해 실행 여부와 조정점을 확인합니다.";
       return "세션 마지막에 개인별 한 줄 다짐을 남기고 현장에서 마무리합니다.";
     }
 
@@ -1763,9 +1832,9 @@
 
       if (data.safetyLevel === "낮음" || data.safetyLevel === "잘 모르겠음") {
         lines.push("공유하고 싶지 않은 내용은 언제든지 넘겨도 괜찮습니다. 정답을 맞히는 자리가 아닙니다.");
-      } else if (data.mood === "솔직한 대화가 가능하게") {
+      } else if (data.mood.includes("솔직한 대화")) {
         lines.push("오늘은 서로 솔직하게 말할 수 있는 자리를 만들겠습니다. 판단하거나 평가하는 시간이 아닙니다.");
-      } else if (data.mood === "따뜻하고 안전하게") {
+      } else if (data.mood.includes("따뜻하고 안전")) {
         lines.push("오늘 나오는 이야기는 평가가 아니라 서로를 더 잘 이해하기 위한 것입니다.");
       } else {
         lines.push("오늘은 정답을 맞히는 것이 아니라, 함께 일할 때 필요한 조건을 더 선명하게 보는 자리입니다.");
@@ -2009,7 +2078,7 @@ ${customText}
       const warnings = validateData(data);
       const facilitatorScript = buildFacilitatorScript(data, activity, mainKpi);
       const safeAvoid = escapeHtml(data.avoid || "없음");
-      const tone = toneMap[data.mood] || { icon: "🎯", text: data.mood };
+      const tone = pickTone(data.mood);
 
       const cadenceGuide = cadenceNote(cadence, sessionCount);
 
@@ -2236,6 +2305,53 @@ ${customText}
       document.getElementById(id).addEventListener("change", render);
     });
 
+    function syncMulti(field, silent) {
+      const wrap = document.querySelector(`.multi[data-multi="${field}"]`);
+      const hidden = document.getElementById(field);
+      if (!wrap || !hidden) return;
+      const selected = [...wrap.querySelectorAll(".chip.selected")].map((chip) => chip.dataset.value);
+      const other = wrap.querySelector(".multi-other");
+      const otherVal = other ? other.value.trim() : "";
+      if (otherVal) selected.push(otherVal);
+      hidden.value = selected.join(", ");
+      if (!silent) hidden.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    function initMultiSelects() {
+      document.querySelectorAll(".multi[data-multi]").forEach((wrap) => {
+        const field = wrap.dataset.multi;
+        wrap.querySelectorAll(".chip").forEach((chip) => {
+          chip.addEventListener("click", () => {
+            const on = chip.classList.toggle("selected");
+            chip.setAttribute("aria-pressed", String(on));
+            syncMulti(field);
+          });
+        });
+        const other = wrap.querySelector(".multi-other");
+        if (other) other.addEventListener("input", () => syncMulti(field));
+        syncMulti(field, true);
+      });
+    }
+
+    function restoreMultiFromHidden() {
+      document.querySelectorAll(".multi[data-multi]").forEach((wrap) => {
+        const field = wrap.dataset.multi;
+        const hidden = document.getElementById(field);
+        const parts = (hidden ? hidden.value : "").split(",").map((s) => s.trim()).filter(Boolean);
+        const matched = new Set();
+        wrap.querySelectorAll(".chip").forEach((chip) => {
+          const on = parts.includes(chip.dataset.value);
+          chip.classList.toggle("selected", on);
+          chip.setAttribute("aria-pressed", String(on));
+          if (on) matched.add(chip.dataset.value);
+        });
+        const other = wrap.querySelector(".multi-other");
+        if (other) other.value = parts.filter((p) => !matched.has(p)).join(", ");
+      });
+    }
+
+    initMultiSelects();
+
     function makeCustomRow(key = "", val = "") {
       const row = document.createElement("div");
       row.className = "custom-row";
@@ -2349,6 +2465,7 @@ ${customText}
         const el = document.getElementById(fid);
         if (el && rec.fields[fid] !== undefined) el.value = rec.fields[fid];
       });
+      restoreMultiFromHidden();
       restoreKpis(rec.kpis);
       restoreCustom(rec.custom);
       render();
