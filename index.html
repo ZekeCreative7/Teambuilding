@@ -942,6 +942,158 @@
     .tone-item:last-child { border-bottom: 0; padding-bottom: 0; }
     .tone-icon { font-size: 16px; flex: 0 0 auto; margin-top: 1px; }
 
+    /* ── BOARD (보관함) ── */
+    .board {
+      margin-top: 60px;
+      padding-top: 44px;
+      border-top: 1px solid var(--line);
+    }
+
+    .board-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 26px;
+    }
+
+    .board-title {
+      margin: 8px 0 0;
+      font-size: clamp(26px, 3vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+    }
+
+    .board-count-pill {
+      flex: 0 0 auto;
+      padding: 8px 15px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      font-size: 13px;
+      font-weight: 750;
+      color: var(--muted);
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .board-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.16s, box-shadow 0.16s;
+    }
+
+    .board-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+
+    .board-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .board-card-tag {
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--blue-light);
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .board-card-top time { font-size: 12px; color: var(--quiet); font-weight: 600; }
+
+    .board-card h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 760;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+
+    .board-card-goal {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .board-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 650;
+      padding-top: 4px;
+    }
+
+    .board-card-actions {
+      display: flex;
+      gap: 7px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .board-btn {
+      flex: 1;
+      min-height: 34px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 750;
+      background: var(--surface-2);
+      color: var(--ink-2);
+      border: 1px solid var(--line);
+      transition: background 0.14s, color 0.14s;
+    }
+
+    .board-btn:hover { background: var(--surface-hover); }
+    .board-btn.primary { background: var(--blue); color: #fff; border-color: transparent; }
+    .board-btn.primary:hover { background: var(--blue-dark); }
+    .board-btn.danger:hover { background: var(--red-light); color: var(--red); border-color: rgba(192,57,43,0.2); }
+
+    .board-empty {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 56px 24px;
+      border: 2px dashed var(--line-strong);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .board-empty-icon { font-size: 40px; }
+    .board-empty p { margin: 0; font-size: 14px; line-height: 1.6; }
+
+    .save-button {
+      flex: 0 0 auto;
+      min-height: 32px;
+      padding: 0 14px;
+      border-radius: 999px;
+      color: #ffffff;
+      background: var(--blue);
+      font-size: 12px;
+      font-weight: 760;
+      transition: background 0.15s, transform 0.15s;
+    }
+
+    .save-button:hover { background: var(--blue-dark); transform: translateY(-1px); }
+
     /* ── MOBILE ── */
     @media (max-width: 1060px) {
       .product { grid-template-columns: 1fr; }
@@ -972,7 +1124,7 @@
       </div>
       <div class="top-actions">
         <a href="#product">Configurator</a>
-        <a href="#outputView">Program</a>
+        <a href="#board">보관함 (<span class="board-count">0</span>)</a>
         <a class="mini-cta" href="#product">Start →</a>
       </div>
     </nav>
@@ -1296,6 +1448,21 @@
           </div>
         </div>
       </section>
+    </section>
+
+    <section class="board" id="board" aria-label="세션 보관함">
+      <div class="board-header">
+        <div>
+          <p class="hero-kicker"><span class="hero-kicker-dot"></span>My Library</p>
+          <h2 class="board-title">내 세션 보관함</h2>
+        </div>
+        <span class="board-count-pill"><span class="board-count">0</span>개 저장됨</span>
+      </div>
+      <div class="board-grid" id="boardGrid"></div>
+      <div class="board-empty" id="boardEmpty">
+        <div class="board-empty-icon">📭</div>
+        <p>아직 저장된 세션이 없습니다.<br>프로그램을 생성한 뒤 "보관함에 저장"을 눌러보세요.</p>
+      </div>
     </section>
   </main>
 
@@ -1829,7 +1996,8 @@ ${customText}
             <div class="section-header">
               <div class="section-icon" style="background:#1a1a2e;color:#6c9fff">🤖</div>
               <h3>GPT 캘리브레이션 프롬프트</h3>
-              <button class="copy-button" type="button" data-copy-prompt style="margin-left:auto">Copy prompt</button>
+              <button class="save-button" type="button" data-save-session style="margin-left:auto">💾 보관함에 저장</button>
+              <button class="copy-button" type="button" data-copy-prompt>Copy prompt</button>
             </div>
             <pre class="prompt-box" id="calibrationPrompt">${escapeHtml(calibrationPrompt)}</pre>
           </section>
@@ -1857,7 +2025,7 @@ ${customText}
       document.getElementById(id).addEventListener("change", render);
     });
 
-    document.getElementById("addVariable").addEventListener("click", () => {
+    function makeCustomRow(key = "", val = "") {
       const row = document.createElement("div");
       row.className = "custom-row";
       row.innerHTML = `
@@ -1865,17 +2033,22 @@ ${customText}
         <input class="custom-value" placeholder="값" aria-label="추가 변수 값">
         <button class="icon-button" type="button" title="삭제" aria-label="추가 변수 삭제">×</button>
       `;
+      row.querySelector(".custom-key").value = key;
+      row.querySelector(".custom-value").value = val;
       row.querySelector("button").addEventListener("click", () => { row.remove(); render(); });
       row.querySelectorAll("input").forEach((input) => input.addEventListener("input", render));
       document.getElementById("customVariables").appendChild(row);
-    });
+      return row;
+    }
+
+    document.getElementById("addVariable").addEventListener("click", () => makeCustomRow());
 
     function bindKpiRow(row) {
       row.querySelector(".kpi-input").addEventListener("input", render);
       row.querySelector("button").addEventListener("click", () => { row.remove(); render(); });
     }
 
-    function addKpi(val = "") {
+    function makeKpiRow(val = "") {
       const row = document.createElement("div");
       row.className = "kpi-row";
       row.innerHTML = `
@@ -1884,6 +2057,11 @@ ${customText}
       `;
       bindKpiRow(row);
       document.getElementById("kpiList").appendChild(row);
+      return row;
+    }
+
+    function addKpi(val = "") {
+      const row = makeKpiRow(val);
       row.querySelector(".kpi-input").focus();
       render();
     }
@@ -1891,7 +2069,141 @@ ${customText}
     document.querySelectorAll(".kpi-row").forEach(bindKpiRow);
     document.getElementById("addKpi").addEventListener("click", () => addKpi());
 
+    /* ── 보관함 (localStorage) ── */
+    const HISTORY_KEY = "sessionStudio.history.v1";
+
+    function readCustomRaw() {
+      return [...document.querySelectorAll(".custom-row")].map((row) => ({
+        key: row.querySelector(".custom-key").value.trim(),
+        val: row.querySelector(".custom-value").value.trim()
+      })).filter((r) => r.key || r.val);
+    }
+
+    function loadHistory() {
+      try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function saveHistory(arr) {
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); return true; }
+      catch { alert("저장에 실패했습니다. 브라우저 저장공간(시크릿 모드 등)을 확인해주세요."); return false; }
+    }
+
+    function saveCurrentSession() {
+      const data = collectData();
+      const activity = inferActivity(data.goal);
+      const kpis = readKpis();
+      const promptEl = document.getElementById("calibrationPrompt");
+      const title = (window.prompt("보관함에 저장할 제목을 입력하세요.", activity.name) || "").trim();
+      if (!title) return false;
+      const rec = {
+        id: Date.now(),
+        createdAt: new Date().toISOString(),
+        title,
+        fields: data,
+        kpis,
+        custom: readCustomRaw(),
+        prompt: promptEl ? promptEl.textContent : "",
+        meta: { people: Number(data.people) || 10, duration: Number(data.duration) || 50, activity: activity.name }
+      };
+      const hist = loadHistory();
+      hist.unshift(rec);
+      if (!saveHistory(hist)) return false;
+      renderBoard();
+      return true;
+    }
+
+    function restoreKpis(arr) {
+      const list = document.getElementById("kpiList");
+      list.innerHTML = "";
+      (arr && arr.length ? arr : [""]).forEach((v) => makeKpiRow(v));
+    }
+
+    function restoreCustom(arr) {
+      const wrap = document.getElementById("customVariables");
+      wrap.innerHTML = "";
+      (arr || []).forEach((o) => makeCustomRow(o.key, o.val));
+    }
+
+    function loadSession(id) {
+      const rec = loadHistory().find((r) => r.id === id);
+      if (!rec) return;
+      ids.forEach((fid) => {
+        const el = document.getElementById(fid);
+        if (el && rec.fields[fid] !== undefined) el.value = rec.fields[fid];
+      });
+      restoreKpis(rec.kpis);
+      restoreCustom(rec.custom);
+      render();
+      document.getElementById("product").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function deleteSession(id) {
+      if (!confirm("이 세션을 삭제할까요?")) return;
+      saveHistory(loadHistory().filter((r) => r.id !== id));
+      renderBoard();
+    }
+
+    function renderBoard() {
+      const hist = loadHistory();
+      const grid = document.getElementById("boardGrid");
+      const empty = document.getElementById("boardEmpty");
+      [...document.querySelectorAll(".board-count")].forEach((el) => { el.textContent = hist.length; });
+      if (!hist.length) { grid.innerHTML = ""; empty.style.display = "flex"; return; }
+      empty.style.display = "none";
+      grid.innerHTML = hist.map((rec) => {
+        const d = new Date(rec.createdAt);
+        const date = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+        const goal = (rec.fields && rec.fields.goal) || "";
+        const snippet = goal.slice(0, 80);
+        return `
+          <article class="board-card">
+            <div class="board-card-top">
+              <span class="board-card-tag">${escapeHtml((rec.meta && rec.meta.activity) || "세션")}</span>
+              <time>${date}</time>
+            </div>
+            <h3>${escapeHtml(rec.title)}</h3>
+            <p class="board-card-goal">${escapeHtml(snippet)}${goal.length > 80 ? "…" : ""}</p>
+            <div class="board-card-meta">
+              <span>👥 ${(rec.meta && rec.meta.people) || "-"}명</span>
+              <span>⏱ ${(rec.meta && rec.meta.duration) || "-"}분</span>
+              <span>🎯 ${(rec.kpis && rec.kpis.length) || 0} KPI</span>
+            </div>
+            <div class="board-card-actions">
+              <button class="board-btn primary" type="button" data-load="${rec.id}">불러오기</button>
+              <button class="board-btn" type="button" data-copy="${rec.id}">복사</button>
+              <button class="board-btn danger" type="button" data-del="${rec.id}">삭제</button>
+            </div>
+          </article>`;
+      }).join("");
+    }
+
+    document.getElementById("boardGrid").addEventListener("click", async (event) => {
+      const loadBtn = event.target.closest("[data-load]");
+      const copyBtn = event.target.closest("[data-copy]");
+      const delBtn = event.target.closest("[data-del]");
+      if (loadBtn) {
+        loadSession(Number(loadBtn.dataset.load));
+      } else if (copyBtn) {
+        const rec = loadHistory().find((r) => r.id === Number(copyBtn.dataset.copy));
+        if (rec) {
+          try { await copyTextToClipboard(rec.prompt); copyBtn.textContent = "✓"; setTimeout(() => { copyBtn.textContent = "복사"; }, 1200); } catch {}
+        }
+      } else if (delBtn) {
+        deleteSession(Number(delBtn.dataset.del));
+      }
+    });
+
     document.getElementById("outputView").addEventListener("click", async (event) => {
+      const saveBtn = event.target.closest("[data-save-session]");
+      if (saveBtn) {
+        const original = saveBtn.textContent;
+        if (saveCurrentSession()) {
+          saveBtn.textContent = "✓ 저장됨";
+          setTimeout(() => { saveBtn.textContent = original; }, 1400);
+        }
+        return;
+      }
       const button = event.target.closest("[data-copy-prompt]");
       if (!button) return;
       const prompt = document.getElementById("calibrationPrompt").textContent;
@@ -1908,6 +2220,7 @@ ${customText}
 
     updateProgress();
     render();
+    renderBoard();
   </script>
 </body>
 </html>
