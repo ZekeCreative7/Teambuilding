@@ -330,6 +330,7 @@ details.slot[open] summary{border-bottom:1px solid rgba(226,232,240,.8)}
       <div class="meta" id="miniMeta">진행률 0% · 저장 전</div>
       <div class="progress"><div id="miniProgress"></div></div>
       <div class="sideActions"><button onclick="saveProject()">저장</button><button onclick="go('board')">보드</button></div>
+      <div id="authBar" style="display:none;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:11px;color:#aab3c5"><span id="authWho" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button onclick="logoutUser()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);color:#fff;padding:6px 10px;font-size:11px">로그아웃</button></div>
     </div>
     <nav class="nav" id="nav">
       <button class="active" data-page="overview" onclick="go('overview')"><span class="left"><span class="dot"></span>Overview</span><span>⌘</span></button>
@@ -444,6 +445,39 @@ details.slot[open] summary{border-bottom:1px solid rgba(226,232,240,.8)}
 
 <div class="modal" id="modal"><div class="modalContent"><div class="modalTop"><div><div class="eyebrow" id="modalEyebrow">Prompt</div><h2 id="modalTitle" style="margin:4px 0 0">GPT Prompt</h2></div><div class="actions"><button class="primary" onclick="copyModal()">복사</button><button class="ghost" onclick="closeModal()">닫기</button></div></div><div class="promptBox" id="modalBody"></div></div></div>
 <div class="toast" id="toast"></div>
+
+<!-- 다른 기기에서 변경 감지 배너 -->
+<div id="syncBanner" style="display:none;position:fixed;left:22px;bottom:22px;z-index:130;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow2);border-radius:16px;padding:11px 13px;font-size:13px;font-weight:800;color:#374151;align-items:center;gap:10px">
+  <span>다른 기기에서 변경되었습니다.</span>
+  <button class="primary" style="padding:7px 11px" onclick="location.reload()">새로고침</button>
+</div>
+
+<!-- 로그인 화면 -->
+<div id="authOverlay" style="position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:22px;background:radial-gradient(circle at 0 0,#1b2440,#0b1220 60%,#070b16)">
+  <div style="background:#fff;border-radius:26px;box-shadow:0 35px 100px rgba(0,0,0,.45);max-width:380px;width:100%;padding:26px">
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
+      <div style="width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,var(--brand),#14b8a6)"></div>
+      <div>
+        <div style="font-weight:950;font-size:17px;letter-spacing:-.04em">Session Design Studio</div>
+        <div style="font-size:11px;color:var(--muted)">로그인하면 모든 기기에서 자동 동기화됩니다</div>
+      </div>
+    </div>
+    <label>이메일</label>
+    <input id="authEmail" type="email" autocomplete="username" placeholder="you@example.com">
+    <label>비밀번호</label>
+    <input id="authPass" type="password" autocomplete="current-password" placeholder="6자 이상" onkeydown="if(event.key==='Enter')loginUser()">
+    <div id="authMsg" style="display:none;margin-top:10px;font-size:12px;font-weight:800;color:var(--red);line-height:1.5"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">
+      <button class="primary" onclick="loginUser()">로그인</button>
+      <button class="secondary" onclick="signupUser()">회원가입</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.55;margin-top:12px">처음이면 이메일·비밀번호를 입력하고 <b>회원가입</b>을 누르세요. 다음부터는 같은 정보로 <b>로그인</b>하면 됩니다.</div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
 (function(){
 const STORE='session_design_studio_premium_v1';const BOARD='session_design_studio_board_v1';let activeSession=0;
@@ -456,7 +490,7 @@ const defaultQuestions=[
  ['이번 세션에서 반드시 남겨야 할 한 문장은 무엇인가?','PPT 문장이 아니라 참여자가 기억할 문장으로 적어보세요.']
 ];
 const slotNames=['Opening','Safety','Core Activity','Reflection','Sharing','Closing','Follow-up'];
-let state=load();init();
+let state=load();/* init()은 Firebase 인증 후 호출됩니다 */
 function base(){return{brief:{name:'',audience:'',sessionCount:'3회차, 각 60분',officialGoal:'',hiddenJob:'',context:'',successVoice:'',failureRisk:'',avoid:'',reporting:''},questions:defaultQuestions.map((q,i)=>({id:i+1,q:q[0],hint:q[1],answer:''})),participants:[emptyP(1),emptyP(2),emptyP(3)],frames:[emptyFrame(1),emptyFrame(2),emptyFrame(3)],decisions:[],slides:[emptySlide(1),emptySlide(2),emptySlide(3)],slots:[],feedback:{raw:'',analysis:''},emotionHypothesis:{raw:'',parsed:null,appliedAt:null},format:{complexity:'중간',energy:'낮음',safety:'낮음',goal:'공감 형성',output:''},tension:{company:'',participant:'',challenge:''},meta:{projectId:null,updatedAt:null}}}
 function emptyP(i){return{id:'P'+String(i).padStart(2,'0'),age:'',gender:'',year:'',role:'',team:'',emotion:'',safety:'중간',resistance:'',risk:''}}
 function emptyFrame(i){return{round:i,purpose:'',start:'',end:'',experience:'',output:''}}
@@ -464,7 +498,7 @@ function emptySlide(i){return{no:i,title:'',story:'',note:''}}
 function emptySlots(session){return slotNames.map(n=>({session,name:n,done:false,decision:'',clear:'',prompt:'',risk:''}))}
 function load(){try{return merge(base(),JSON.parse(localStorage.getItem(STORE)||'{}'))}catch(e){return base()}}
 function merge(a,b){if(Array.isArray(a))return Array.isArray(b)?b:a;if(a&&typeof a==='object'){let o={...a};if(b&&typeof b==='object')Object.keys(b).forEach(k=>o[k]=merge(a[k],b[k]));return o}return b!==undefined?b:a}
-function save(){localStorage.setItem(STORE,JSON.stringify(state));updateMini();markDone()}
+function save(){localStorage.setItem(STORE,JSON.stringify(state));updateMini();markDone();cloudSave()}
 function init(){ensureSlots();renderAll();bindInputs();updateMini();markDone();}
 function bindInputs(){document.querySelectorAll('[data-key]').forEach(el=>{const key=el.dataset.key;el.value=get(key)||'';el.addEventListener('input',()=>{set(key,el.value);save()});el.addEventListener('change',()=>{set(key,el.value);save()})})}
 function get(path){return path.split('.').reduce((o,k)=>o?o[k]:undefined,state)}
@@ -702,6 +736,52 @@ window.exportJSON=function(){download((state.brief.name||'session_design')+'.jso
 function download(name,text,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__to);window.__to=setTimeout(()=>t.classList.remove('show'),1700)}
 function esc(s){return String(s??'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}function escAttr(s){return String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}function sel(a,b){return a===b?'selected':''}
+/* ============ Firebase 인증 + Firestore 자동 동기화 ============ */
+const firebaseConfig={apiKey:"AIzaSyAA2BvQ7yllagmJvbUBUlBUOnfkkdHwuqI",authDomain:"creative-session-canvas.firebaseapp.com",projectId:"creative-session-canvas",storageBucket:"creative-session-canvas.firebasestorage.app",messagingSenderId:"605192328299",appId:"1:605192328299:web:9be3f62ccae301cccd4d2e",measurementId:"G-DRM186YD59"};
+const __sessionId=Math.random().toString(36).slice(2)+'_'+Date.now();
+let __uid=null,__booted=false,__saveTimer=null,__lastLocalWrite=0,fbDb=null,fbAuth=null;
+function docRef(){return fbDb.collection('userStates').doc(__uid)}
+function cleanState(){return JSON.parse(JSON.stringify(state))}
+function cloudSaveNow(){if(!__uid||!fbDb)return Promise.resolve();const stamp=Date.now();__lastLocalWrite=stamp;return docRef().set({state:cleanState(),updatedAt:stamp,writer:__sessionId})}
+function cloudSave(){if(!__uid||!fbDb)return;clearTimeout(__saveTimer);__saveTimer=setTimeout(function(){cloudSaveNow().catch(function(e){console.warn('동기화 저장 실패',e)})},700)}
+function authMsg(t){var e=document.getElementById('authMsg');if(!e)return;e.textContent=t||'';e.style.display=t?'block':'none'}
+function friendlyAuthErr(e){var c=(e&&e.code)||'';if(c.indexOf('invalid-email')>=0)return '이메일 형식이 올바르지 않습니다.';if(c.indexOf('missing-password')>=0||c.indexOf('weak-password')>=0)return '비밀번호는 6자 이상이어야 합니다.';if(c.indexOf('email-already-in-use')>=0)return '이미 가입된 이메일입니다. 로그인을 눌러주세요.';if(c.indexOf('invalid-credential')>=0||c.indexOf('wrong-password')>=0||c.indexOf('user-not-found')>=0)return '이메일 또는 비밀번호가 올바르지 않습니다.';if(c.indexOf('too-many-requests')>=0)return '시도가 너무 많습니다. 잠시 후 다시 시도하세요.';return (e&&e.message)||'오류가 발생했습니다.'}
+window.loginUser=function(){var em=(document.getElementById('authEmail').value||'').trim(),pw=document.getElementById('authPass').value||'';authMsg('');fbAuth.signInWithEmailAndPassword(em,pw).catch(function(e){authMsg(friendlyAuthErr(e))})};
+window.signupUser=function(){var em=(document.getElementById('authEmail').value||'').trim(),pw=document.getElementById('authPass').value||'';authMsg('');fbAuth.createUserWithEmailAndPassword(em,pw).catch(function(e){authMsg(friendlyAuthErr(e))})};
+window.logoutUser=function(){if(fbAuth)fbAuth.signOut();setTimeout(function(){location.reload()},250)};
+/* 보드 불러오기/템플릿/새 프로젝트는 클라우드도 함께 갱신 */
+window.newProject=function(){if(confirm('새 프로젝트를 시작할까요? 현재 작업은 보드에 먼저 저장해두는 것이 안전합니다.')){state=base();localStorage.setItem(STORE,JSON.stringify(state));cloudSaveNow().finally(function(){location.reload()})}};
+window.loadProject=function(id){var p=JSON.parse(localStorage.getItem(BOARD)||'[]').find(function(x){return x.id===id});if(!p)return;state=merge(base(),p.state);localStorage.setItem(STORE,JSON.stringify(state));cloudSaveNow().finally(function(){location.reload()})};
+window.templateProject=function(id){var p=JSON.parse(localStorage.getItem(BOARD)||'[]').find(function(x){return x.id===id});if(!p)return;state=merge(base(),p.state);state.meta.projectId=null;state.brief.name=(state.brief.name||'Template')+' copy';localStorage.setItem(STORE,JSON.stringify(state));cloudSaveNow().finally(function(){location.reload()})};
+if(typeof firebase==='undefined'){
+  /* Firebase SDK 로드 실패 → 로컬 전용 모드로 동작 */
+  var __ov=document.getElementById('authOverlay');if(__ov)__ov.style.display='none';
+  init();toast('오프라인 모드(이 브라우저에만 저장)');
+}else{
+  firebase.initializeApp(firebaseConfig);
+  fbAuth=firebase.auth();fbDb=firebase.firestore();
+  fbAuth.onAuthStateChanged(async function(user){
+    var ov=document.getElementById('authOverlay');
+    if(user){
+      __uid=user.uid;
+      if(ov)ov.style.display='none';
+      var bar=document.getElementById('authBar');if(bar){bar.style.display='flex';var who=document.getElementById('authWho');if(who)who.textContent=user.email||''}
+      if(!__booted){
+        __booted=true;
+        var hadDoc=false;
+        try{var snap=await docRef().get();if(snap.exists&&snap.data()&&snap.data().state){state=merge(base(),snap.data().state);localStorage.setItem(STORE,JSON.stringify(state));hadDoc=true}}
+        catch(e){console.warn('클라우드 불러오기 실패, 로컬 캐시 사용',e)}
+        init();
+        if(!hadDoc){cloudSaveNow().catch(function(e){console.warn(e)})}
+        try{docRef().onSnapshot(function(s){if(!s.exists)return;var d=s.data()||{};if(d.writer===__sessionId)return;if(d.updatedAt&&d.updatedAt>__lastLocalWrite){var b=document.getElementById('syncBanner');if(b)b.style.display='flex'}})}
+        catch(e){console.warn(e)}
+      }
+    }else{
+      __uid=null;__booted=false;
+      if(ov)ov.style.display='flex';
+    }
+  });
+}
 window.state=state;window.save=save;window.renderSlots=renderSlots;
 })();
 </script>
