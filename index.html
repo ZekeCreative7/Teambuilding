@@ -1,443 +1,709 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Purpose-Adaptive Session Design OS — Professional SaaS UX v4.4.2</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session Design Studio — Question-Led Planning Canvas</title>
 <style>
 :root{
-  --bg:#f3f5fb;
-  --surface:#ffffff;
-  --surface2:#f8fafc;
-  --surface3:#eef2ff;
-  --ink:#111827;
-  --ink2:#1f2937;
-  --muted:#6b7280;
-  --muted2:#9ca3af;
-  --line:#e5e7eb;
-  --line2:#d1d5db;
-  --accent:#5b5ce2;
-  --accentDark:#4645c8;
-  --accentSoft:#eef2ff;
-  --accent2:#0f9f7f;
-  --accent2Soft:#e7f8f3;
-  --warn:#b7791f;
-  --warnSoft:#fff7e6;
-  --danger:#dc2626;
-  --dangerSoft:#fef2f2;
-  --blue:#2563eb;
-  --blueSoft:#eff6ff;
-  --ok:#0f8f60;
-  --okSoft:#ecfdf5;
-  --yellow:#fef3c7;
-  --rose:#fff1f2;
-  --sidebar:#111827;
-  --sidebar2:#1f2937;
-  --sidebarMuted:#a6adbb;
-  --shadow-sm:0 1px 2px rgba(15,23,42,.05);
-  --shadow:0 12px 32px rgba(15,23,42,.08);
-  --shadow-lg:0 20px 60px rgba(15,23,42,.12);
-  --radius:18px;
-  --radius-lg:24px;
-  --focus:0 0 0 4px rgba(91,92,226,.16);
+  --bg:#f4f6fb;--panel:#fff;--panel2:#f8fafc;--ink:#111827;--muted:#6b7280;--soft:#eef2ff;--line:#e5e7eb;
+  --brand:#5b5ce2;--brand2:#7c3aed;--green:#0f9f7f;--blue:#2563eb;--amber:#b7791f;--red:#dc2626;
+  --shadow:0 14px 40px rgba(15,23,42,.08);--shadow2:0 24px 70px rgba(15,23,42,.13);--r:18px;--r2:26px;
 }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",Segoe UI,sans-serif;background:radial-gradient(circle at top left,#eef2ff 0,#f3f5fb 34%,#f8fafc 100%);color:var(--ink);letter-spacing:-.015em}
-header{position:sticky;top:0;z-index:10;padding:20px 30px 18px;border-bottom:1px solid rgba(229,231,235,.78);background:rgba(255,255,255,.78);backdrop-filter:saturate(160%) blur(18px);box-shadow:0 8px 28px rgba(15,23,42,.05)}
-h1{display:flex;align-items:center;gap:12px;margin:0;font-size:24px;letter-spacing:-.045em;color:#0f172a}
-h1:before{content:"";display:inline-block;width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,var(--accent),#8b5cf6);box-shadow:0 12px 26px rgba(91,92,226,.28)}
-h1 span{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:var(--accentSoft);color:var(--accent)!important;font-size:12px!important;font-weight:900;letter-spacing:.02em}
-header p{margin:8px 0 0 50px;color:var(--muted);line-height:1.55;font-size:13px;max-width:1180px}.wrap{display:grid;grid-template-columns:348px 1fr;min-height:calc(100vh - var(--headerH))}
-aside{border-right:1px solid rgba(255,255,255,.12);padding:18px;background:linear-gradient(180deg,var(--sidebar),#0b1220);position:sticky;top:var(--headerH);height:calc(100vh - var(--headerH));overflow:auto;color:#fff;box-shadow:inset -1px 0 0 rgba(255,255,255,.06)}
-aside::-webkit-scrollbar,.main::-webkit-scrollbar,.modalContent::-webkit-scrollbar,.prompt::-webkit-scrollbar{width:10px;height:10px}aside::-webkit-scrollbar-thumb,.main::-webkit-scrollbar-thumb,.modalContent::-webkit-scrollbar-thumb,.prompt::-webkit-scrollbar-thumb{background:rgba(148,163,184,.45);border-radius:999px;border:3px solid transparent;background-clip:padding-box}
-.main{padding:28px;overflow:auto;max-width:1320px;width:100%}.progressBox{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:16px;margin-bottom:16px;box-shadow:0 18px 40px rgba(0,0,0,.14)}
-.progressTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-weight:800;font-size:13px;color:#fff}.bar{height:10px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}.bar>div{height:100%;width:0;background:linear-gradient(90deg,#8b5cf6,#14b8a6);transition:.35s ease}.progressHint{font-size:12px;color:var(--sidebarMuted);line-height:1.5;margin:10px 0 0}.sideTools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}.sideTools button{width:100%;background:rgba(255,255,255,.08)!important;color:#fff!important;border:1px solid rgba(255,255,255,.14)!important}.sideTools button.green{background:linear-gradient(135deg,var(--accent2),#12b981)!important;border:0!important}.sideTools button:hover{background:rgba(255,255,255,.13)!important}
-.stepList{display:flex;flex-direction:column;gap:8px}.stepItem{position:relative;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);border-radius:16px;padding:13px 12px;cursor:pointer;transition:.18s ease;color:#fff}.stepItem:hover{transform:translateY(-1px);background:rgba(255,255,255,.09);box-shadow:0 12px 26px rgba(0,0,0,.20)}.stepItem.active{background:rgba(91,92,226,.22);border-color:rgba(139,92,246,.65);box-shadow:0 0 0 3px rgba(139,92,246,.18)}.stepItem.active:before{content:"";position:absolute;left:-1px;top:12px;bottom:12px;width:4px;border-radius:0 999px 999px 0;background:#a78bfa}.stepTitle{font-weight:900;font-size:13px;letter-spacing:-.02em}.stepMeta{font-size:12px;color:var(--sidebarMuted);margin-top:4px;line-height:1.35}.stepPhase{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#a78bfa;font-weight:950;margin-bottom:5px}.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:900;margin-top:8px;border:1px solid transparent}.draft{background:rgba(255,255,255,.12);color:#d1d5db}.saved{background:var(--blueSoft);color:#1d4ed8}.validated{background:var(--yellow);color:#92400e}.approved{background:var(--okSoft);color:#047857}.revise{background:var(--dangerSoft);color:#b91c1c}
-.card{background:rgba(255,255,255,.92);border:1px solid rgba(229,231,235,.9);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow);margin-bottom:18px}.card:hover{box-shadow:var(--shadow-lg)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.phase{font-size:12px;font-weight:950;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}h2{margin:0 0 8px;font-size:28px;letter-spacing:-.055em;color:#0f172a}.lead{color:var(--muted);line-height:1.68;margin:0 0 15px}.nextAction{position:relative;overflow:hidden;background:linear-gradient(135deg,#111827,#2b2e7f 55%,#0f766e);color:#fff;border-radius:24px;padding:22px;margin-bottom:18px;box-shadow:var(--shadow-lg)}.nextAction:after{content:"";position:absolute;right:-60px;top:-80px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.10)}.nextAction h3{margin:0 0 10px;font-size:17px}.nextAction ol{margin:0;padding-left:20px;line-height:1.78;font-size:14px;position:relative;z-index:1}.nextAction b{color:#c4b5fd}.mini{font-size:12px;color:var(--muted);line-height:1.5}.box{border:1px solid var(--line);border-radius:18px;padding:16px;background:#fff;box-shadow:var(--shadow-sm)}.box h3{margin:0 0 8px;font-size:15px;color:#111827}.checklist{margin:0;padding-left:18px;line-height:1.7;color:#374151}.label{font-weight:900;font-size:13px;margin:14px 0 7px;display:block;color:#1f2937}input,textarea,select{width:100%;border:1px solid var(--line2);border-radius:14px;background:#fff;padding:12px 13px;font:inherit;font-size:14px;color:var(--ink);outline:none;transition:.15s ease}input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:var(--focus)}textarea{min-height:118px;resize:vertical;line-height:1.58}.raw textarea{min-height:76px}.btns{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}button{border:0;border-radius:13px;padding:10px 14px;font-weight:900;cursor:pointer;font-size:13px;transition:.16s ease;box-shadow:var(--shadow-sm)}button:hover{transform:translateY(-1px);filter:brightness(.99)}button:active{transform:translateY(0)}button.primary{background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff}button.secondary{background:var(--accentSoft);color:#4338ca;border:1px solid #dbe2ff}button.dark{background:#111827;color:#fff}button.green{background:linear-gradient(135deg,var(--accent2),#10b981);color:#fff}button.ghost{background:#fff;color:#374151;border:1px solid var(--line)}button.warn{background:var(--warnSoft);color:#92400e;border:1px solid #fde68a}button.danger{background:var(--dangerSoft);color:#b91c1c;border:1px solid #fecaca}
-.prompt{background:#0b1020;color:#e5e7eb;border:1px solid #1f2937;border-radius:18px;padding:16px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.58;max-height:400px;overflow:auto;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}.summary{background:linear-gradient(135deg,#f0fdf4,#f8fafc);border:1px solid #bbf7d0;border-radius:18px;padding:16px;line-height:1.62}.summary h4{margin:0 0 8px;color:#065f46}.summary ul{margin:0;padding-left:18px}.warnNote{background:var(--warnSoft);border:1px solid #fed7aa;border-radius:18px;padding:15px;color:#7c4a03;line-height:1.58}.insightNote{background:var(--accentSoft);border:1px solid #d8b4fe;border-radius:18px;padding:15px;color:#4338ca;line-height:1.58}.dangerNote{background:var(--dangerSoft);border:1px solid #fecaca;border-radius:18px;padding:15px;color:#991b1b;line-height:1.58}.tabs{display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap}.tab{padding:8px 11px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:12px;font-weight:900;cursor:pointer;color:#374151}.tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}.hidden{display:none}.smallTitle{font-weight:950;margin:0 0 6px;color:#111827}.resultHeader{display:flex;align-items:center;justify-content:space-between;gap:12px}.pillRow{display:flex;gap:7px;flex-wrap:wrap}.pill{padding:5px 9px;border-radius:999px;background:#f3f4f6;border:1px solid #e5e7eb;font-size:11px;font-weight:900;color:#4b5563}.footer{font-size:12px;color:var(--muted);text-align:center;padding:22px}.modal{position:fixed;inset:0;background:rgba(15,23,42,.54);display:none;align-items:center;justify-content:center;padding:20px;z-index:30;backdrop-filter:blur(8px)}.modalContent{background:#fff;border:1px solid rgba(255,255,255,.5);border-radius:26px;padding:24px;max-width:940px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 30px 90px rgba(15,23,42,.28)}.modal.show{display:flex}.table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;overflow:hidden;border-radius:16px;border:1px solid var(--line)}.table th,.table td{border-bottom:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}.table tr:last-child td{border-bottom:0}.table th{background:#f8fafc;color:#374151;font-size:12px;text-transform:uppercase;letter-spacing:.04em}.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.quick .box{min-height:120px}.downloadPanel{background:linear-gradient(135deg,#eff6ff,#fff);border:1px solid #bfdbfe;border-radius:20px;padding:17px;margin-top:14px}.downloadPanel h3{margin:0 0 8px}.storageNote{background:#fff;border:1px dashed #94a3b8;border-radius:18px;padding:15px;color:#475569;line-height:1.58}
-.projectBoardTop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:10px 0 16px}.boardStats{display:flex;gap:9px;flex-wrap:wrap}.boardStat{background:#fff;border:1px solid var(--line);border-radius:17px;padding:12px 14px;min-width:122px;box-shadow:var(--shadow-sm)}.boardStat b{display:block;font-size:21px;letter-spacing:-.04em}.boardStat span{font-size:11px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.04em}.projectGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}.projectCard{background:#fff;border:1px solid var(--line);border-radius:22px;padding:17px;box-shadow:var(--shadow);transition:.16s ease}.projectCard:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}.projectCard h3{margin:0 0 7px;font-size:17px;letter-spacing:-.035em;color:#111827}.projectMeta{font-size:12px;color:var(--muted);line-height:1.58;margin-bottom:11px}.projectActions{display:flex;gap:7px;flex-wrap:wrap}.projectActions button{font-size:11px;padding:8px 10px}.boardEmpty{background:#fff;border:1px dashed #94a3b8;border-radius:22px;padding:28px;color:var(--muted);line-height:1.65;text-align:center}.searchRow{display:grid;grid-template-columns:1fr auto;gap:8px;margin:12px 0}.progressTiny{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:9px 0}.progressTiny div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 0 0,#eef2ff 0,#f4f6fb 38%,#f8fafc 100%);font-family:Inter,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;color:var(--ink);letter-spacing:-.02em}
+button,input,textarea,select{font:inherit}button{border:0;cursor:pointer;border-radius:13px;padding:10px 13px;font-weight:850;font-size:13px;transition:.16s ease;white-space:nowrap}button:hover{transform:translateY(-1px)}button.primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;box-shadow:0 12px 26px rgba(91,92,226,.22)}button.secondary{background:#eef2ff;color:#4338ca;border:1px solid #dbe2ff}button.dark{background:#111827;color:#fff}button.green{background:linear-gradient(135deg,#0f9f7f,#10b981);color:#fff}button.ghost{background:#fff;color:#374151;border:1px solid var(--line)}button.warn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}button.danger{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+input,textarea,select{width:100%;border:1px solid #d1d5db;background:#fff;border-radius:14px;padding:11px 12px;color:#111827;outline:none;transition:.15s ease;font-size:14px}textarea{min-height:96px;resize:vertical;line-height:1.55}input:focus,textarea:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 4px rgba(91,92,226,.14)}label{display:block;font-size:12px;font-weight:900;color:#374151;margin:12px 0 7px}.app{display:grid;grid-template-columns:310px minmax(0,1fr);min-height:100vh}.side{background:linear-gradient(180deg,#101828,#0b1220);color:#fff;padding:18px;position:sticky;top:0;height:100vh;overflow:auto}.brand{display:flex;align-items:center;gap:11px;margin-bottom:18px}.logo{width:42px;height:42px;border-radius:15px;background:linear-gradient(135deg,var(--brand),#14b8a6);box-shadow:0 16px 32px rgba(91,92,226,.25)}.brand h1{font-size:18px;line-height:1.1;margin:0;letter-spacing:-.045em}.brand p{margin:4px 0 0;color:#aab3c5;font-size:11px}.projectMini{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:15px;margin-bottom:14px}.projectMini .name{font-weight:950;font-size:15px}.projectMini .meta{font-size:12px;color:#aab3c5;line-height:1.45;margin-top:5px}.progress{height:9px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden;margin:12px 0 6px}.progress div{height:100%;width:0;background:linear-gradient(90deg,#8b5cf6,#10b981);transition:.25s}.nav{display:flex;flex-direction:column;gap:7px}.nav button{width:100%;background:transparent;color:#dbe4f0;border:1px solid transparent;text-align:left;display:flex;justify-content:space-between;align-items:center;padding:12px 12px}.nav button .left{display:flex;gap:10px;align-items:center}.nav button .dot{width:8px;height:8px;border-radius:50%;background:#475569}.nav button:hover{background:rgba(255,255,255,.08);transform:none}.nav button.active{background:rgba(91,92,226,.24);border-color:rgba(167,139,250,.35);color:#fff}.nav button.done .dot{background:#10b981}.sideActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.sideActions button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);color:#fff}.main{padding:24px 28px 44px;max-width:1480px;width:100%}.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}.eyebrow{font-size:12px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}.topbar h2{font-size:31px;margin:5px 0 4px;letter-spacing:-.06em}.topbar p{margin:0;color:var(--muted);line-height:1.55}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.page{display:none}.page.active{display:block}.grid{display:grid;gap:16px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.card{background:rgba(255,255,255,.94);border:1px solid rgba(229,231,235,.9);border-radius:var(--r2);box-shadow:var(--shadow);padding:20px}.card h3{margin:0 0 9px;font-size:17px;letter-spacing:-.04em}.card .sub{color:var(--muted);font-size:13px;line-height:1.55;margin:0 0 10px}.metric{background:#fff;border:1px solid var(--line);border-radius:21px;padding:15px;box-shadow:0 2px 12px rgba(15,23,42,.04)}.metric b{font-size:25px;letter-spacing:-.05em}.metric span{display:block;color:var(--muted);font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.05em;margin-top:3px}.tableWrap{overflow:auto;border:1px solid var(--line);border-radius:18px;background:#fff}.table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}.table th{background:#f8fafc;color:#475569;font-size:11px;letter-spacing:.05em;text-transform:uppercase;text-align:left;padding:11px;border-bottom:1px solid var(--line)}.table td{padding:9px;border-bottom:1px solid #eef2f7;vertical-align:top}.table tr:last-child td{border-bottom:0}.table input,.table select,.table textarea{border-radius:10px;padding:9px;font-size:13px}.table textarea{min-height:58px}.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:#f3f4f6;border:1px solid #e5e7eb;color:#4b5563;font-weight:850;font-size:11px}.pill.green{background:#ecfdf5;color:#047857;border-color:#bbf7d0}.pill.red{background:#fef2f2;color:#b91c1c;border-color:#fecaca}.pill.amber{background:#fff7ed;color:#9a3412;border-color:#fed7aa}.questionCard{border:1px solid #e0e7ff;background:linear-gradient(135deg,#fff,#f8faff);border-radius:22px;padding:16px}.questionCard .q{font-weight:950;font-size:15px;line-height:1.45}.questionCard .hint{font-size:12px;color:#64748b;line-height:1.5;margin-top:5px}.lensGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.lens{border:1px solid var(--line);background:#fff;border-radius:20px;padding:15px;box-shadow:0 4px 18px rgba(15,23,42,.04)}.lens b{display:block;margin-bottom:6px}.lens p{font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 11px}.map{display:grid;grid-template-columns:1fr 70px 1fr 70px 1fr;align-items:center;gap:10px}.mapNode{border:1px solid var(--line);border-radius:22px;background:#fff;padding:17px;min-height:122px;box-shadow:0 4px 18px rgba(15,23,42,.04)}.mapNode h4{margin:0 0 8px;font-size:14px}.arrow{text-align:center;font-size:28px;color:#94a3b8}.equalizer{display:grid;gap:9px}.eqRow{display:grid;grid-template-columns:70px 1fr 34px;align-items:center;gap:10px}.eqRow span{font-size:12px;font-weight:900;color:#475569}.eqRow input[type=range]{padding:0;accent-color:var(--brand)}.slideCard{border:1px solid var(--line);border-radius:22px;background:#fff;padding:16px;margin-bottom:12px}.slideTop{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}.slideTop h4{margin:0}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}.tab{background:#fff;border:1px solid var(--line);color:#374151}.tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}details.slot{background:#fff;border:1px solid var(--line);border-radius:20px;margin-bottom:10px;overflow:hidden;box-shadow:0 3px 14px rgba(15,23,42,.04)}details.slot summary{list-style:none;cursor:pointer;padding:15px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:950}details.slot summary::-webkit-details-marker{display:none}.slotBody{padding:0 16px 16px}.status{font-size:11px;border-radius:999px;padding:4px 8px;background:#f3f4f6;color:#6b7280}.status.done{background:#ecfdf5;color:#047857}.promptBox{background:#0b1020;color:#e5e7eb;border:1px solid #1f2937;border-radius:20px;padding:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;max-height:420px;overflow:auto}.modal{position:fixed;inset:0;background:rgba(15,23,42,.58);display:none;align-items:center;justify-content:center;padding:22px;z-index:99;backdrop-filter:blur(8px)}.modal.show{display:flex}.modalContent{background:#fff;border-radius:28px;box-shadow:0 35px 100px rgba(15,23,42,.30);max-width:980px;width:100%;max-height:86vh;overflow:auto;padding:22px}.modalTop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.toast{position:fixed;right:22px;bottom:22px;background:#111827;color:#fff;border-radius:16px;padding:12px 15px;font-weight:900;font-size:13px;display:none;z-index:120}.toast.show{display:block;animation:pop .18s ease}@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.boardCards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}.boardCard{background:#fff;border:1px solid var(--line);border-radius:22px;padding:17px;box-shadow:var(--shadow)}.boardCard h3{margin:0 0 6px}.boardCard p{font-size:12px;color:var(--muted);line-height:1.55}.decision{border-left:4px solid var(--brand);background:#fff;border-radius:16px;padding:12px;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:8px}.decision b{display:block;margin-bottom:4px}.muted{color:var(--muted)}.note{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:18px;padding:14px;color:#475569;line-height:1.55;font-size:13px}.split{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.miniList{margin:8px 0 0;padding-left:18px;color:#475569;line-height:1.65;font-size:13px}.hide{display:none!important}
 
-/* v4.4 UX refinement */
-.topWorkspace{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin-bottom:18px}.heroCard{background:linear-gradient(135deg,#ffffff,#f8fafc);border:1px solid rgba(229,231,235,.9);border-radius:28px;padding:24px;box-shadow:var(--shadow-lg)}.heroTop{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.heroKicker{font-size:12px;font-weight:950;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:7px}.heroCard h2{font-size:30px;margin:0 0 8px}.heroActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.focusPanel{background:#0f172a;color:#fff;border-radius:24px;padding:20px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}.focusPanel:after{content:"";position:absolute;right:-30px;bottom:-50px;width:160px;height:160px;background:rgba(91,92,226,.28);border-radius:50%}.focusPanel h3{margin:0 0 10px;font-size:16px}.focusPanel ol{margin:0;padding-left:18px;line-height:1.72;font-size:13px;color:#e5e7eb;position:relative;z-index:1}.focusPanel b{color:#c4b5fd}.actionGroup{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.dropdown{position:relative;display:inline-block}.menu{position:absolute;right:0;top:calc(100% + 8px);min-width:230px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 22px 70px rgba(15,23,42,.18);padding:8px;display:none;z-index:25}.menu.open{display:block}.menu button{display:flex;width:100%;align-items:center;justify-content:flex-start;text-align:left;background:#fff;color:#374151;border:0;box-shadow:none;border-radius:11px;padding:10px 11px}.menu button:hover{background:#f3f4f6;transform:none}.menu .dangerItem{color:#b91c1c}.menu .menuDivider{height:1px;background:var(--line);margin:6px 4px}.dropdownBtn:after{content:"⌄";font-size:12px;margin-left:7px;opacity:.7}.workSection{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}.workSection summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px;font-weight:950;color:#111827}.workSection summary::-webkit-details-marker{display:none}.workSection summary:after{content:"⌄";font-size:16px;color:var(--muted);transition:.15s}.workSection[open] summary:after{transform:rotate(180deg)}.sectionBody{padding:0 20px 20px}.sectionMeta{font-size:12px;color:var(--muted);font-weight:700}.stepMiniBar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.miniMetric{background:#fff;border:1px solid var(--line);border-radius:17px;padding:12px;box-shadow:var(--shadow-sm)}.miniMetric b{display:block;font-size:18px;color:#111827}.miniMetric span{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.formAccordion details{background:#fff;border:1px solid var(--line);border-radius:20px;margin-bottom:12px;box-shadow:var(--shadow-sm);overflow:hidden}.formAccordion summary{cursor:pointer;padding:16px 18px;font-weight:950;color:#111827;display:flex;justify-content:space-between;align-items:center}.formAccordion summary:after{content:"⌄";color:var(--muted)}.formAccordion details[open] summary:after{transform:rotate(180deg)}.formAccordion .inside{padding:0 18px 18px}.stickyStage{position:sticky;top:calc(var(--headerH) + var(--stageGap));z-index:8;background:rgba(243,245,251,.86);backdrop-filter:blur(12px);border:1px solid rgba(229,231,235,.72);border-radius:20px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:var(--shadow-sm)}.stickyStage .labelMini{font-size:12px;color:var(--muted);font-weight:800}.stickyStage .stageName{font-weight:950;color:#111827}.toast{position:fixed;right:22px;bottom:22px;background:#111827;color:#fff;padding:12px 14px;border-radius:16px;box-shadow:0 20px 60px rgba(15,23,42,.25);font-size:13px;font-weight:800;display:none;z-index:60}.toast.show{display:block;animation:toastIn .18s ease}@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.projectActions{justify-content:flex-end}.projectMenuBtn{font-size:12px!important}.projectCardHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.boardFilters{display:grid;grid-template-columns:1fr 160px auto;gap:8px;margin:12px 0}.selectSmall{padding:10px 11px;border-radius:12px;font-size:13px}.kbd{display:inline-flex;align-items:center;border:1px solid #d1d5db;border-bottom-width:2px;background:#fff;border-radius:7px;padding:1px 6px;font-size:11px;font-weight:900;color:#4b5563}
-.projectLaunch{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);border-radius:22px;padding:14px;margin-bottom:16px;box-shadow:0 18px 40px rgba(0,0,0,.14)}
-.projectLaunch h3{margin:0 0 4px;font-size:13px;color:#fff;letter-spacing:-.02em}.projectLaunch p{margin:0 0 12px;font-size:11px;line-height:1.45;color:var(--sidebarMuted)}
-.projectLaunch .projectPrimary{display:grid;grid-template-columns:1fr;gap:8px}.projectLaunch .projectPrimary button{width:100%;justify-content:center;display:flex;align-items:center;gap:6px;min-height:39px}.projectLaunch .projectPrimary button.boardMain{background:linear-gradient(135deg,#7c3aed,var(--accent))!important;color:#fff!important;border:0!important;box-shadow:0 14px 30px rgba(91,92,226,.30)}
-.projectLaunch .projectPrimary button.newMain{background:rgba(255,255,255,.12)!important;color:#fff!important;border:1px solid rgba(255,255,255,.18)!important}.projectLaunch .projectPrimary button.saveMain{background:linear-gradient(135deg,var(--accent2),#10b981)!important;color:#fff!important;border:0!important}
-.projectLaunch .projectSub{margin-top:9px}.projectLaunch .projectSub button{width:100%;background:rgba(255,255,255,.06)!important;color:#dbeafe!important;border:1px solid rgba(255,255,255,.12)!important}
-.boardEmpty strong{display:block;color:#111827;font-size:16px;margin-bottom:6px}.projectCardTopActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 10px}.projectCardTopActions button{width:100%;font-size:12px;padding:9px 10px}.projectCardFooterActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.projectCardFooterActions button{font-size:11px;padding:8px 10px}.boardGuide{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}.boardGuide .box{padding:12px}.boardGuide b{display:block;font-size:13px;margin-bottom:4px;color:#111827}.boardGuide span{font-size:11px;color:var(--muted);line-height:1.45}.currentProjectBadge{margin-bottom:10px;padding:10px 12px;border-radius:16px;background:rgba(91,92,226,.15);border:1px solid rgba(167,139,250,.25);color:#ede9fe;font-size:12px;line-height:1.45}.currentProjectBadge b{color:#fff}
-@media(max-width:1100px){.boardGuide{grid-template-columns:1fr}.projectCardTopActions{grid-template-columns:1fr}}
+.hypoTabs{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 14px}.hypoTab{background:#fff;border:1px solid var(--line);color:#374151}.hypoTab.active{background:#111827;color:#fff;border-color:#111827}.hintStrip{background:linear-gradient(135deg,#eef2ff,#fff);border:1px solid #dbe2ff;border-radius:20px;padding:14px;color:#4338ca;font-size:13px;line-height:1.55}.barViz{display:grid;gap:10px}.barRow{display:grid;grid-template-columns:96px 1fr 70px;gap:10px;align-items:center}.barRow .barBg{height:12px;background:#eef2f7;border-radius:999px;overflow:hidden}.barRow .barFill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand),#14b8a6)}.barRow .confFill{background:linear-gradient(90deg,#f59e0b,#ef4444)}.curveGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.curveCard{background:#fff;border:1px solid var(--line);border-radius:20px;padding:14px}.curveCard h4{margin:0 0 10px;font-size:14px}.warnCard{border:1px solid #fed7aa;background:#fff7ed;border-radius:18px;padding:13px;margin-bottom:10px;color:#7c2d12}.okCard{border:1px solid #bbf7d0;background:#ecfdf5;border-radius:18px;padding:13px;margin-bottom:10px;color:#065f46}.jsonArea{min-height:280px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}.confidenceNote{font-size:12px;color:#64748b;line-height:1.55;margin-top:8px}
 
-@media(max-width:1100px){.topWorkspace{grid-template-columns:1fr}.heroTop{flex-direction:column}.heroActions{justify-content:flex-start}.stepMiniBar{grid-template-columns:1fr 1fr}.boardFilters{grid-template-columns:1fr}.stickyStage{top:calc(var(--headerH) + 8px)}}
-@media(max-width:1100px){.wrap{grid-template-columns:1fr}aside{position:relative;top:0;height:auto}.grid2,.grid3,.quick{grid-template-columns:1fr}.main{padding:18px}header p{margin-left:0}h1:before{display:none}}
+@media(max-width:1150px){.app{grid-template-columns:1fr}.side{position:relative;height:auto}.g2,.g3,.g4,.split,.map{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}.topbar{flex-direction:column}.actions{justify-content:flex-start}.main{padding:18px}.table{min-width:780px}}
+
+/* Participant table sizing fix: keep select fields aligned with text inputs */
+#participantTable{min-width:1320px;table-layout:fixed;}
+#participantTable th:nth-child(1),#participantTable td:nth-child(1){width:90px;}
+#participantTable th:nth-child(2),#participantTable td:nth-child(2){width:90px;}
+#participantTable th:nth-child(3),#participantTable td:nth-child(3){width:132px;min-width:132px;}
+#participantTable th:nth-child(4),#participantTable td:nth-child(4){width:110px;}
+#participantTable th:nth-child(5),#participantTable td:nth-child(5){width:140px;}
+#participantTable th:nth-child(6),#participantTable td:nth-child(6){width:130px;}
+#participantTable th:nth-child(7),#participantTable td:nth-child(7){width:180px;}
+#participantTable th:nth-child(8),#participantTable td:nth-child(8){width:154px;min-width:154px;}
+#participantTable th:nth-child(9),#participantTable td:nth-child(9){width:170px;}
+#participantTable th:nth-child(10),#participantTable td:nth-child(10){width:190px;}
+#participantTable th:nth-child(11),#participantTable td:nth-child(11){width:72px;}
+#participantTable input,#participantTable select{width:100%;min-width:100%;height:40px;display:block;}
+#participantTable select{appearance:auto;}
+
+
+.storyBoard{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start}
+.storyCard{background:#fff;border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow-sm)}
+.storyCardHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.storyCardHead h4{margin:4px 0 0;font-size:17px;letter-spacing:-.03em;color:#111827}
+.storyNum{display:inline-flex;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#4338ca;font-size:11px;font-weight:950;letter-spacing:.05em}
+.storyText{min-height:220px;line-height:1.62}
+.storyNote{min-height:90px;background:#f8fafc}
+
+
+
+/* =========================================================
+   Premium Visual System Upgrade — v3
+   Purpose: keep all existing functions, upgrade UI quality only
+   ========================================================= */
+:root{
+  --canvas:#eef1f8;
+  --canvas2:#f8fafc;
+  --ink:#111827;
+  --inkStrong:#050816;
+  --muted:#6b7280;
+  --muted3:#94a3b8;
+  --glass:rgba(255,255,255,.74);
+  --glass2:rgba(255,255,255,.88);
+  --hair:rgba(148,163,184,.22);
+  --deep:#080d1b;
+  --deep2:#111827;
+  --violet:#6d5dfc;
+  --violet2:#9b5cf6;
+  --cyan:#14b8a6;
+  --mint:#10b981;
+  --gold:#f59e0b;
+  --rose:#f43f5e;
+  --premiumShadow:0 24px 80px rgba(15,23,42,.14);
+  --premiumShadow2:0 36px 110px rgba(15,23,42,.20);
+  --innerGlow:inset 0 1px 0 rgba(255,255,255,.70);
+  --ring:0 0 0 4px rgba(109,93,252,.16);
+}
+html{background:#eef1f8;}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 8% -4%, rgba(124,58,237,.22) 0, transparent 34%),
+    radial-gradient(circle at 92% 8%, rgba(20,184,166,.20) 0, transparent 30%),
+    radial-gradient(circle at 52% 105%, rgba(37,99,235,.11) 0, transparent 34%),
+    linear-gradient(135deg,#f8fafc 0%,#eef2ff 42%,#f4f7fb 100%) !important;
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  opacity:.45;
+  background-image:
+    linear-gradient(rgba(15,23,42,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15,23,42,.03) 1px, transparent 1px);
+  background-size:44px 44px;
+  mask-image:linear-gradient(to bottom, rgba(0,0,0,.55), transparent 70%);
+}
+.app{grid-template-columns:332px minmax(0,1fr);}
+.side{
+  background:
+    radial-gradient(circle at 20% 0%, rgba(109,93,252,.34), transparent 32%),
+    radial-gradient(circle at 92% 14%, rgba(20,184,166,.22), transparent 30%),
+    linear-gradient(180deg,#080d1b 0%,#0c1224 56%,#070b16 100%) !important;
+  border-right:1px solid rgba(255,255,255,.09);
+  box-shadow:30px 0 90px rgba(15,23,42,.16);
+  padding:22px 18px;
+}
+.side::-webkit-scrollbar{width:10px}.side::-webkit-scrollbar-thumb{background:rgba(148,163,184,.25);border-radius:999px;border:3px solid transparent;background-clip:padding-box}
+.brand{
+  position:relative;
+  min-height:56px;
+  margin-bottom:22px;
+  padding:4px 4px 4px 2px;
+}
+.logo{
+  width:48px;height:48px;border-radius:17px;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.55),rgba(255,255,255,0) 32%),
+    conic-gradient(from 210deg,var(--violet),#2563eb,var(--cyan),var(--violet));
+  box-shadow:0 18px 40px rgba(109,93,252,.36), inset 0 1px 0 rgba(255,255,255,.65);
+  position:relative;
+}
+.logo:after{content:"";position:absolute;inset:12px;border-radius:11px;background:rgba(8,13,27,.24);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(4px)}
+.brand h1{font-size:18px;font-weight:950;letter-spacing:-.055em;}
+.brand p{font-size:11px;color:#b9c3d7;letter-spacing:.02em;text-transform:uppercase;font-weight:800;}
+.premiumBadge{
+  margin-left:auto;
+  align-self:flex-start;
+  display:inline-flex;align-items:center;justify-content:center;
+  height:24px;padding:0 9px;border-radius:999px;
+  background:linear-gradient(135deg,rgba(245,158,11,.95),rgba(251,191,36,.92));
+  color:#451a03;font-size:10px;font-weight:1000;letter-spacing:.08em;
+  box-shadow:0 12px 22px rgba(245,158,11,.24), inset 0 1px 0 rgba(255,255,255,.55);
+}
+.projectMini{
+  background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.055));
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 24px 54px rgba(0,0,0,.24), var(--innerGlow);
+  border-radius:26px;
+  padding:17px;
+}
+.projectMini .name{font-size:16px;letter-spacing:-.035em;color:#fff;}
+.projectMini .meta{color:#b3bfd3;}
+.progress{height:10px;background:rgba(255,255,255,.11);box-shadow:inset 0 1px 2px rgba(0,0,0,.22)}
+.progress div{background:linear-gradient(90deg,var(--violet),#3b82f6,var(--cyan));box-shadow:0 0 28px rgba(20,184,166,.35)}
+.nav{gap:8px;}
+.nav button{
+  min-height:44px;
+  border-radius:16px;
+  color:#cbd5e1;
+  letter-spacing:-.015em;
+  background:rgba(255,255,255,.025);
+}
+.nav button .left{font-weight:850;}
+.nav button .dot{
+  width:9px;height:9px;background:rgba(148,163,184,.46);
+  box-shadow:0 0 0 3px rgba(148,163,184,.06);
+}
+.nav button:hover{background:rgba(255,255,255,.075);border-color:rgba(255,255,255,.10);color:#fff}
+.nav button.active{
+  background:linear-gradient(135deg,rgba(109,93,252,.35),rgba(20,184,166,.14));
+  border-color:rgba(167,139,250,.38);
+  box-shadow:0 16px 34px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.10);
+}
+.nav button.active .dot{background:#a78bfa;box-shadow:0 0 0 4px rgba(167,139,250,.14),0 0 22px rgba(167,139,250,.55)}
+.nav button.done .dot{background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.12),0 0 20px rgba(52,211,153,.45)}
+.sideActions{gap:9px;}
+.sideActions button{
+  border-radius:15px;
+  background:rgba(255,255,255,.075);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+.sideActions button:hover{background:rgba(255,255,255,.13)}
+.main{padding:34px 38px 60px;max-width:1580px;}
+.topbar{
+  position:relative;
+  padding:24px 24px;
+  border:1px solid rgba(255,255,255,.66);
+  background:linear-gradient(135deg,rgba(255,255,255,.72),rgba(255,255,255,.45));
+  backdrop-filter:blur(20px) saturate(140%);
+  border-radius:32px;
+  box-shadow:var(--premiumShadow),var(--innerGlow);
+  overflow:hidden;
+}
+.topbar:after{
+  content:"";position:absolute;right:-70px;top:-90px;width:260px;height:260px;border-radius:999px;
+  background:radial-gradient(circle,rgba(109,93,252,.18),transparent 65%);
+  pointer-events:none;
+}
+.eyebrow{
+  color:var(--violet);
+  font-size:11px;
+  font-weight:1000;
+  letter-spacing:.13em;
+}
+.topbar h2{font-size:34px;font-weight:950;color:var(--inkStrong);letter-spacing:-.075em;line-height:1.05;margin-top:7px;}
+.topbar p{max-width:900px;color:#5b6473;font-size:14px;}
+button{
+  border-radius:15px;
+  font-weight:900;
+  letter-spacing:-.01em;
+  box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 4px 12px rgba(15,23,42,.05);
+}
+button:hover{transform:translateY(-2px);filter:saturate(1.03)}
+button:active{transform:translateY(0)}
+button.primary{
+  background:linear-gradient(135deg,var(--violet),#7c3aed 52%,#2563eb);
+  box-shadow:0 16px 34px rgba(109,93,252,.28), inset 0 1px 0 rgba(255,255,255,.30);
+}
+button.green{background:linear-gradient(135deg,#0f766e,var(--cyan),var(--mint));box-shadow:0 16px 34px rgba(20,184,166,.22),inset 0 1px 0 rgba(255,255,255,.30)}
+button.dark{background:linear-gradient(135deg,#0b1020,#1f2937);box-shadow:0 14px 28px rgba(15,23,42,.18), inset 0 1px 0 rgba(255,255,255,.10)}
+button.secondary{background:linear-gradient(135deg,#eef2ff,#ffffff);border-color:#d8ddff;color:#4f46e5;}
+button.ghost{background:rgba(255,255,255,.84);border-color:rgba(203,213,225,.85);}
+button.warn{background:linear-gradient(135deg,#fff7ed,#fff);}
+button.danger{background:linear-gradient(135deg,#fff1f2,#fff);}
+input,textarea,select{
+  border-radius:16px;
+  border:1px solid rgba(148,163,184,.42);
+  background:rgba(255,255,255,.92);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 1px 2px rgba(15,23,42,.025);
+}
+input:hover,textarea:hover,select:hover{border-color:rgba(109,93,252,.42)}
+input:focus,textarea:focus,select:focus{border-color:var(--violet);box-shadow:var(--ring),inset 0 1px 0 rgba(255,255,255,.75)}
+label{color:#273244;font-size:11px;letter-spacing:.035em;text-transform:uppercase;}
+.card,.metric,.questionCard,.lens,.mapNode,.slideCard,details.slot,.boardCard,.curveCard,.storyCard{
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.78));
+  border:1px solid rgba(255,255,255,.70);
+  box-shadow:var(--premiumShadow),var(--innerGlow);
+  backdrop-filter:blur(18px) saturate(140%);
+}
+.card{border-radius:30px;padding:23px;}
+.card:hover,.storyCard:hover,.boardCard:hover,.lens:hover,.questionCard:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--premiumShadow2),var(--innerGlow);
+  transition:.18s ease;
+}
+.card h3{font-size:18px;font-weight:950;color:#0f172a;}
+.card .sub{color:#64748b;}
+.metric{border-radius:24px;padding:18px;position:relative;overflow:hidden;}
+.metric:after{content:"";position:absolute;right:-30px;top:-35px;width:96px;height:96px;border-radius:999px;background:rgba(109,93,252,.08)}
+.metric b{font-size:30px;font-weight:950;color:#08111f;}
+.metric span{color:#718096;}
+.tableWrap{border-radius:24px;border:1px solid rgba(255,255,255,.70);box-shadow:var(--premiumShadow);background:rgba(255,255,255,.82);}
+.table th{background:linear-gradient(180deg,#f8fafc,#f1f5f9);color:#526071;font-weight:1000;}
+.table td{border-bottom:1px solid rgba(226,232,240,.76);}
+.table input,.table select,.table textarea{background:#fff;border-radius:13px;}
+.pill{border-radius:999px;font-weight:950;background:rgba(248,250,252,.9);border-color:rgba(203,213,225,.75)}
+.pill.green{background:linear-gradient(135deg,#ecfdf5,#fff);}
+.pill.amber{background:linear-gradient(135deg,#fff7ed,#fff);}
+.pill.red{background:linear-gradient(135deg,#fff1f2,#fff);}
+.questionCard{padding:18px;border-radius:26px;background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(238,242,255,.72));}
+.questionCard .q{font-size:16px;color:#0f172a;}
+.questionCard .hint{color:#6b7280;}
+.lens{border-radius:24px;padding:18px;}
+.lens b{font-size:15px;color:#0f172a;}
+.mapNode{border-radius:26px;}
+.mapNode h4{font-size:15px;color:#0f172a}.arrow{color:#a5b4fc;text-shadow:0 8px 30px rgba(109,93,252,.28)}
+.tabs,.hypoTabs{gap:9px;}
+.tab,.hypoTab{
+  border-radius:999px;
+  background:rgba(255,255,255,.78);
+  border-color:rgba(203,213,225,.78);
+}
+.tab.active,.hypoTab.active{
+  background:linear-gradient(135deg,var(--violet),#2563eb);
+  border-color:transparent;
+  color:#fff;
+  box-shadow:0 12px 26px rgba(109,93,252,.25);
+}
+details.slot{border-radius:24px;overflow:hidden;}
+details.slot summary{padding:17px 18px;background:linear-gradient(135deg,rgba(255,255,255,.72),rgba(248,250,252,.64));}
+details.slot[open] summary{border-bottom:1px solid rgba(226,232,240,.8)}
+.slotBody{padding:2px 18px 18px;}
+.status{font-weight:950;background:#f1f5f9;color:#64748b;}
+.status.done{background:#dcfce7;color:#047857;box-shadow:0 0 0 3px rgba(16,185,129,.10)}
+.promptBox{
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 12% 0%,rgba(109,93,252,.20),transparent 30%),
+    linear-gradient(180deg,#0a1022,#080d1b);
+  border:1px solid rgba(148,163,184,.22);
+  box-shadow:0 28px 80px rgba(8,13,27,.28),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.note,.hintStrip{
+  border-radius:22px;
+  background:linear-gradient(135deg,rgba(255,255,255,.78),rgba(238,242,255,.65));
+  border:1px solid rgba(203,213,225,.70);
+  box-shadow:var(--innerGlow);
+}
+.decision{border-left:0;position:relative;border-radius:20px;background:rgba(255,255,255,.88);padding-left:18px;box-shadow:0 8px 22px rgba(15,23,42,.055)}
+.decision:before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:999px;background:linear-gradient(180deg,var(--violet),var(--cyan));}
+.modal{backdrop-filter:blur(14px) saturate(145%);}
+.modalContent{border:1px solid rgba(255,255,255,.66);background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(255,255,255,.84));box-shadow:0 42px 130px rgba(15,23,42,.34);}
+.toast{background:linear-gradient(135deg,#0b1020,#111827);box-shadow:0 24px 60px rgba(15,23,42,.28);border:1px solid rgba(255,255,255,.10)}
+.storyBoard{grid-template-columns:repeat(auto-fit,minmax(330px,1fr));}
+.storyCard{position:relative;overflow:hidden;border-radius:28px;padding:18px;}
+.storyCard:before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--violet),#3b82f6,var(--cyan));opacity:.88}
+.storyCardHead h4{font-size:18px;font-weight:950;}
+.storyNum{background:linear-gradient(135deg,#eef2ff,#fff);border:1px solid #dbe2ff;color:#4f46e5;box-shadow:0 8px 18px rgba(79,70,229,.08)}
+.storyText{min-height:240px;background:rgba(255,255,255,.95)}
+.storyNote{background:rgba(248,250,252,.90)}
+.barRow .barBg{height:14px;background:#e8edf5;box-shadow:inset 0 1px 2px rgba(15,23,42,.06)}
+.barRow .barFill{background:linear-gradient(90deg,var(--violet),#3b82f6,var(--cyan));box-shadow:0 0 22px rgba(20,184,166,.28)}
+.barRow .confFill{background:linear-gradient(90deg,var(--gold),var(--rose));}
+.warnCard,.okCard{border-radius:22px;box-shadow:0 10px 28px rgba(15,23,42,.055)}
+.warnCard{background:linear-gradient(135deg,#fff7ed,#fff);}
+.okCard{background:linear-gradient(135deg,#ecfdf5,#fff);}
+.jsonArea{background:#0b1020;color:#e5e7eb;border-color:#1f2937;}
+.split{gap:18px}.grid{gap:18px}.actions{gap:9px}
+@media(max-width:1150px){.app{grid-template-columns:1fr}.main{padding:20px}.topbar{border-radius:26px}.topbar h2{font-size:28px}.side{height:auto}.storyBoard{grid-template-columns:1fr}}
+
+
+/* UX spacing refinement: keep hypothesis notice and tabs visually separated */
+#emotion .hintStrip{margin:0 0 20px;padding:16px 18px;}
+#emotion .hypoTabs{margin:0 0 22px;gap:10px;}
+#emotion .hypoTab{min-height:42px;padding:11px 16px;}
+.brand p{max-width:210px;line-height:1.25;}
+
 </style>
 </head>
 <body>
-<header>
-<h1>Purpose-Adaptive Session Design OS <span style="font-size:14px;color:#6b4eff">Professional SaaS UX v4.4.2</span></h1>
-<p>API 없이 ChatGPT에 복사/붙여넣기로 작동하는 단계형 세션 설계 도구. v4.4.2는 <b>프로젝트 게시판 전면 노출 · 다중 프로젝트 관리 · 템플릿 재사용 · 단계별 다운로드 · UX 정리</b>를 포함한 전문 SaaS형 로컬 워크스페이스입니다.</p>
-</header>
-<div class="wrap">
-<aside>
-  <div class="progressBox">
-    <div class="progressTop"><span>전체 진행률</span><span id="progressText">0%</span></div>
-    <div class="bar"><div id="progressBar"></div></div>
-    <p class="progressHint" id="progressHint">승인된 단계 기준으로 계산됩니다.</p>
-  </div>
-  <div class="projectLaunch">
-    <h3>Project Workspace</h3>
-    <p>여러 프로젝트를 저장하고, 진행률을 보드에서 관리하고, 기존 작업을 템플릿으로 재사용합니다.</p>
-    <div class="currentProjectBadge" id="currentProjectBadge">현재 프로젝트: <b>Untitled</b></div>
-    <div class="projectPrimary">
-      <button class="newMain" onclick="newProject()">+ 새 프로젝트</button>
-      <button class="saveMain" onclick="saveProjectToBoard()">현재 프로젝트 저장</button>
-      <button class="boardMain" onclick="showProjectBoard()">프로젝트 게시판</button>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo"></div><div><h1>Session Design Studio</h1><p>Question-Led Planning Canvas</p></div></div>
+    <div class="projectMini">
+      <div class="name" id="miniName">Untitled Project</div>
+      <div class="meta" id="miniMeta">진행률 0% · 저장 전</div>
+      <div class="progress"><div id="miniProgress"></div></div>
+      <div class="sideActions"><button onclick="saveProject()">저장</button><button onclick="go('board')">보드</button></div>
     </div>
-    <div class="projectSub dropdown">
-      <button class="dropdownBtn" onclick="toggleDropdown('sideMenu', event)">기타 작업 ▾</button>
-      <div class="menu" id="sideMenu">
-        <button onclick="showRoadmap();closeDropdowns()">로드맵 보기</button>
-        <button onclick="showPrinciples();closeDropdowns()">핵심 원칙 보기</button>
-        <div class="menuDivider"></div>
-        <button onclick="downloadMarkdown();closeDropdowns()">전체 Markdown 다운로드</button>
-        <button onclick="downloadJSON();closeDropdowns()">현재 작업 JSON 다운로드</button>
+    <nav class="nav" id="nav">
+      <button class="active" data-page="overview" onclick="go('overview')"><span class="left"><span class="dot"></span>Overview</span><span>⌘</span></button>
+      <button data-page="brief" onclick="go('brief')"><span class="left"><span class="dot"></span>Project Brief</span><span>1</span></button>
+      <button data-page="questions" onclick="go('questions')"><span class="left"><span class="dot"></span>Question Board</span><span>2</span></button>
+      <button data-page="emotion" onclick="go('emotion')"><span class="left"><span class="dot"></span>Participant DB</span><span>3</span></button>
+      <button data-page="frame" onclick="go('frame')"><span class="left"><span class="dot"></span>Big Frame</span><span>4</span></button>
+      <button data-page="lens" onclick="go('lens')"><span class="left"><span class="dot"></span>Thinking Lens</span><span>5</span></button>
+      <button data-page="story" onclick="go('story')"><span class="left"><span class="dot"></span>Story Cards</span><span>6</span></button>
+      <button data-page="slots" onclick="go('slots')"><span class="left"><span class="dot"></span>Slot Game</span><span>7</span></button>
+      <button data-page="feedback" onclick="go('feedback')"><span class="left"><span class="dot"></span>Feedback</span><span>8</span></button>
+      <button data-page="format" onclick="go('format')"><span class="left"><span class="dot"></span>Format Advisor</span><span>9</span></button>
+      <button data-page="runbook" onclick="go('runbook')"><span class="left"><span class="dot"></span>PPT Script</span><span>10</span></button>
+    </nav>
+    <div class="sideActions"><button onclick="exportJSON()">JSON</button><button onclick="downloadRunbook()">MD</button></div>
+  </aside>
+
+  <main class="main">
+    <section id="overview" class="page active">
+      <div class="topbar"><div><div class="eyebrow">Workspace</div><h2>기획 상태를 한눈에 보기</h2><p>초안, 질문, 감정 데이터, 큰 프레임, 스토리, 슬롯, 피드백, 최종 스크립트를 한 화면 흐름으로 관리합니다.</p></div><div class="actions"><button class="primary" onclick="go('brief')">시작하기</button><button class="ghost" onclick="go('board')">프로젝트 보드</button></div></div>
+      <div class="grid g4" id="dashMetrics"></div>
+      <div class="split" style="margin-top:16px">
+        <div class="card"><h3>Current Flow</h3><p class="sub">각 단계는 답을 자동으로 만들기보다, 입력값을 더 선명하게 만드는 질문과 결정 로그를 남기는 구조입니다.</p><div class="map"><div class="mapNode"><h4>Draft</h4><p class="muted">내 초안과 질문</p></div><div class="arrow">→</div><div class="mapNode"><h4>Pressure Test</h4><p class="muted">렌즈, 리스크, 감정선</p></div><div class="arrow">→</div><div class="mapNode"><h4>Script</h4><p class="muted">결정 기반 PPT 스크립트</p></div></div></div>
+        <div class="card"><h3>Decision Log</h3><p class="sub">각 단계에서 확정한 판단만 최종 산출물에 반영됩니다.</p><div id="decisionPreview"></div><div class="actions"><button class="secondary" onclick="go('lens')">결정 추가</button><button class="ghost" onclick="go('runbook')">스크립트 보기</button></div></div>
       </div>
-    </div>
-  </div>
-  <div class="stepList" id="stepList"></div>
-</aside>
-<main class="main">
-  <div id="app"></div>
-  <div class="footer">저장 위치: 이 브라우저의 localStorage · 다른 PC/브라우저로 옮기려면 Markdown/JSON 다운로드 필요 · API 사용 없음</div>
-</main>
+    </section>
+
+    <section id="board" class="page">
+      <div class="topbar"><div><div class="eyebrow">Project Board</div><h2>프로젝트 저장 / 불러오기</h2><p>현재 브라우저에 프로젝트 상태를 저장하고, 다음에 템플릿으로 재사용할 수 있습니다.</p></div><div class="actions"><button class="green" onclick="saveProject()">현재 프로젝트 저장</button><button class="ghost" onclick="newProject()">새 프로젝트</button></div></div>
+      <div class="boardCards" id="projectCards"></div>
+    </section>
+
+    <section id="brief" class="page">
+      <div class="topbar"><div><div class="eyebrow">Step 1</div><h2>Project Brief</h2><p>기본정보는 단순한 입력칸이 아니라 이후 모든 질문과 프롬프트의 기준값입니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('brief')">GPT 질문 프롬프트</button><button class="ghost" onclick="suggestBriefFields()">추가 정보 제안</button></div></div>
+      <div class="grid g2"><div class="card"><h3>Core</h3><label>프로젝트명</label><input data-key="brief.name" placeholder="예: 팀장 리더십 리셋 세션"><label>대상 / 인원</label><input data-key="brief.audience" placeholder="예: 팀장 6명"><label>회차 / 시간</label><input data-key="brief.sessionCount" placeholder="예: 3회차, 각 60분"><label>공식 목적</label><textarea data-key="brief.officialGoal"></textarea><label>숨은 목적 / 진짜 과제</label><textarea data-key="brief.hiddenJob"></textarea></div>
+      <div class="card"><h3>Context</h3><label>조직 맥락</label><textarea data-key="brief.context"></textarea><label>성공했을 때 참여자 속마음</label><textarea data-key="brief.successVoice"></textarea><label>실패한다면 가장 가능성 높은 이유</label><textarea data-key="brief.failureRisk"></textarea><label>피해야 할 표현 / 활동</label><textarea data-key="brief.avoid"></textarea><label>기록 / 보고 원칙</label><textarea data-key="brief.reporting"></textarea></div></div>
+      <div class="card" style="margin-top:16px"><h3>Suggested Missing Inputs</h3><div id="briefSuggestions" class="note">추가 정보 제안 버튼을 누르면, 현재 기본정보에서 빠진 판단 포인트를 보여줍니다.</div></div>
+    </section>
+
+    <section id="questions" class="page">
+      <div class="topbar"><div><div class="eyebrow">Step 2</div><h2>Question Board</h2><p>답을 바로 만들기 전에, 먼저 좋은 질문으로 초안의 질을 높입니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('questions')">질문 확장 프롬프트</button><button class="ghost" onclick="addCustomQuestion()">질문 추가</button></div></div>
+      <div class="grid g2" id="questionList"></div>
+    </section>
+
+    <section id="emotion" class="page">
+      <div class="topbar"><div><div class="eyebrow">Step 3</div><h2>Participant Context & Emotion Hypothesis</h2><p>참여자의 감정을 단정하지 않고, 제한된 맥락 정보로 감정 가설을 만들고 검토합니다.</p></div><div class="actions"><button class="secondary" onclick="showEmotionHypothesisPrompt()">감정 가설 프롬프트 생성</button><button class="ghost" onclick="addParticipant()">참여자 추가</button><button class="ghost" onclick="downloadCSVTemplate()">CSV 템플릿</button></div></div>
+      <div class="hintStrip">이 화면은 감정을 측정하거나 진단하지 않습니다. 입력된 맥락을 바탕으로 <b>설계용 감정 가설</b>을 만들고, GPT 분석 결과를 붙여넣으면 강도·확신도·전환 목표·설계 경고를 시각화합니다.</div>
+      <div class="hypoTabs"><button class="hypoTab active" onclick="switchHypoTab('context',this)">1. Context Input</button><button class="hypoTab" onclick="switchHypoTab('prompt',this)">2. Hypothesis Prompt</button><button class="hypoTab" onclick="switchHypoTab('result',this)">3. GPT Result & Visualization</button></div>
+      <div id="hypo_context" class="hypoPane">
+        <div class="tableWrap"><table class="table" id="participantTable"><thead><tr><th>ID</th><th>나이</th><th>성별</th><th>입사년도</th><th>직급/역할</th><th>부서</th><th>추정 감정/단서</th><th>말하기 안전감 추정</th><th>예상 저항 가설</th><th>관계/권력 리스크 단서</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div class="grid g3" style="margin-top:16px"><div class="card"><h3>Quick Signal</h3><div class="metric"><b id="riskScore">0</b><span>Context Signal Score</span></div><button class="primary" style="margin-top:12px" onclick="analyzeEmotion()">간이 신호 점검</button></div><div class="card"><h3>Signals</h3><div id="emotionSignals" class="note">참여자 맥락을 입력한 뒤 간이 신호 점검을 누르세요.</div></div><div class="card"><h3>Design Questions</h3><div id="emotionQuestions" class="note">맥락 정보가 던지는 설계 질문이 표시됩니다.</div></div></div>
+      </div>
+      <div id="hypo_prompt" class="hypoPane hide">
+        <div class="grid g2"><div class="card"><h3>Emotion Hypothesis Prompt</h3><p class="sub">현재 입력값을 바탕으로 GPT에게 감정 가설 분석을 요청하는 프롬프트입니다. JSON 형식으로 받도록 설계되어 있어, 결과를 다시 붙여넣으면 그래픽으로 변환됩니다.</p><div class="actions"><button class="primary" onclick="renderEmotionHypothesisPrompt()">프롬프트 새로 만들기</button><button class="ghost" onclick="copyEmotionPrompt()">복사</button></div><div class="promptBox" id="emotionPromptBox" style="margin-top:12px">프롬프트 새로 만들기를 누르세요.</div></div><div class="card"><h3>Output Rule</h3><div class="note">GPT 답변은 반드시 JSON 하나로 받는 것이 가장 안정적입니다. 자유 문장 분석은 사람이 읽기에는 좋지만, 프로그램이 점수와 그래프로 바꾸기 어렵습니다.</div><ul class="miniList"><li>emotion: 감정명</li><li>level: 추정 강도 1~5</li><li>confidence: 확신도 1~5</li><li>design_implication: 설계 영향</li></ul></div></div>
+      </div>
+      <div id="hypo_result" class="hypoPane hide">
+        <div class="grid g2"><div class="card"><h3>GPT 분석 결과 붙여넣기</h3><p class="sub">GPT가 준 JSON을 그대로 붙여넣고 적용하세요. 코드블록(```json)으로 감싸져 있어도 처리합니다.</p><textarea id="hypothesisJsonInput" class="jsonArea" placeholder='{"hypotheses":[{"emotion":"피로","level":4,"confidence":3,"reason":"...","design_implication":"..."}],"risks":[],"questions_to_ask":[],"recommended_entry":"","avoid":[],"guardrails":[]}'></textarea><div class="actions" style="margin-top:10px"><button class="green" onclick="applyHypothesisResult()">결과 적용 / 시각화</button><button class="ghost" onclick="loadSampleHypothesis()">샘플 불러오기</button></div></div><div class="card"><h3>Hypothesis Summary</h3><div id="hypothesisSummary" class="note">아직 적용된 감정 가설 분석이 없습니다.</div><div class="actions" style="margin-top:12px"><button class="secondary" onclick="addHypothesisToDecisionLog()">Decision Log에 반영</button></div></div></div>
+        <div class="grid g2" style="margin-top:16px"><div class="card"><h3>Emotion Strength / Confidence</h3><div id="hypothesisBars" class="note">JSON 적용 후 표시됩니다.</div></div><div class="card"><h3>Design Warning Cards</h3><div id="hypothesisWarnings" class="note">JSON 적용 후 표시됩니다.</div></div></div>
+      </div>
+    </section>
+
+    <section id="frame" class="page">
+      <div class="topbar"><div><div class="eyebrow">Step 4</div><h2>Big Frame Board</h2><p>회차별 큰 구조를 먼저 잡고, 제안/리스크/대안을 카드로 검토합니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('frame')">프레임 리뷰 프롬프트</button><button class="ghost" onclick="addFrameRow()">회차 추가</button><button class="green" onclick="createFrameReviewCards()">리뷰 카드 생성</button></div></div>
+      <div class="tableWrap"><table class="table" id="frameTable"><thead><tr><th>회차</th><th>핵심 목적</th><th>시작 상태</th><th>종료 상태</th><th>주요 경험</th><th>산출물</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="grid g2" style="margin-top:16px"><div class="card"><h3>Review Cards</h3><div id="reviewCards" class="note">리뷰 카드 생성 버튼을 누르면 현재 프레임의 리스크와 질문이 표시됩니다.</div></div><div class="card"><h3>Version & Impact</h3><p class="sub">큰 프레임이 바뀌면 Story, Slot, Runbook에서 재점검이 필요한 항목을 표시합니다.</p><div class="actions"><button class="primary" onclick="confirmFrameVersion()">현재 프레임 확정</button><button class="ghost" onclick="checkImpact()">변경 영향도 보기</button></div><div id="impactBox" class="note" style="margin-top:12px">아직 영향도 점검 전입니다.</div></div></div>
+    </section>
+
+    <section id="lens" class="page">
+      <div class="topbar"><div><div class="eyebrow">Step 5</div><h2>Thinking Lens</h2><p>같은 초안을 여러 관점에서 흔들어보고, 유지/수정/보류 결정을 남깁니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('lens')">렌즈 질문 프롬프트</button><button class="green" onclick="addDecision()">결정 추가</button></div></div>
+      <div class="lensGrid">
+        <div class="lens"><b>참여자 관점</b><p>이 구성이 참여자에게 안전하고 실질적으로 느껴지는가?</p><button class="secondary" onclick="lensPrompt('participant')">질문 만들기</button></div>
+        <div class="lens"><b>CEO / HR 관점</b><p>조직 메시지와 연결되지만 강요처럼 보이지 않는가?</p><button class="secondary" onclick="lensPrompt('sponsor')">질문 만들기</button></div>
+        <div class="lens"><b>운영자 관점</b><p>현장에서 막힐 구간과 멈춤 기준은 있는가?</p><button class="secondary" onclick="lensPrompt('facilitator')">질문 만들기</button></div>
+        <div class="lens"><b>냉소적 참여자 관점</b><p>가장 회의적인 사람이 속으로 할 말은 무엇인가?</p><button class="secondary" onclick="lensPrompt('skeptic')">질문 만들기</button></div>
+        <div class="lens"><b>행동 전이 관점</b><p>끝나고 실제로 바뀔 수 있는 행동은 무엇인가?</p><button class="secondary" onclick="lensPrompt('transfer')">질문 만들기</button></div>
+      </div>
+      <div class="grid g2" style="margin-top:16px"><div class="card"><h3>Tension Map</h3><div class="map"><div class="mapNode"><h4>Company Wants</h4><textarea data-key="tension.company" placeholder="예: 협업 개선, 실행 약속"></textarea></div><div class="arrow">⚠</div><div class="mapNode"><h4>Participants Feel</h4><textarea data-key="tension.participant" placeholder="예: 피로, 냉소, 방어"></textarea></div><div class="arrow">→</div><div class="mapNode"><h4>Design Challenge</h4><textarea data-key="tension.challenge" placeholder="충돌을 해결할 설계 과제"></textarea></div></div></div><div class="card"><h3>Decision Log</h3><div id="decisionList"></div></div></div>
+    </section>
+
+    <section id="story" class="page">
+      <div class="topbar"><div><div class="eyebrow">Step 6</div><h2>Story Cards</h2><p>복잡한 PPT 슬라이드 설계가 아니라, 카드 1~5에 전체 흐름을 줄글로 써서 한눈에 스토리를 봅니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('story')">스토리 점검 프롬프트</button><button class="ghost" onclick="addSlide()">카드 추가</button></div></div>
+      <div id="slideList"></div>
+    </section>
+
+    <section id="slots" class="page">
+      <div class="topbar"><div><div class="eyebrow">Step 7</div><h2>Slot Completion Game</h2><p>회차별 탭을 이동하면서 슬롯을 하나씩 클리어합니다. GPT가 만든 슬롯 초안을 붙여넣으면 입력창에 자동 반영되고, 이후 직접 수정할 수 있습니다.</p></div><div class="actions"><button class="secondary" onclick="showSlotDraftPrompt()">슬롯 질문 프롬프트</button><button class="ghost" onclick="syncSessionsFromFrame()">회차 동기화</button></div></div>
+      <div class="tabs" id="sessionTabs"></div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="cardHead"><div><h3>GPT Slot Draft Import</h3><p class="sub">현재 선택된 회차의 슬롯 초안을 GPT에게 받은 뒤, 아래에 JSON을 붙여넣으면 각 슬롯 입력창에 자동으로 채워집니다. 자동 반영 후에는 직접 하나씩 수정하면 됩니다.</p></div><div class="actions"><button class="primary" onclick="applySlotDraftResult()">GPT 답변 적용</button><button class="ghost" onclick="clearSlotDraftInput()">입력창 비우기</button></div></div>
+        <textarea id="slotDraftJsonInput" placeholder="GPT가 준 JSON 결과를 여기에 붙여넣으세요. 자유문장이 섞여 있어도 JSON 블록을 찾아서 읽습니다." style="min-height:150px"></textarea>
+        <div class="note" style="margin-top:10px">권장 방식: 위의 <b>슬롯 질문 프롬프트</b>를 복사해 GPT에 넣고, GPT가 준 JSON 결과를 그대로 붙여넣으세요.</div>
+      </div>
+      <div id="slotContainer"></div>
+    </section>
+
+    <section id="feedback" class="page">
+      <div class="topbar"><div><div class="eyebrow">Step 8</div><h2>Employee Feedback Review</h2><p>직원 피드백을 수정 지시가 아니라, 고려해야 할 설계 질문으로 바꿉니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('feedback')">피드백 분석 프롬프트</button><button class="green" onclick="analyzeFeedback()">고려사항 생성</button></div></div>
+      <div class="grid g2"><div class="card"><h3>Feedback Input</h3><textarea data-key="feedback.raw" placeholder="직원 피드백, FGD 발언, 설문 의견 등을 붙여넣으세요." style="min-height:260px"></textarea></div><div class="card"><h3>Design Questions from Feedback</h3><div id="feedbackOutput" class="note">피드백을 입력한 뒤 고려사항 생성을 누르세요.</div></div></div>
+    </section>
+
+    <section id="format" class="page">
+      <div class="topbar"><div><div class="eyebrow">Step 9</div><h2>Format Advisor</h2><p>활동, 영상, PPT 설명, 토론, 개인 작성 중 어떤 방식이 적합한지 판단 기준을 생성합니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('format')">매체 판단 프롬프트</button><button class="green" onclick="adviseFormat()">추천 생성</button></div></div>
+      <div class="grid g2"><div class="card"><h3>Conditions</h3><label>정보 복잡도</label><select data-key="format.complexity"><option>낮음</option><option>중간</option><option>높음</option></select><label>참여자 에너지</label><select data-key="format.energy"><option>낮음</option><option>중간</option><option>높음</option></select><label>심리적 안전감</label><select data-key="format.safety"><option>낮음</option><option>중간</option><option>높음</option></select><label>목표</label><select data-key="format.goal"><option>공감 형성</option><option>정보 이해</option><option>문제 분석</option><option>행동 합의</option><option>감정 환기</option></select></div><div class="card"><h3>Recommendation</h3><div id="formatOutput" class="note">추천 생성 버튼을 누르세요.</div></div></div>
+    </section>
+
+    <section id="runbook" class="page">
+      <div class="topbar"><div><div class="eyebrow">Step 10</div><h2>Final PPT Script</h2><p>입력값과 결정 로그를 조립해 PPT 스크립트 형태로 정리합니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('runbook')">최종 점검 프롬프트</button><button class="green" onclick="compileRunbook()">스크립트 조립</button><button class="ghost" onclick="downloadRunbook()">Markdown 다운로드</button></div></div>
+      <div class="promptBox" id="runbookBox">아직 조립 전입니다. “스크립트 조립” 버튼을 누르세요.</div>
+    </section>
+  </main>
 </div>
-<div class="modal" id="helpModal"><div class="modalContent"><div class="resultHeader"><h2 id="modalTitle">사용 방법</h2><button class="ghost" onclick="closeHelp()">닫기</button></div><div id="helpBody"></div></div></div><div class="toast" id="toast"></div>
+
+<div class="modal" id="modal"><div class="modalContent"><div class="modalTop"><div><div class="eyebrow" id="modalEyebrow">Prompt</div><h2 id="modalTitle" style="margin:4px 0 0">GPT Prompt</h2></div><div class="actions"><button class="primary" onclick="copyModal()">복사</button><button class="ghost" onclick="closeModal()">닫기</button></div></div><div class="promptBox" id="modalBody"></div></div></div>
+<div class="toast" id="toast"></div>
 <script>
-const STORAGE='purpose_adaptive_os_v4_implementation';
-const PROJECT_STORAGE='purpose_adaptive_os_v4_project_board';
-const steps=[
- {id:0, phase:'Foundation', title:'Raw Input', short:'원본 변수 입력', goal:'전체 프로젝트의 기준값을 만든다.', output:'Raw Context Card', checklist:['대상·시간·회차가 명확한가?','왜 지금 이 세션이 필요한가?','반드시 포함/회피할 것이 있는가?','원하는 종료 상태가 있는가?','관계 역학·보고 제약·공간 조건이 포함됐는가?'], feedbackHelp:'Step 0에서는 피드백보다 원본 조건을 정확히 넣는 것이 중요합니다.'},
- {id:1, phase:'Diagnose', title:'Pre-Diagnostic & Dynamics Scan', short:'사전진단 / 관계 위험도', goal:'참여자 6명의 관계 역학, 권력 차이, 기존 갈등, 말하기 위험도를 사전에 파악한다.', output:'Pre-diagnosis Questions, Dynamics Risk Map, Safety Assumptions', checklist:['사전 질문이 5~7개로 짧은가?','기존 갈등·권력 차이·핵심부서 여부를 볼 수 있는가?','응답을 개인 평가가 아니라 운영 조정 변수로 쓰는가?','프로그램 전에 반드시 확인할 리스크가 정리됐는가?'], feedbackHelp:'예: 팀장 6명 중 핵심부서/지원부서 힘의 차이가 있을 수 있어. 누가 말하기 어려운지 먼저 잡아줘.'},
- {id:2, phase:'Define', title:'Session Intent Brief', short:'표면 목적 / 숨은 목적', goal:'세션의 공식 목적과 실제 심리적 기능을 분리한다.', output:'Surface Goal, Hidden Job, Success/Failure Criteria, Sponsor-facing Rationale', checklist:['표면 목적과 숨은 목적이 분리됐는가?','성공 기준이 참여자 상태로 쓰였는가?','회사/스폰서 설득 언어가 참여자 언어와 분리됐는가?','아직 활동을 제안하지 않았는가?'], feedbackHelp:'예: 참여자에게는 회복과 연결, HR에게는 팀장 간 협업 마찰 완화라는 언어로 분리해줘.'},
- {id:3, phase:'Understand', title:'Participant & Context Model', short:'참여자 심리 / 저항 예측', goal:'참여자가 어떤 상태로 들어오고 무엇을 경계할지 예측한다.', output:'Starting State, Resistance, Safety Level, Sharing Mode, Power Dynamics', checklist:['예상 저항이 구체적인 문장인가?','자기노출 허용 수준이 정해졌는가?','권력관계 리스크가 반영됐는가?','공유 방식이 안전감 수준과 맞는가?'], feedbackHelp:'예: 팀장들이 서로 친하지 않고 기록되는 걸 경계할 수 있어. 전체 공유는 최소화해줘.'},
- {id:4, phase:'Define', title:'Session Function Map', short:'세션 기능 정의', goal:'이 세션이 수행할 기능과 하지 않을 일을 정한다.', output:'Primary/Secondary Function, Not This Session, Memory Hook Potential', checklist:['주 기능이 1개로 명확한가?','보조 기능이 주 기능을 방해하지 않는가?','이번 세션에서 하지 않을 것이 정해졌는가?','기억에 남을 작은 장치 가능성이 있는가?'], feedbackHelp:'예: 망하지 않는 안전함뿐 아니라 끝나고 기억에 남는 장면도 필요해.'},
- {id:5, phase:'Design', title:'Emotional / Cognitive Arc', short:'감정선 / 사고선', goal:'참여자가 어떤 상태에서 시작해 어떤 상태로 끝날지 설계한다.', output:'Starting State, Desired Landing, Transitions, Memorable Moments', checklist:['시작 감정과 종료 감정이 자연스러운가?','각 전환에 설계 장치가 있는가?','갑자기 깊은 자기노출로 점프하지 않는가?','마지막이 다음 단계 수용으로 이어지는가?','안전하지만 밋밋하지 않은 순간이 있는가?'], feedbackHelp:'예: 경계 → 안전감 → 자기 확인 → 자기인정 → 작은 행동으로 가되, 기억에 남는 한 장면을 넣어줘.'},
- {id:6, phase:'Design', title:'Session Architecture', short:'시간표 / 구간 구성', goal:'감정선에 맞춰 세션의 큰 흐름과 시간 배분을 만든다.', output:'Time Flow, Segment Purpose, Participant Action, Session-to-Session Bridges', checklist:['각 구간에 기능이 있는가?','시간 배분이 현실적인가?','말하기/쓰기/침묵 비율이 맞는가?','다음 회차 브릿지가 자연스러운가?'], feedbackHelp:'예: 각 회차 끝에 다음 회차를 기다리게 만드는 연결 문장을 넣어줘.'},
- {id:7, phase:'Design', title:'Activity Composition', short:'활동 조합', goal:'목적에 맞는 활동만 선택하고 각 활동의 리스크를 정의한다.', output:'Activity Cards, Safety Devices, Outputs, Interaction Quality', checklist:['활동이 기능과 맞는가?','자기노출 수준이 적절한가?','참여자 간 소통의 질이 확보됐는가?','그냥 넣고 싶은 활동이 섞이지 않았는가?'], feedbackHelp:'예: 쓰기 중심으로 안전하게 가되, 서로 들은 것 중 하나를 표시하는 반응 장치를 넣어줘.'},
- {id:8, phase:'Write', title:'Tone & Language System', short:'톤 / 언어 온도', goal:'설계자 언어를 진행자·참여자·스폰서 언어로 분리한다.', output:'Tone Rules, Avoid/Use Language, Slide Language, Sponsor Language', checklist:['참여자 언어와 HR/스폰서 언어가 분리됐는가?','평가/진단/개인 탓 단어가 제거됐는가?','케어의 온기가 구조와 말에 살아 있는가?','피해야 할 표현과 대체어가 있는가?'], feedbackHelp:'예: 참여자에게는 회복과 연결, HR에게는 관계 기반 협업 마찰 완화라고 말해줘.'},
- {id:9, phase:'Produce', title:'Script / Worksheet / Slide Copy', short:'실행 자료 생성', goal:'실제 진행 가능한 스크립트와 워크시트, 슬라이드 문구를 만든다.', output:'Facilitator Script, Worksheet, Slide Copy, Cue Sheet Draft', checklist:['진행자 발화량이 과하지 않은가?','참여자가 무엇을 해야 하는지 명확한가?','워크시트 질문이 이전 단계와 연결되는가?','침묵/작성 시간이 포함됐는가?','1페이지 큐시트로 축약 가능한가?'], feedbackHelp:'예: 현장에서는 긴 문서보다 큐시트가 필요해. 각 회차 한 장으로도 운영 가능하게 만들어줘.'},
- {id:10, phase:'Stress-test', title:'Risk Simulation & Revision', short:'냉정한 검증 / 수정', goal:'현장 저항·침묵·방어를 시뮬레이션하고 수정한다.', output:'Top Risks, Revision Table, Backup Plan, Stop Lines', checklist:['냉소/침묵/방어 반응을 검토했는가?','High-risk 항목에 수정안이 있는가?','수정 전후 이유가 명확한가?','좋은 분위기 과열 리스크까지 다뤘는가?'], feedbackHelp:'예: 냉정하게 봐줘. 팀장들이 싫어할 표현, 유치한 활동, 개인 탓처럼 들리는 부분을 잡아줘.'},
- {id:11, phase:'Measure', title:'Measurement & Success Signals', short:'측정 / 성공 신호', goal:'만족도 조사가 아니라 협업 접근성 변화와 운영 성과를 보는 가벼운 측정 체계를 만든다.', output:'Pre/Post Questions, Success/Failure Signals, Low-pressure Pulse Check', checklist:['만족도 유도 질문을 피했는가?','협업 접근성 변화가 측정되는가?','문항 수가 5~7개로 짧은가?','운영자 관찰 신호와 참여자 응답 신호가 분리됐는가?'], feedbackHelp:'예: “프로그램 좋았나요?”가 아니라 “다음 협업 때 한 번 더 확인할 수 있을 것 같은가?”를 물어봐.'},
- {id:12, phase:'Enable', title:'Facilitator Training Guide', short:'운영자 훈련', goal:'운영자가 침묵, 냉소, 특정 팀 비난, 감정 과열을 다루는 훈련 자료를 만든다.', output:'Facilitator Mindset, Practice Scenarios, Response Drills, Do/Do-not', checklist:['운영자의 절제력이 핵심이라는 점이 반영됐는가?','리스크 상황별 연습 문장이 있는가?','멈출 타이밍을 훈련하게 되어 있는가?','좋은 분위기에서도 깊이를 제한하는 훈련이 있는가?'], feedbackHelp:'예: 이 프로그램의 성패는 콘텐츠보다 운영자가 어디서 멈출 줄 아는가에 달려 있어.'},
- {id:13, phase:'Experience', title:'Space & Experience Design', short:'공간 / 비언어적 케어', goal:'강의실·교육 느낌을 줄이고, 케어받는 경험을 만드는 공간과 진행 환경을 설계한다.', output:'Room Setup, Materials, Non-verbal Care, Experience Checklist', checklist:['강의실형 느낌을 줄였는가?','워크시트 미제출과 개인 공간감이 보장되는가?','물/차/좌석/화이트보드 사용 원칙이 있는가?','케어가 말보다 구조로 느껴지는가?'], feedbackHelp:'예: 공간이 강의실이면 아무리 좋은 말도 리더십 교육처럼 보여. 원형/ㄷ자 배치와 차분한 세팅을 넣어줘.'},
- {id:14, phase:'Govern', title:'HR / Sponsor Reporting Pack', short:'보고 / 스폰서 설득', goal:'참여자 안전을 해치지 않으면서 HR/스폰서에게 설명·보고할 수 있는 패키지를 만든다.', output:'Sponsor Rationale, Reporting Template, Privacy Rules, ROI Narrative', checklist:['참여자용 언어와 스폰서용 언어가 분리됐는가?','개인 발언·팀명·사건 보고 금지가 명확한가?','익명화된 패턴 단위 보고 템플릿이 있는가?','프로그램 ROI가 현실적 언어로 설명되는가?'], feedbackHelp:'예: HR에는 팀장 간 협업 마찰과 방어성 완화라는 언어로 설명하되, 개인 발언은 절대 보고하지 않게 해줘.'},
- {id:15, phase:'Transfer', title:'Follow-up & Transfer Design', short:'후속 전이 / 2주 리마인드', goal:'프로그램 종료 후 부담 없는 방식으로 확인 문장이 업무 속에 남도록 설계한다.', output:'2-week Reminder, No-homework Follow-up, Transfer Questions, Optional Micro-touch', checklist:['숙제나 실천 점검처럼 보이지 않는가?','확인 문장을 자연스럽게 리마인드하는가?','후속 질문이 부담 없이 낮은가?','성과 수집보다 업무 전이에 초점이 있는가?'], feedbackHelp:'예: 2주 후 확인 문장만 다시 보내고 “최근 한 번 더 확인해본 순간이 있었나요?” 정도로 낮게 물어봐.'},
- {id:16, phase:'Finalize', title:'Final Implementation Pack', short:'최종 실행 패키지', goal:'최종 실행 패키지로 묶고 실제 운영자가 사용할 수 있는 형태로 정리한다.', output:'Quick Guide, Runbook, Cue Sheets, Worksheets, Slides, Measurement, Reporting, Revision Log', checklist:['최종본만 봐도 실행 가능한가?','설계 노트와 실제 자료가 분리되어 있는가?','운영자용 1페이지 큐시트가 있는가?','측정·보고·후속 전이까지 포함됐는가?','수정 이력이 남아 있는가?'], feedbackHelp:'예: 최종 실행용으로 정리해줘. 내부 설계 노트, 현장 스크립트, 큐시트, 워크시트, HR 보고용을 분리해줘.'}
+(function(){
+const STORE='session_design_studio_premium_v1';const BOARD='session_design_studio_board_v1';let activeSession=0;
+const defaultQuestions=[
+ ['이 세션이 끝난 후, 참여자가 속으로 어떤 말을 하면 성공인가?','만족도보다 실제 인식 변화의 언어로 적어보세요.'],
+ ['회사/HR이 얻고 싶은 것과 참여자가 얻고 싶은 것은 어디서 충돌하는가?','충돌을 숨기지 말고 먼저 드러내야 설계가 좋아집니다.'],
+ ['이 세션이 실패한다면 가장 가능성 높은 이유는 무엇인가?','냉소, 방어, 시간 부족, 후속 부재 등 현실 리스크를 적어보세요.'],
+ ['참여자에게 절대 강요하면 안 되는 것은 무엇인가?','공유, 고백, 긍정, 실행 약속 등 부담이 될 수 있는 것을 분리하세요.'],
+ ['가장 냉소적인 참여자가 속으로 할 말은 무엇인가?','그 말을 이길 필요는 없고, 그 말이 나오지 않게 설계해야 합니다.'],
+ ['이번 세션에서 반드시 남겨야 할 한 문장은 무엇인가?','PPT 문장이 아니라 참여자가 기억할 문장으로 적어보세요.']
 ];
-const CORE_PRINCIPLES=[
-  '안전하지만 밋밋하지 않게: 부담은 낮추되 기억에 남는 장면을 만든다.',
-  '참여자용 언어와 HR/스폰서용 언어를 분리한다.',
-  '운영자의 핵심 역량은 더 밀어붙이는 능력이 아니라 멈출 줄 아는 절제력이다.',
-  '워크시트는 제출하지 않고, 개인 발언 단위로 기록하지 않는다.',
-  '3회차는 사람보다 조건, 사건보다 패턴으로 전환한다.',
-  '4회차는 깊은 고백이 아니라 Controlled Openness와 확인 문장으로 끝낸다.',
-  '후속 조치는 숙제가 아니라 낮은 압박의 리마인드여야 한다.'
-];
-let state=load(); let current=state.current||0;
-syncHeaderOffset();
-window.addEventListener('resize', syncHeaderOffset);
-render();
-function syncHeaderOffset(){
-  const header=document.querySelector('header');
-  if(!header) return;
-  document.documentElement.style.setProperty('--headerH', Math.ceil(header.getBoundingClientRect().height)+'px');
-}
-
-function defaultState(){return{current:0, projectId:null, projectName:'', raw:{topic:'',why:'',audience:'',size:'',duration:'',count:'',context:'',tension:'',outcome:'',include:'',avoid:'',tone:'',facilitator:'',relationship:'',sponsor:'',reporting:'',space:'',followup:''}, feedback:{}, results:{}, validations:{}, approved:{}, notes:{}}}
-function migrate(s){const d=defaultState();return Object.assign(d,s,{raw:Object.assign(d.raw,(s&&s.raw)||{})})}
-function load(){try{return migrate(JSON.parse(localStorage.getItem(STORAGE))||defaultState())}catch(e){return defaultState()}}
-function save(){localStorage.setItem(STORAGE,JSON.stringify(state))}
-function statusOf(i){if(state.approved[i])return'approved'; if((state.validations[i]||'').trim())return'validated'; if((state.results[i]||'').trim())return'saved'; return'draft'}
-function statusLabel(s){return{draft:'작성 전',saved:'결과 저장',validated:'검증 완료',approved:'승인 완료',revise:'수정 필요'}[s]||s}
-function render(){renderSteps(); renderMain(); updateProgress(); updateCurrentProjectBadge(); save()}
-function renderSteps(){const el=document.getElementById('stepList');el.innerHTML='';steps.forEach(st=>{const s=statusOf(st.id);const div=document.createElement('div');div.className='stepItem '+(current===st.id?'active':'');div.onclick=()=>{current=st.id;state.current=current;render()};div.innerHTML=`<div class="stepPhase">${st.phase}</div><div class="stepTitle">${st.id}. ${st.title} ${state.approved[st.id]?'✓':''}</div><div class="stepMeta">${st.short}</div><span class="chip ${s}">${statusLabel(s)}</span>${(state.feedback[st.id]||'').trim()?'<span class="chip saved">피드백 있음</span>':''}`;el.appendChild(div)})}
-function updateProgress(){const done=steps.filter(st=>state.approved[st.id]).length;const pct=Math.round(done/steps.length*100);document.getElementById('progressText').textContent=pct+'%';document.getElementById('progressBar').style.width=pct+'%';document.getElementById('progressHint').textContent=`${done}/${steps.length} 단계 승인 완료 · v4 Implementation Pack`}
-function rawSummary(){const r=state.raw;return `주제: ${r.topic||'-'}\n대상: ${r.audience||'-'} / ${r.size||'-'}명\n시간/회차: ${r.duration||'-'} / ${r.count||'-'}\n왜 지금: ${r.why||'-'}\n원하는 결과: ${r.outcome||'-'}\n필수 포함: ${r.include||'-'}\n회피: ${r.avoid||'-'}\n톤: ${r.tone||'-'}\n관계 역학/권력 차이: ${r.relationship||'-'}\n스폰서/HR 기대: ${r.sponsor||'-'}\n기록/보고 제약: ${r.reporting||'-'}\n공간/운영 조건: ${r.space||'-'}\n후속 전이 조건: ${r.followup||'-'}`}
-function getPrevResults(upto){let out=`[Raw Input]\n${rawSummary()}\n`;for(let i=1;i<upto;i++){if(state.results[i])out+=`\n\n[Step ${i}. ${steps[i].title} Result]\n${state.results[i]}`;}return out}
-function stepPrompt(i){const st=steps[i]; if(i===0)return 'Step 0은 웹페이지에서 직접 입력하고 승인합니다.';return `당신은 조직문화, 리더십, 워크숍, 전략 세션 설계에 강한 세션 전략가입니다.\n\n아래 정보를 바탕으로 Step ${i}: ${st.title}를 작성하세요.\n\n중요 원칙:\n- 활동을 먼저 제안하지 말고, 이 단계의 목적에 맞는 결과만 작성하세요.\n- 세션마다 목적, 방식, 톤앤매너, 활동이 달라져야 합니다.\n- 단순 팀빌딩 활동 추천기가 아니라 목적 기반 세션 설계 시스템의 한 단계로 답하세요.\n- 이전 단계 결과를 반드시 반영하세요.\n- 사용자의 추가 피드백이 있으면 최우선으로 반영하세요.\n- 안전하지만 밋밋하지 않게 설계하세요. 부담은 낮추되 기억에 남는 장면이 있어야 합니다.\n- 참여자용 언어와 HR/스폰서용 언어를 분리하세요.\n- 워크시트 제출, 개인 발언 기록, 특정 팀/사람 기록은 기본적으로 금지하세요.\n- 운영자의 핵심은 더 밀어붙이는 것이 아니라 어디서 멈출지 아는 절제력입니다.\n\n[이 단계의 목표]\n${st.goal}\n\n[이 단계의 기대 산출물]\n${st.output}\n\n[Raw Input 및 이전 단계 결과]\n${getPrevResults(i)}\n\n[이 단계에 대한 사용자 피드백 / 추가 디렉션]\n${state.feedback[i]||'(없음)'}\n\n출력 형식:\n## Step ${i}. ${st.title}\n### 1. 핵심 결론\n이 단계에서 확정해야 할 내용을 5줄 이내로 요약하세요.\n\n### 2. 상세 결과\n${st.output}에 맞춰 구조화해서 작성하세요.\n\n### 3. 다음 단계에 넘길 핵심 변수\n다음 단계가 반드시 기억해야 할 변수만 bullet로 정리하세요.\n\n### 4. 사용자가 확인해야 할 질문\n이 결과를 승인하기 전에 사용자가 점검해야 할 질문 3~5개를 작성하세요.\n\n주의: 아직 최종 세션 스크립트를 만들 단계가 아니라면 스크립트를 만들지 마세요.`}
-function validationPrompt(i){const st=steps[i];return `아래 Step ${i}: ${st.title} 결과를 냉정하게 검증하세요.\n\n[검증 기준]\n${st.checklist.map((c,idx)=>`${idx+1}. ${c}`).join('\n')}\n\n[추가 검증 관점]\n- 안전하지만 밋밋하지 않은가?\n- 참여자 언어와 HR/스폰서 언어가 섞이지 않았는가?\n- 운영자가 실제 현장에서 멈출 수 있는 기준이 있는가?\n- 기록/보고 리스크가 통제되어 있는가?\n- 6명 소규모 집단의 관계 역학을 충분히 고려했는가?\n\n[Raw Input 및 이전 단계 결과]\n${getPrevResults(i)}\n\n[사용자 피드백]\n${state.feedback[i]||'(없음)'}\n\n[Step ${i} 결과]\n${state.results[i]||'(아직 결과 없음)'}\n\n출력 형식:\n## Verdict\nPass / Revise / Fail 중 하나\n\n## 잘 된 점\n\n## 문제점 / 리스크\n\n## 반드시 수정할 것\n\n## 수정 방향\n\n## 수정본이 필요하다면\n수정본을 작성하세요.\n\n중요: 칭찬보다 실제 현장에서 작동할지, 목적과 맞는지, 다음 단계 입력값으로 충분한지 냉정하게 판단하세요.`}
-function revisionPrompt(i){const st=steps[i];return `아래 검증 결과와 사용자 피드백을 반영해 Step ${i}: ${st.title} 결과를 수정하세요.\n\n[Raw Input 및 이전 단계 결과]\n${getPrevResults(i)}\n\n[사용자 피드백]\n${state.feedback[i]||'(없음)'}\n\n[현재 Step ${i} 결과]\n${state.results[i]||'(없음)'}\n\n[검증 결과]\n${state.validations[i]||'(검증 결과 없음)'}\n\n출력 형식:\n## Revised Step ${i}. ${st.title}\n### 1. 무엇을 바꿨는가\n### 2. 왜 바꿨는가\n### 3. 수정된 최종 결과\n### 4. 다음 단계에 넘길 핵심 변수\n\n주의: 수정은 단순 문장 다듬기가 아니라 목적 적합성, 감정선, 참여자 리스크, 실행 가능성, 기억에 남는 경험성을 높이는 방향이어야 합니다.`}
-function parseSummary(txt){if(!txt||!txt.trim())return '<p class="mini">아직 GPT 결과가 없습니다. 결과를 붙여넣고 저장하면 여기에서 핵심을 확인할 수 있습니다.</p>';const lines=txt.split('\n').map(x=>x.trim()).filter(Boolean);const heads=lines.filter(l=>l.startsWith('#')).slice(0,8);let bullets=lines.filter(l=>l.startsWith('-')||l.startsWith('*')||/^\d+[.)]/.test(l)).slice(0,8);if(!bullets.length)bullets=lines.slice(0,6);return `<h4>저장된 결과 빠른 확인</h4>${heads.length?`<p class="mini"><b>구조:</b> ${heads.map(h=>h.replace(/^#+\s*/,'')).join(' · ')}</p>`:''}<ul>${bullets.map(b=>`<li>${escapeHtml(b.replace(/^[-*]\s*/,''))}</li>`).join('')}</ul>`}
-function renderMain(){
-const st=steps[current];const app=document.getElementById('app');if(current===0){app.innerHTML=renderRaw();return}const s=statusOf(current);const done=steps.filter(x=>state.approved[x.id]).length;const pct=Math.round(done/steps.length*100);const resultSaved=!!(state.results[current]||'').trim();const validationSaved=!!(state.validations[current]||'').trim();
-app.innerHTML=`
-<div class="stickyStage"><div><span class="labelMini">Current Stage</span><div class="stageName">Step ${st.id}. ${st.title}</div></div><div class="actionGroup"><button class="primary" onclick="copyText('stepPrompt')">Prompt 복사</button><div class="dropdown"><button class="ghost dropdownBtn" onclick="toggleDropdown('topStepActions', event)">작업 메뉴</button><div class="menu" id="topStepActions"><button onclick="saveResult();closeDropdowns()">현재 결과 저장</button><button onclick="saveValidation();closeDropdowns()">검증 결과 저장</button><button onclick="downloadStepResult(current);closeDropdowns()">Step 결과 다운로드</button><button onclick="downloadStepBundle(current);closeDropdowns()">검증용 패키지 다운로드</button><div class="menuDivider"></div><button onclick="goPrev();closeDropdowns()">이전 단계</button><button onclick="goNext();closeDropdowns()">다음 단계 보기</button></div></div></div></div>
-<div class="topWorkspace"><div class="heroCard"><div class="heroTop"><div><div class="heroKicker">${st.phase}</div><h2>Step ${st.id}. ${st.title}</h2><p class="lead">${st.goal}</p><div class="pillRow"><span class="pill">기대 산출물: ${st.output}</span><span class="pill">상태: ${statusLabel(s)}</span></div></div><div class="heroActions"><button class="primary" onclick="copyText('stepPrompt')">Step Prompt 복사</button><button class="dark" onclick="approveStep(${current})">Approve</button><div class="dropdown"><button class="ghost dropdownBtn" onclick="toggleDropdown('heroMore', event)">더보기</button><div class="menu" id="heroMore"><button onclick="showHelp(${current});closeDropdowns()">이 단계 도움말</button><button onclick="downloadStepResult(current);closeDropdowns()">결과만 다운로드</button><button onclick="downloadStepBundle(current);closeDropdowns()">검증 패키지 다운로드</button><button onclick="copyStepBundle(current);closeDropdowns()">검증 패키지 복사</button><div class="menuDivider"></div><button class="dangerItem" onclick="clearResult();closeDropdowns()">결과 지우기</button></div></div></div></div>${renderUpgradeNote(current)}<div class="stepMiniBar"><div class="miniMetric"><b>${pct}%</b><span>전체 진행률</span></div><div class="miniMetric"><b>${done}/${steps.length}</b><span>승인 단계</span></div><div class="miniMetric"><b>${resultSaved?'Yes':'No'}</b><span>결과 저장</span></div><div class="miniMetric"><b>${validationSaved?'Yes':'No'}</b><span>검증 저장</span></div></div></div><div class="focusPanel"><h3>이번 단계 작업 흐름</h3><ol><li>피드백/방향을 먼저 정리합니다.</li><li><b>Step Prompt</b>를 복사해 새 GPT 답변을 받습니다.</li><li>결과를 저장하고 요약을 확인합니다.</li><li><b>Validation</b>으로 새 채팅 검증용 패키지도 내려받습니다.</li><li>만족하면 Approve 후 다음 단계로 갑니다.</li></ol></div></div>
-<details class="workSection" open><summary><span>① 피드백 & 검증 기준</span><span class="sectionMeta">방향 수정 · 체크리스트</span></summary><div class="sectionBody"><div class="grid2"><div class="box"><h3>이 단계가 끝나면 반드시 확인할 것</h3><ul class="checklist">${st.checklist.map(x=>`<li>${x}</li>`).join('')}</ul></div><div class="box"><h3>피드백 예시</h3><p class="mini">${st.feedbackHelp}</p><label class="label">내 피드백 / 방향 수정</label><textarea id="feedback">${escapeHtml(state.feedback[current]||'')}</textarea><div class="btns"><button class="secondary" onclick="saveFeedback()">피드백 저장</button><button class="ghost" onclick="showHelp(${current})">도움말</button></div></div></div></div></details>
-<details class="workSection" open><summary><span>② Step Prompt</span><span class="sectionMeta">복사해서 ChatGPT에 입력</span></summary><div class="sectionBody"><div class="prompt" id="stepPrompt">${escapeHtml(stepPrompt(current))}</div><div class="btns"><button class="primary" onclick="copyText('stepPrompt')">Step Prompt 복사</button><button class="ghost" onclick="downloadText('step_'+current+'_prompt.md', document.getElementById('stepPrompt').textContent)">Prompt 다운로드</button></div></div></details>
-<details class="workSection" open><summary><span>③ GPT 결과 저장</span><span class="sectionMeta">붙여넣기 · 요약 · 다운로드</span></summary><div class="sectionBody"><textarea id="resultBox" placeholder="ChatGPT가 준 Step ${current} 결과를 여기에 붙여넣으세요.">${escapeHtml(state.results[current]||'')}</textarea><div class="btns"><button class="green" onclick="saveResult()">결과 저장</button><button class="secondary" onclick="downloadStepResult(current)">결과 다운로드</button><button class="ghost" onclick="clearResult()">결과 지우기</button></div><div class="summary" style="margin-top:14px" id="summaryBox">${parseSummary(state.results[current])}</div><div class="warnNote" style="margin-top:14px"><b>판단 포인트:</b> 이 요약을 보고 “이 단계의 결과가 다음 단계에 넘겨도 될 만큼 명확한가?”를 먼저 판단하세요.</div></div></details>
-<details class="workSection"><summary><span>④ 검증 & 수정</span><span class="sectionMeta">Validation / Revision Prompt</span></summary><div class="sectionBody"><div class="tabs"><span class="tab on" onclick="switchPrompt('validation', event)">Validation Prompt</span><span class="tab" onclick="switchPrompt('revision', event)">Revision Prompt</span></div><div class="prompt" id="checkPrompt">${escapeHtml(validationPrompt(current))}</div><div class="btns"><button class="primary" onclick="copyText('checkPrompt')">현재 프롬프트 복사</button><button class="secondary" onclick="downloadStepBundle(current)">검증용 패키지 다운로드</button><button class="ghost" onclick="copyStepBundle(current)">검증용 패키지 복사</button></div><label class="label">검증 결과 붙여넣기</label><textarea id="validationBox" placeholder="ChatGPT 검증 결과를 여기에 붙여넣으세요.">${escapeHtml(state.validations[current]||'')}</textarea><div class="btns"><button class="green" onclick="saveValidation()">검증 결과 저장</button><button class="warn" onclick="markNeedsRevision()">수정 필요 표시</button></div></div></details>
-<details class="workSection" ${current===steps.length-1?'open':''}><summary><span>⑤ Export & 승인</span><span class="sectionMeta">단계 확정 · 최종 산출물</span></summary><div class="sectionBody"><p class="lead">결과와 검증이 만족스럽다면 승인하세요. 승인한 결과는 다음 단계 프롬프트에 자동 포함됩니다.</p><div class="btns"><button class="dark" onclick="approveStep(${current})">Approve Step ${current}</button><button class="ghost" onclick="goPrev()">이전 단계</button><button class="secondary" onclick="goNext()">다음 단계 보기</button></div>${current===steps.length-1?`<div class="downloadPanel"><h3>최종 산출물 다운로드</h3><p class="mini">최종 실행 패키지만 별도로 다운로드하거나, Raw Input부터 전체 단계 이력까지 포함한 Full Pack을 다운로드할 수 있습니다.</p><div class="btns"><button class="dark" onclick="downloadFinalOutput()">최종 산출물만 다운로드</button><button class="green" onclick="downloadFullImplementationPack()">Full Implementation Pack 다운로드</button></div></div>`:''}</div></details>`}
-
-function renderUpgradeNote(i){const notes={1:'사전진단 단계가 추가되었습니다. 이제 “좋은 설계” 전에 6명 관계 역학과 말하기 위험도를 먼저 봅니다.',11:'만족도 대신 협업 접근성 변화를 측정합니다. 좋은 피드백 유도처럼 보이는 문항은 배제합니다.',12:'이 프로그램은 운영자의 절제력이 핵심입니다. 여기서 침묵·냉소·과열 대응을 훈련 자료로 바꿉니다.',13:'케어는 말보다 구조로 느껴져야 합니다. 공간, 좌석, 차/물, 화이트보드 사용 원칙까지 설계합니다.',14:'참여자 안전과 회사 보고를 분리합니다. 개인 발언이 아니라 익명화된 패턴만 보고합니다.',15:'4회 종료 후 사라지지 않도록 부담 없는 2주 리마인드와 업무 전이 질문을 만듭니다.',16:'최종본은 설계 문서가 아니라 실행 패키지입니다. 큐시트·워크시트·보고·측정·후속까지 분리합니다.'};return notes[i]?`<div class="insightNote"><b>v4 강화 포인트:</b> ${notes[i]}</div>`:''}
-function renderRaw(){const r=state.raw;return `<div class="topWorkspace"><div class="heroCard"><div class="heroTop"><div><div class="heroKicker">Foundation</div><h2>Step 0. Raw Input</h2><p class="lead">전체 프로젝트의 기준값을 입력합니다. v4.4에서는 핵심 조건뿐 아니라 관계 역학, 스폰서 기대, 기록/보고 제약, 공간 조건, 후속 전이 조건까지 함께 관리합니다.</p></div><div class="heroActions"><button class="green" onclick="saveRaw()">Raw 저장</button><button class="dark" onclick="approveStep(0)">Approve</button><div class="dropdown"><button class="ghost dropdownBtn" onclick="toggleDropdown('rawMore', event)">더보기</button><div class="menu" id="rawMore"><button onclick="showProjectBoard();closeDropdowns()">프로젝트 보드</button><button onclick="saveProjectToBoard();closeDropdowns()">프로젝트 보드에 저장</button><button onclick="downloadJSON();closeDropdowns()">현재 작업 JSON</button><div class="menuDivider"></div><button class="dangerItem" onclick="resetAll();closeDropdowns()">전체 초기화</button></div></div></div></div><div class="stepMiniBar"><div class="miniMetric"><b>${state.raw.topic?'Yes':'No'}</b><span>주제 입력</span></div><div class="miniMetric"><b>${state.raw.audience?'Yes':'No'}</b><span>대상 입력</span></div><div class="miniMetric"><b>${state.raw.relationship?'Yes':'No'}</b><span>관계 역학</span></div><div class="miniMetric"><b>${state.raw.reporting?'Yes':'No'}</b><span>보고 제약</span></div></div></div><div class="focusPanel"><h3>Raw Input 작성 순서</h3><ol><li>기본 조건을 먼저 입력합니다.</li><li><b>관계 역학/기존 갈등</b>을 반드시 적습니다.</li><li>워크시트·보고 원칙을 미리 정합니다.</li><li>저장 후 Approve를 눌러 Step 1로 갑니다.</li></ol></div></div>
-<div class="formAccordion raw"><details open><summary>기본 세션 조건</summary><div class="inside"><div class="grid2"><div><label class="label">세션 주제</label><input id="topic" value="${escapeAttr(r.topic)}" placeholder="예: Recharging Leadership"><label class="label">왜 지금 필요한가</label><textarea id="why">${escapeHtml(r.why)}</textarea><label class="label">대상</label><input id="audience" value="${escapeAttr(r.audience)}" placeholder="예: 팀장"><label class="label">인원</label><input id="size" value="${escapeAttr(r.size)}" placeholder="예: 6"></div><div><label class="label">시간</label><input id="duration" value="${escapeAttr(r.duration)}" placeholder="예: 50분"><label class="label">회차 수</label><input id="count" value="${escapeAttr(r.count)}" placeholder="예: 4주 과정"><label class="label">원하는 종료 상태</label><textarea id="outcome">${escapeHtml(r.outcome)}</textarea></div></div></div></details>
-<details><summary>맥락 / 포함 / 회피 조건</summary><div class="inside"><div class="grid2"><div><label class="label">비즈니스 / 조직 맥락</label><textarea id="context">${escapeHtml(r.context)}</textarea><label class="label">현재 긴장 / 리스크</label><textarea id="tension">${escapeHtml(r.tension)}</textarea><label class="label">반드시 포함할 것</label><textarea id="include">${escapeHtml(r.include)}</textarea></div><div><label class="label">반드시 피할 것</label><textarea id="avoid">${escapeHtml(r.avoid)}</textarea><label class="label">원하는 톤앤매너</label><textarea id="tone">${escapeHtml(r.tone)}</textarea><label class="label">진행자 역할 / 신뢰 수준</label><textarea id="facilitator">${escapeHtml(r.facilitator)}</textarea></div></div></div></details>
-<details open><summary>v4 고도화 입력값</summary><div class="inside"><div class="grid2"><div><label class="label">관계 역학 / 권력 차이 / 기존 갈등</label><textarea id="relationship" placeholder="예: 핵심부서와 지원부서 간 힘의 차이, 특정 팀장 영향력, 기존 협업 갈등 등">${escapeHtml(r.relationship)}</textarea><label class="label">스폰서 / HR 기대</label><textarea id="sponsor" placeholder="예: 회사 신뢰, 긍정 피드백, 리텐션, 팀장 협업 분위기 개선 등">${escapeHtml(r.sponsor)}</textarea></div><div><label class="label">기록 / 보고 제약</label><textarea id="reporting" placeholder="예: 워크시트 미제출, 익명화된 패턴만 공유, 개인 발언 기록 금지 등">${escapeHtml(r.reporting)}</textarea><label class="label">공간 / 운영 조건</label><textarea id="space" placeholder="예: 회의실 형태, 좌석 배치, 음료, 화이트보드 사용 가능 여부 등">${escapeHtml(r.space)}</textarea><label class="label">후속 전이 조건</label><textarea id="followup" placeholder="예: 2주 후 리마인드 가능 여부, HR 후속 커뮤니케이션 가능 여부 등">${escapeHtml(r.followup)}</textarea></div></div></div></details></div>
-<div class="card"><div class="resultHeader"><h3>Raw Input 요약</h3><div class="actionGroup"><button class="green" onclick="saveRaw()">저장</button><button class="dark" onclick="approveStep(0)">Approve Raw Input</button></div></div><div class="summary"><pre style="white-space:pre-wrap;margin:0;font-family:inherit">${escapeHtml(rawSummary())}</pre></div><div class="warnNote" style="margin-top:12px">승인 후 Step 1로 이동하면, 이 Raw Input을 바탕으로 <b>사전진단과 관계 위험도</b>를 먼저 설계합니다.</div></div>${renderExportCard()}`}
-
-function renderExportCard(){return `<div class="card"><div class="resultHeader"><div><h3>Export / 저장 위치</h3><p class="lead">현재 작업과 프로젝트 보드는 브라우저 localStorage에 저장됩니다. 중요한 결과는 Markdown/JSON으로 내려받아 보관하세요.</p></div><div class="dropdown"><button class="primary dropdownBtn" onclick="toggleDropdown('exportMenu', event)">Export 메뉴</button><div class="menu" id="exportMenu"><button onclick="saveProjectToBoard();closeDropdowns()">현재 프로젝트 보드에 저장</button><button onclick="showProjectBoard();closeDropdowns()">프로젝트 보드 열기</button><div class="menuDivider"></div><button onclick="downloadMarkdown();closeDropdowns()">전체 Markdown 다운로드</button><button onclick="downloadJSON();closeDropdowns()">전체 JSON 다운로드</button><button onclick="downloadFullImplementationPack();closeDropdowns()">Full Implementation Pack</button></div></div></div><div class="storageNote"><b>저장 위치:</b> 입력값과 GPT 결과는 이 HTML 파일 안에 저장되는 것이 아니라, 현재 브라우저의 <b>localStorage</b>에 저장됩니다.<br>같은 브라우저·같은 주소/파일 경로에서 다시 열면 유지되지만, 다른 PC/브라우저에서는 보이지 않습니다.</div></div>`}
-
-function saveRaw(){['topic','why','audience','size','duration','count','context','tension','outcome','include','avoid','tone','facilitator','relationship','sponsor','reporting','space','followup'].forEach(k=>state.raw[k]=document.getElementById(k).value);save();render()}
-function saveFeedback(){state.feedback[current]=document.getElementById('feedback').value;save();renderSteps();notify('피드백 저장 완료')}
-function saveResult(){state.results[current]=document.getElementById('resultBox').value;save();render();notify('결과 저장 완료')}
-function clearResult(){if(confirm('현재 단계 결과를 지울까요?')){state.results[current]='';state.validations[current]='';state.approved[current]=false;render()}}
-function saveValidation(){state.validations[current]=document.getElementById('validationBox').value;save();render();notify('검증 결과 저장 완료')}
-function markNeedsRevision(){state.approved[current]=false;save();notify('수정 필요로 표시했습니다');render()}
-function approveStep(i){if(i===0)saveRaw(); else {state.results[i]=document.getElementById('resultBox')?document.getElementById('resultBox').value:state.results[i];state.validations[i]=document.getElementById('validationBox')?document.getElementById('validationBox').value:state.validations[i];}state.approved[i]=true;if(i<steps.length-1){current=i+1;state.current=current}save();render()}
-function goPrev(){if(current>0){current--;state.current=current;render()}}
-function goNext(){if(current<steps.length-1){current++;state.current=current;render()}}
-function switchPrompt(type, ev){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));if(ev&&ev.target)ev.target.classList.add('on');document.getElementById('checkPrompt').textContent= type==='validation'? validationPrompt(current): revisionPrompt(current)}
-function copyText(id){const txt=document.getElementById(id).textContent;navigator.clipboard.writeText(txt).then(()=>notify('복사 완료'))}
-function escapeHtml(s){return String(s||'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}
-function escapeAttr(s){return String(s||'').replace(/"/g,'&quot;')}
-function resetAll(){if(confirm('모든 입력과 결과를 삭제할까요?')){state=defaultState();current=0;localStorage.removeItem(STORAGE);render()}}
-function buildMarkdown(){let md=`# Purpose-Adaptive Session Design OS v4 Export\n\n## Core Principles\n${CORE_PRINCIPLES.map(x=>`- ${x}`).join('\n')}\n\n## Raw Input\n\n\`\`\`\n${rawSummary()}\n\`\`\`\n`;steps.slice(1).forEach(st=>{md+=`\n\n---\n\n## Step ${st.id}. ${st.title}\n\n### Feedback\n${state.feedback[st.id]||'-'}\n\n### Result\n${state.results[st.id]||'-'}\n\n### Validation\n${state.validations[st.id]||'-'}\n`});return md}
-function copyMarkdown(){navigator.clipboard.writeText(buildMarkdown()).then(()=>notify('Markdown 복사 완료'))}
-function downloadJSON(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='session_design_pipeline_v4_export.json';a.click();URL.revokeObjectURL(a.href)}
-function downloadMarkdown(){const blob=new Blob([buildMarkdown()],{type:'text/markdown'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='session_design_pipeline_v4_export.md';a.click();URL.revokeObjectURL(a.href)}
-function safeFileName(s){return String(s||'output').replace(/[\/:*?"<>|]+/g,'').replace(/\s+/g,'_').slice(0,80)}
-function downloadText(filename, text, type='text/markdown'){const blob=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
-function stepResultMarkdown(i){if(i===0){return `# Step 0. Raw Input
-
-## Raw Context
-
-\`\`\`
-${rawSummary()}
-\`\`\`
-`}const st=steps[i];return `# Step ${st.id}. ${st.title}
-
-## 기대 산출물
-${st.output}
-
-## 사용자 피드백 / 추가 디렉션
-${state.feedback[i]||'(없음)'}
-
-## 최종 산출물
-${state.results[i]||'(아직 저장된 결과 없음)'}
-`}
-function stepBundleMarkdown(i){const st=steps[i];return `# External Validation Bundle — Step ${st.id}. ${st.title}
-
-이 파일은 같은 채팅창 편향을 줄이기 위해 새 ChatGPT 대화창에 업로드해 검증하도록 만든 단계별 검증 패키지입니다.
-
-## 검증 요청문
-아래 Step ${st.id}: ${st.title} 산출물을 냉정하게 검증하세요.
-
-### 검증 기준
-${st.checklist.map((c,idx)=>`${idx+1}. ${c}`).join('\n')}
-
-### 추가 검증 관점
-- 안전하지만 밋밋하지 않은가?
-- 참여자 언어와 HR/스폰서 언어가 섞이지 않았는가?
-- 운영자가 실제 현장에서 멈출 수 있는 기준이 있는가?
-- 기록/보고 리스크가 통제되어 있는가?
-- 6명 소규모 집단의 관계 역학을 충분히 고려했는가?
-
----
-
-## Raw Input
-
-\`\`\`
-${rawSummary()}
-\`\`\`
-
----
-
-## 이전 단계 결과
-${getPrevResults(i).replace(`[Raw Input]\n${rawSummary()}`,'(Raw Input은 위에 별도 기재)') || '(없음)'}
-
----
-
-## 이 단계 사용자 피드백
-${state.feedback[i]||'(없음)'}
-
----
-
-## Step ${st.id} 산출물
-${state.results[i]||'(아직 저장된 결과 없음)'}
-
----
-
-## 내부 검증 결과 / 메모
-${state.validations[i]||'(아직 저장된 검증 결과 없음)'}
-`}
-function downloadStepResult(i){const st=steps[i];downloadText(`step_${String(i).padStart(2,'0')}_${safeFileName(st.title)}_result.md`, stepResultMarkdown(i))}
-function downloadStepBundle(i){const st=steps[i];downloadText(`step_${String(i).padStart(2,'0')}_${safeFileName(st.title)}_validation_bundle.md`, stepBundleMarkdown(i))}
-function copyStepBundle(i){navigator.clipboard.writeText(stepBundleMarkdown(i)).then(()=>alert('검증용 패키지 복사 완료'))}
-function downloadFinalOutput(){const i=steps.length-1;const st=steps[i];downloadText(`FINAL_${safeFileName(state.raw.topic||'session')}_output.md`, state.results[i]||'(마지막 단계 결과가 아직 저장되지 않았습니다.)')}
-function buildFullImplementationPack(){let md=`# Final Implementation Pack Export
-
-## 저장/이동 안내
-이 웹앱의 입력값과 GPT 결과는 현재 브라우저 localStorage에 저장됩니다. 다른 PC나 브라우저에서는 자동으로 보이지 않으므로 이 파일을 보관하세요.
-
-## Core Principles
-${CORE_PRINCIPLES.map(x=>`- ${x}`).join('\n')}
-
-## Raw Input
-
-\`\`\`
-${rawSummary()}
-\`\`\`
-`;steps.slice(1).forEach(st=>{md+=`
-
----
-
-# Step ${st.id}. ${st.title}
-
-## Goal
-${st.goal}
-
-## Expected Output
-${st.output}
-
-## Feedback
-${state.feedback[st.id]||'(없음)'}
-
-## Result
-${state.results[st.id]||'(저장된 결과 없음)'}
-
-## Validation
-${state.validations[st.id]||'(저장된 검증 결과 없음)'}
-
-## Approved
-${state.approved[st.id]?'Yes':'No'}
-`});return md}
-function downloadFullImplementationPack(){downloadText(`FULL_${safeFileName(state.raw.topic||'session')}_implementation_pack.md`, buildFullImplementationPack())}
-
-function deepClone(obj){return JSON.parse(JSON.stringify(obj||{}))}
-function boardLoad(){try{return JSON.parse(localStorage.getItem(PROJECT_STORAGE))||[]}catch(e){return[]}}
-function boardSave(list){localStorage.setItem(PROJECT_STORAGE,JSON.stringify(list||[]))}
-function projectProgress(st){const approved=(st&&st.approved)||{};const done=steps.filter(x=>approved[x.id]).length;return {done,total:steps.length,pct:Math.round(done/steps.length*100)}}
-function projectTitleFromState(st){return (st&&st.projectName)||((st&&st.raw&&st.raw.topic)||'Untitled Project')}
-function updateCurrentProjectBadge(){
-  const el=document.getElementById('currentProjectBadge');
+const slotNames=['Opening','Safety','Core Activity','Reflection','Sharing','Closing','Follow-up'];
+let state=load();init();
+function base(){return{brief:{name:'',audience:'',sessionCount:'3회차, 각 60분',officialGoal:'',hiddenJob:'',context:'',successVoice:'',failureRisk:'',avoid:'',reporting:''},questions:defaultQuestions.map((q,i)=>({id:i+1,q:q[0],hint:q[1],answer:''})),participants:[emptyP(1),emptyP(2),emptyP(3)],frames:[emptyFrame(1),emptyFrame(2),emptyFrame(3)],decisions:[],slides:[emptySlide(1),emptySlide(2),emptySlide(3)],slots:[],feedback:{raw:'',analysis:''},emotionHypothesis:{raw:'',parsed:null,appliedAt:null},format:{complexity:'중간',energy:'낮음',safety:'낮음',goal:'공감 형성',output:''},tension:{company:'',participant:'',challenge:''},meta:{projectId:null,updatedAt:null}}}
+function emptyP(i){return{id:'P'+String(i).padStart(2,'0'),age:'',gender:'',year:'',role:'',team:'',emotion:'',safety:'중간',resistance:'',risk:''}}
+function emptyFrame(i){return{round:i,purpose:'',start:'',end:'',experience:'',output:''}}
+function emptySlide(i){return{no:i,title:'',story:'',note:''}}
+function emptySlots(session){return slotNames.map(n=>({session,name:n,done:false,decision:'',clear:'',prompt:'',risk:''}))}
+function load(){try{return merge(base(),JSON.parse(localStorage.getItem(STORE)||'{}'))}catch(e){return base()}}
+function merge(a,b){if(Array.isArray(a))return Array.isArray(b)?b:a;if(a&&typeof a==='object'){let o={...a};if(b&&typeof b==='object')Object.keys(b).forEach(k=>o[k]=merge(a[k],b[k]));return o}return b!==undefined?b:a}
+function save(){localStorage.setItem(STORE,JSON.stringify(state));updateMini();markDone()}
+function init(){ensureSlots();renderAll();bindInputs();updateMini();markDone();}
+function bindInputs(){document.querySelectorAll('[data-key]').forEach(el=>{const key=el.dataset.key;el.value=get(key)||'';el.addEventListener('input',()=>{set(key,el.value);save()});el.addEventListener('change',()=>{set(key,el.value);save()})})}
+function get(path){return path.split('.').reduce((o,k)=>o?o[k]:undefined,state)}
+function set(path,val){let parts=path.split('.'),o=state;while(parts.length>1){let k=parts.shift();if(!o[k])o[k]={};o=o[k]}o[parts[0]]=val}
+window.go=function(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));let p=document.getElementById(id); if(!p)p=document.getElementById('overview');p.classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id)); if(id==='runbook')compileRunbook(false); if(id==='board')renderBoard(); window.scrollTo({top:0,behavior:'smooth'})}
+function updateMini(){document.getElementById('miniName').textContent=state.brief.name||'Untitled Project';const pct=completion();document.getElementById('miniMeta').textContent=`진행률 ${pct}% · ${state.meta.updatedAt?new Date(state.meta.updatedAt).toLocaleString('ko-KR'):'저장 전'}`;document.getElementById('miniProgress').style.width=pct+'%';renderDash()}
+function completion(){let checks=[state.brief.name,state.brief.officialGoal,state.questions.some(q=>q.answer),(state.emotionHypothesis&&state.emotionHypothesis.parsed)||state.participants.some(p=>p.emotion||p.role),state.frames.some(f=>f.purpose),state.decisions.length,state.slides.some(s=>s.title||s.story||s.message||s.script),state.slots.some(s=>s.done),state.feedback.raw,state.format.output];return Math.round(checks.filter(Boolean).length/checks.length*100)}
+function markDone(){const map={brief:state.brief.name&&state.brief.officialGoal,questions:state.questions.some(q=>q.answer),emotion:(state.emotionHypothesis&&state.emotionHypothesis.parsed)||state.participants.some(p=>p.emotion||p.role),frame:state.frames.some(f=>f.purpose),lens:state.decisions.length,story:state.slides.some(s=>s.title||s.story||s.message||s.script),slots:state.slots.some(s=>s.done),feedback:state.feedback.raw,format:state.format.output,runbook:completion()>50};document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('done',!!map[b.dataset.page]))}
+function renderDash(){let el=document.getElementById('dashMetrics'); if(!el)return; const data=[['진행률',completion()+'%'],['질문 답변',state.questions.filter(q=>q.answer).length+'/'+state.questions.length],['결정 로그',state.decisions.length+'개'],['완료 슬롯',state.slots.filter(s=>s.done).length+'/'+state.slots.length]];el.innerHTML=data.map(d=>`<div class="metric"><b>${d[1]}</b><span>${d[0]}</span></div>`).join('');renderDecisionPreview()}
+function renderDecisionPreview(){let el=document.getElementById('decisionPreview'); if(!el)return;el.innerHTML=state.decisions.slice(-4).reverse().map(d=>`<div class="decision"><b>${esc(d.title||'Decision')}</b><div class="muted">${esc(d.body||'')}</div></div>`).join('')||'<div class="note">아직 확정한 결정이 없습니다.</div>'}
+function renderAll(){renderQuestions();renderParticipants();renderFrames();renderSlides();renderSlots();renderDecisions();renderHypothesisVisuals();}
+function renderQuestions(){let el=document.getElementById('questionList');if(!el)return;el.innerHTML=state.questions.map((q,i)=>`<div class="questionCard"><div class="q">Q${i+1}. ${esc(q.q)}</div><div class="hint">${esc(q.hint)}</div><label>내 답변</label><textarea oninput="state.questions[${i}].answer=this.value;save()">${esc(q.answer)}</textarea></div>`).join('')}
+window.addCustomQuestion=function(){state.questions.push({id:Date.now(),q:'새 질문을 입력하세요',hint:'이 질문이 왜 필요한지 적어보세요.',answer:''});renderQuestions();save()}
+function renderParticipants(){let tb=document.querySelector('#participantTable tbody'); if(!tb)return;tb.innerHTML=state.participants.map((p,i)=>`<tr><td><input value="${esc(p.id)}" oninput="state.participants[${i}].id=this.value;save()"></td><td><input value="${esc(p.age)}" oninput="state.participants[${i}].age=this.value;save()"></td><td><select onchange="state.participants[${i}].gender=this.value;save()"><option ${sel(p.gender,'')}></option><option ${sel(p.gender,'여성')}>여성</option><option ${sel(p.gender,'남성')}>남성</option><option ${sel(p.gender,'기타/비공개')}>기타/비공개</option></select></td><td><input value="${esc(p.year)}" oninput="state.participants[${i}].year=this.value;save()"></td><td><input value="${esc(p.role)}" oninput="state.participants[${i}].role=this.value;save()"></td><td><input value="${esc(p.team)}" oninput="state.participants[${i}].team=this.value;save()"></td><td><input value="${esc(p.emotion)}" oninput="state.participants[${i}].emotion=this.value;save()" placeholder="피로, 냉소"></td><td><select onchange="state.participants[${i}].safety=this.value;save()"><option ${sel(p.safety,'낮음')}>낮음</option><option ${sel(p.safety,'중간')}>중간</option><option ${sel(p.safety,'높음')}>높음</option></select></td><td><input value="${esc(p.resistance)}" oninput="state.participants[${i}].resistance=this.value;save()"></td><td><input value="${esc(p.risk)}" oninput="state.participants[${i}].risk=this.value;save()"></td><td><button class="danger" onclick="removeParticipant(${i})">삭제</button></td></tr>`).join('')}
+window.addParticipant=function(){state.participants.push(emptyP(state.participants.length+1));renderParticipants();save()}
+window.removeParticipant=function(i){state.participants.splice(i,1);renderParticipants();save()}
+window.downloadCSVTemplate=function(){download('participant_template.csv','ID,나이,성별,입사년도,직급/역할,부서,추정 감정/단서,말하기 안전감 추정,예상 저항 가설,관계/권력 리스크 단서\nP01,45,여성,2012,팀장,영업,"피로;냉소 가능성",낮음,"또 교육인가","핵심부서 영향력"','text/csv')}
+window.analyzeEmotion=function(){let ps=state.participants;let low=ps.filter(p=>p.safety==='낮음').length;let emo=ps.map(p=>p.emotion+' '+p.resistance+' '+p.risk).join(' ');let risk=0;risk+=low*18;risk+=(emo.match(/냉소|불신|방어|피로|무기력|불안/g)||[]).length*9;risk=Math.min(100,risk);document.getElementById('riskScore').textContent=risk;let level=risk>=70?'높음':risk>=40?'중간':'낮음';document.getElementById('emotionSignals').innerHTML=`<span class="pill ${risk>=70?'red':risk>=40?'amber':'green'}">Context Signal ${level}</span><ul class="miniList"><li>안전감 낮음: ${low}명</li><li>주요 감정 키워드: ${esc((emo.match(/냉소|불신|방어|피로|무기력|불안|기대|부담/g)||[]).slice(0,8).join(', ')||'미입력')}</li><li>권장: 전체 공유보다 개인 작성/선택 공유 중심</li></ul>`;document.getElementById('emotionQuestions').innerHTML=`<ul class="miniList"><li>이들의 냉소는 변화 자체에 대한 것인가, 반복된 미이행 경험 때문인가?</li><li>안전감이 올라가기 전에 공유를 요구하는 슬롯은 없는가?</li><li>감정 고백보다 상황 카드/구조 분석이 더 적합하지 않은가?</li></ul>`;save()}
+function renderFrames(){let tb=document.querySelector('#frameTable tbody'); if(!tb)return;tb.innerHTML=state.frames.map((f,i)=>`<tr><td><input value="${esc(f.round)}" oninput="state.frames[${i}].round=this.value;save()"></td><td><textarea oninput="state.frames[${i}].purpose=this.value;save()">${esc(f.purpose)}</textarea></td><td><textarea oninput="state.frames[${i}].start=this.value;save()">${esc(f.start)}</textarea></td><td><textarea oninput="state.frames[${i}].end=this.value;save()">${esc(f.end)}</textarea></td><td><textarea oninput="state.frames[${i}].experience=this.value;save()">${esc(f.experience)}</textarea></td><td><textarea oninput="state.frames[${i}].output=this.value;save()">${esc(f.output)}</textarea></td><td><button class="danger" onclick="removeFrameRow(${i})">삭제</button></td></tr>`).join('')}
+window.addFrameRow=function(){state.frames.push(emptyFrame(state.frames.length+1));renderFrames();ensureSlots();renderSlots();save()}
+window.removeFrameRow=function(i){state.frames.splice(i,1);renderFrames();ensureSlots();renderSlots();save()}
+window.createFrameReviewCards=function(){let risk=[];state.frames.forEach((f,i)=>{if(!f.purpose)risk.push([`회차 ${i+1}`,'핵심 목적이 비어 있어 이후 스토리와 슬롯이 흔들릴 수 있음.']);if((f.purpose||'').includes('실패'))risk.push([`회차 ${i+1}`,'“실패” 표현은 방어를 만들 수 있음. “막히는 순간”으로 완화 가능.']);if(!f.end)risk.push([`회차 ${i+1}`,'종료 상태가 없으면 세션의 감정선 변화가 보이지 않음.']);});document.getElementById('reviewCards').innerHTML=(risk.length?risk:[['전체','큰 구조는 시작 가능. 다만 감정선과 종료 상태를 더 날카롭게 점검할 것.']]).map(r=>`<div class="decision"><b>${esc(r[0])}</b><div>${esc(r[1])}</div><div class="actions" style="margin-top:8px"><button class="secondary" onclick="decisionFromText('${escAttr(r[0])}','${escAttr(r[1])}')">결정 로그로 이동</button><button class="ghost">보류</button></div></div>`).join('')}
+window.decisionFromText=function(t,b){state.decisions.push({title:t,body:b,source:'Review Card',date:new Date().toISOString()});renderDecisions();save();toast('Decision Log에 추가했습니다')}
+window.confirmFrameVersion=function(){state.decisions.push({title:'Big Frame 확정',body:'현재 회차별 큰 프레임을 기준안으로 확정함.',source:'Big Frame',date:new Date().toISOString()});renderDecisions();save();toast('프레임을 확정했습니다')}
+window.checkImpact=function(){document.getElementById('impactBox').innerHTML='<ul class="miniList"><li>Story Cards의 전체 흐름 재점검</li><li>변경된 회차의 Slot Clear Condition 재점검</li><li>Final PPT Script 재조립 필요</li><li>Participant DB의 감정 리스크와 충돌 여부 확인</li></ul>'}
+function renderDecisions(){let el=document.getElementById('decisionList');if(!el)return;el.innerHTML=state.decisions.map((d,i)=>`<div class="decision"><b>${esc(d.title)}</b><div>${esc(d.body)}</div><div class="muted" style="font-size:11px;margin-top:5px">${esc(d.source||'Manual')}</div><button class="danger" style="margin-top:8px" onclick="removeDecision(${i})">삭제</button></div>`).join('')||'<div class="note">확정한 결정이 없습니다.</div>';renderDecisionPreview()}
+window.addDecision=function(){let title=prompt('결정 제목');if(!title)return;let body=prompt('결정 내용 / 이유')||'';state.decisions.push({title,body,source:'Manual',date:new Date().toISOString()});renderDecisions();save()}
+window.removeDecision=function(i){state.decisions.splice(i,1);renderDecisions();save()}
+function renderSlides(){
+  let el=document.getElementById('slideList');
   if(!el)return;
-  const title=projectTitleFromState(state);
-  const prog=projectProgress(state);
-  const loc=currentStepTitle(state);
-  el.innerHTML=`현재 프로젝트: <b>${escapeHtml(title)}</b><br><span>${escapeHtml(loc)} · 진행률 ${prog.pct}%</span>`;
+  el.innerHTML=`<div class="storyBoard">${state.slides.map((s,i)=>{
+    const story=(s.story!==undefined?s.story:(s.message||s.script||''));
+    const note=(s.note!==undefined?s.note:(s.role||s.transition||''));
+    return `<div class="storyCard"><div class="storyCardHead"><div><span class="storyNum">CARD ${i+1}</span><h4>${esc(s.title||'Story Card '+(i+1))}</h4></div><div class="actions"><button class="ghost" onclick="moveStoryCard(${i},-1)">↑</button><button class="ghost" onclick="moveStoryCard(${i},1)">↓</button><button class="danger" onclick="removeSlide(${i})">삭제</button></div></div><label>카드 제목</label><input value="${esc(s.title||'')}" placeholder="예: 왜 지금 이 이야기를 해야 하는가" oninput="state.slides[${i}].title=this.value;save()"><label>스토리 메모</label><textarea class="storyText" placeholder="이 카드에서 말하고 싶은 흐름을 줄글로 적으세요. 완성된 PPT 문장이 아니어도 됩니다." oninput="state.slides[${i}].story=this.value;save()">${esc(story)}</textarea><label>생각 메모 / 보류 질문</label><textarea class="storyNote" placeholder="아직 고민 중인 표현, 리스크, 다음 카드와의 연결 질문 등을 적으세요." oninput="state.slides[${i}].note=this.value;save()">${esc(note)}</textarea></div>`
+  }).join('')}</div>`;
 }
-function newProject(){
-  const hasWork=(state.raw&&Object.values(state.raw).some(v=>String(v||'').trim()))||Object.values(state.results||{}).some(v=>String(v||'').trim());
-  if(hasWork){
-    const ok=confirm('새 프로젝트를 시작할까요? 현재 작업은 먼저 “현재 프로젝트 저장”으로 보드에 저장해두는 것이 안전합니다.');
-    if(!ok)return;
+window.addSlide=function(){state.slides.push(emptySlide(state.slides.length+1));renderSlides();save()}
+window.removeSlide=function(i){state.slides.splice(i,1);renderSlides();save()}
+window.moveStoryCard=function(i,dir){const j=i+dir;if(j<0||j>=state.slides.length)return;const tmp=state.slides[i];state.slides[i]=state.slides[j];state.slides[j]=tmp;renderSlides();save()}
+function ensureSlots(){let n=Math.max(1,state.frames.length||3);for(let s=0;s<n;s++){if(!state.slots.some(x=>x.session===s))state.slots.push(...emptySlots(s))}state.slots=state.slots.filter(x=>x.session<n)}
+function renderSlots(){ensureSlots();let tabs=document.getElementById('sessionTabs'), cont=document.getElementById('slotContainer');if(!tabs||!cont)return;tabs.innerHTML=state.frames.map((f,i)=>`<button class="tab ${activeSession===i?'active':''}" onclick="activeSession=${i};renderSlots()">${i+1}회차</button>`).join('');let rows=state.slots.filter(s=>s.session===activeSession);cont.innerHTML=rows.map((s,idx)=>{let global=state.slots.indexOf(s);return `<details class="slot"><summary><span>${esc(s.name)}</span><span class="status ${s.done?'done':''}">${s.done?'CLEAR':'OPEN'}</span></summary><div class="slotBody"><div class="grid g2"><div><label>Mission / 목적</label><textarea oninput="state.slots[${global}].prompt=this.value;save()">${esc(s.prompt)}</textarea><label>Clear Condition</label><textarea oninput="state.slots[${global}].clear=this.value;save()">${esc(s.clear)}</textarea></div><div><label>My Decision</label><textarea oninput="state.slots[${global}].decision=this.value;save()">${esc(s.decision)}</textarea><label>Risk / 주의점</label><textarea oninput="state.slots[${global}].risk=this.value;save()">${esc(s.risk)}</textarea><div class="actions" style="margin-top:10px"><button class="green" onclick="state.slots[${global}].done=true;renderSlots();save()">Clear</button><button class="ghost" onclick="state.slots[${global}].done=false;renderSlots();save()">Open</button></div></div></div></div></details>`}).join('')}
+window.syncSessionsFromFrame=function(){ensureSlots();renderSlots();save();toast('회차를 동기화했습니다')}
+function slotDraftPromptText(){ensureSlots();let session=activeSession;let frame=state.frames[session]||{};let sessionSlots=state.slots.filter(x=>x.session===session);return `당신은 조직문화/리더십 세션 설계를 돕는 비판적 사고 파트너이자 세션 구조화 전문가입니다.
+
+중요 원칙:
+- 아래 정보를 바탕으로 현재 선택된 ${session+1}회차의 슬롯 초안을 만드세요.
+- 답을 완성본처럼 단정하지 말고, 사용자가 수정할 수 있는 초안으로 작성하세요.
+- 지금까지 입력된 Project Brief, Question Board, Participant Context, Emotion Hypothesis, Big Frame, Story Cards, Decision Log를 모두 반영하세요.
+- 각 슬롯의 목적, 완료 조건, 사용자가 최종 판단해야 할 결정, 리스크/주의점을 분리하세요.
+- 전체 공유, 감정 고백, 회사 메시지처럼 들리는 표현은 Participant Context와 감정 가설을 고려해 조심스럽게 다루세요.
+- 반드시 아래 JSON 형식 하나로만 출력하세요. JSON 밖에 설명 문장을 쓰지 마세요.
+
+[현재 대상 회차]
+${session+1}회차
+- 목적: ${frame.purpose||'-'}
+- 시작 상태: ${frame.start||'-'}
+- 종료 상태: ${frame.end||'-'}
+- 주요 경험: ${frame.experience||'-'}
+- 산출물: ${frame.output||'-'}
+
+[현재 슬롯 목록]
+${sessionSlots.map(x=>`- ${x.name}`).join('\n')}
+
+[전체 입력 맥락]
+${slotContextPack()}
+
+[JSON 출력 형식]
+{
+  "session": ${session+1},
+  "draft_note": "이 회차 슬롯 초안의 전체 방향",
+  "slots": [
+    {
+      "name": "Opening",
+      "mission": "이 슬롯의 목적/미션",
+      "clear_condition": "이 슬롯이 완료되었다고 볼 수 있는 조건",
+      "my_decision": "사용자가 검토 후 수정할 수 있는 초안 결정사항/진행 방향",
+      "risk": "현장에서 주의할 리스크와 피해야 할 표현"
+    }
+  ],
+  "questions_for_user": ["사용자가 직접 판단해야 할 질문"]
+}` }
+window.showSlotDraftPrompt=function(){openModal('슬롯 질문 프롬프트',slotDraftPromptText())}
+function normalizeSlotName(v){return String(v||'').toLowerCase().replace(/[^a-z0-9가-힣]/g,'')}
+function findSlotIndex(session,name){let target=normalizeSlotName(name);let rows=state.slots.map((x,i)=>({x,i})).filter(o=>o.x.session===session);let exact=rows.find(o=>normalizeSlotName(o.x.name)===target);if(exact)return exact.i;let contains=rows.find(o=>target&&normalizeSlotName(o.x.name).includes(target)||target.includes(normalizeSlotName(o.x.name)));if(contains)return contains.i;return -1}
+window.applySlotDraftResult=function(){let el=document.getElementById('slotDraftJsonInput');let raw=el?el.value:'';try{let parsed=extractJson(raw);let targetSession=Math.max(0,Math.min(state.frames.length-1,(parseInt(parsed.session,10)||activeSession+1)-1));let applied=0;(parsed.slots||[]).forEach((item,idx)=>{let gi=findSlotIndex(targetSession,item.name);if(gi<0){let rows=state.slots.filter(x=>x.session===targetSession);let fallback=rows[idx];if(fallback)gi=state.slots.indexOf(fallback)}if(gi>=0){state.slots[gi].prompt=item.mission||item.purpose||item.prompt||state.slots[gi].prompt||'';state.slots[gi].clear=item.clear_condition||item.clear||state.slots[gi].clear||'';state.slots[gi].decision=item.my_decision||item.decision||item.draft||state.slots[gi].decision||'';state.slots[gi].risk=item.risk||item.watchout||state.slots[gi].risk||'';state.slots[gi].done=false;applied++;}});if(parsed.draft_note){state.decisions.push({title:`${targetSession+1}회차 Slot Draft 방향`,body:parsed.draft_note,source:'Slot Draft Import',date:new Date().toISOString()});renderDecisions();}activeSession=targetSession;renderSlots();save();toast(`${applied}개 슬롯에 GPT 초안을 반영했습니다. 이제 직접 수정하세요.`)}catch(e){alert('JSON을 읽을 수 없습니다. GPT 결과가 JSON 형식인지 확인해 주세요.\n\n오류: '+e.message)}}
+window.clearSlotDraftInput=function(){let el=document.getElementById('slotDraftJsonInput');if(el)el.value='';}
+function slotContextPack(){let hypo=state.emotionHypothesis&&state.emotionHypothesis.parsed;let hypoText=hypo?JSON.stringify(hypo,null,2):'(아직 적용된 감정 가설 없음)';return `${contextPack()}
+
+Story Cards:
+${state.slides.map((s,i)=>`Card ${i+1}. ${s.title||'-'}\nStory: ${s.story||s.message||'-'}\nNote: ${s.note||'-'}`).join('\n')}
+
+Employee Feedback:
+${state.feedback.raw||'-'}
+
+Feedback Analysis:
+${state.feedback.analysis||'-'}
+
+Format Advisor:
+${state.format.output||'-'}
+
+Emotion Hypothesis JSON:
+${hypoText}
+
+Existing Slot Inputs:
+${state.slots.map(x=>`${x.session+1}회차 / ${x.name} / mission:${x.prompt||'-'} / clear:${x.clear||'-'} / decision:${x.decision||'-'} / risk:${x.risk||'-'}`).join('\n')}` }
+window.analyzeFeedback=function(){let raw=state.feedback.raw||'';let list=[];if(/회사|해줄|바뀌/.test(raw))list.push(['회사 신뢰','회사 약속처럼 들리지 않도록, 통제 가능한 범위의 행동으로 제한해야 함.']);if(/시간|바쁘|피곤|업무/.test(raw))list.push(['에너지','초반 설명을 줄이고, 작성/정리 중심으로 설계해야 함.']);if(/말해도|안 바뀜|소용/.test(raw))list.push(['후속성','후속 조치는 큰 약속보다 낮은 압박의 리마인드로 설계해야 함.']);if(!list.length)list.push(['추가 질문','이 피드백이 불만인지, 피로인지, 기대의 표현인지 분리해서 봐야 함.']);state.feedback.analysis=list.map(x=>`${x[0]}: ${x[1]}`).join('\n');document.getElementById('feedbackOutput').innerHTML=list.map(x=>`<div class="decision"><b>${x[0]}</b><div>${x[1]}</div></div>`).join('');save()}
+window.adviseFormat=function(){let f=state.format;let rec='';if(f.safety==='낮음'||f.energy==='낮음')rec='개인 작성 → 상황 카드 → 선택 공유';else if(f.goal==='정보 이해')rec='짧은 PPT 설명 + 사례 카드';else if(f.goal==='감정 환기')rec='짧은 영상보다 개인 반응 카드';else rec='소그룹 활동 + 전체 요약';state.format.output=`추천: ${rec}\n이유: 안전감/에너지/목표를 기준으로 볼 때, 참여자에게 부담을 낮추면서도 판단할 여지를 주는 형식이 적합합니다.`;document.getElementById('formatOutput').innerHTML=`<div class="decision"><b>${esc(rec)}</b><div>안전감 ${esc(f.safety)}, 에너지 ${esc(f.energy)}, 목표 ${esc(f.goal)} 기준의 추천입니다.</div></div><ul class="miniList"><li>활동은 행동 전이가 필요할 때 적합</li><li>영상은 감정 몰입에는 좋지만 냉소가 높으면 회사 메시지처럼 보일 수 있음</li><li>PPT는 복잡한 정보를 정리할 때만 짧게 사용</li></ul>`;save()}
+window.suggestBriefFields=function(){let missing=[];if(!state.brief.context)missing.push('조직 맥락: 왜 지금 이 세션이 필요한가');if(!state.brief.reporting)missing.push('기록/보고 원칙: 개인 발언 기록 여부와 익명화 기준');if(!state.brief.failureRisk)missing.push('실패 리스크: 참여자가 냉소적으로 반응할 가능성');if(!state.brief.successVoice)missing.push('성공 후 참여자 속마음: 만족도보다 기억 문장');if(!state.brief.avoid)missing.push('피해야 할 것: 강제 공유, 회사 칭찬 유도, 감정 고백 등');document.getElementById('briefSuggestions').innerHTML=missing.length?'<ul class="miniList">'+missing.map(x=>`<li>${x}</li>`).join('')+'</ul>':'현재 기본정보는 주요 항목이 비교적 잘 채워져 있습니다.'}
+
+window.switchHypoTab=function(id,btn){document.querySelectorAll('.hypoPane').forEach(x=>x.classList.add('hide'));let pane=document.getElementById('hypo_'+id);if(pane)pane.classList.remove('hide');document.querySelectorAll('.hypoTab').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');if(id==='prompt')renderEmotionHypothesisPrompt();if(id==='result')renderHypothesisVisuals();}
+function emotionHypothesisPromptText(){return `당신은 조직문화/리더십 세션 설계를 돕는 비판적 사고 파트너이자 그룹 다이내믹 분석가입니다.
+
+중요 전제:
+- 아래 정보는 실제 감정 측정 데이터가 아닙니다.
+- 참여자의 현재 감정을 단정하지 마세요.
+- 제한된 맥락을 바탕으로 세션 설계를 위한 "감정 가설"만 만들어 주세요.
+- 강도(level)와 확신도(confidence)를 반드시 분리하세요.
+- 확신도가 낮은 가설은 낮다고 표시하고, 확인 질문을 제안하세요.
+
+요청:
+1. 가능한 감정 가설을 도출하세요.
+2. 각 감정 가설의 강도(level 1~5)와 확신도(confidence 1~5)를 분리하세요.
+3. 설계 리스크와 피해야 할 표현/활동을 제안하세요.
+4. 세션 진입 방식과 감정 전환 목표를 제안하세요.
+5. 결과는 아래 JSON 형식 하나로만 주세요. 설명 문장은 JSON 밖에 쓰지 마세요.
+
+[현재 입력 정보]
+${contextPack()}
+
+[JSON 출력 형식]
+{
+  "hypotheses": [
+    {
+      "emotion": "피로",
+      "level": 4,
+      "confidence": 3,
+      "reason": "이 가설을 세운 근거",
+      "design_implication": "세션 설계에 미치는 영향"
+    }
+  ],
+  "risks": [
+    {
+      "title": "리스크 제목",
+      "detail": "어떤 상황에서 문제가 될 수 있는지",
+      "question": "사용자가 다시 생각해야 할 질문",
+      "revision_hint": "수정 방향"
+    }
+  ],
+  "questions_to_ask": ["확인해야 할 질문"],
+  "recommended_entry": "추천 세션 진입 방식",
+  "avoid": ["피해야 할 표현 또는 활동"],
+  "guardrails": ["설계 안전장치"]
+}`}
+window.renderEmotionHypothesisPrompt=function(){let el=document.getElementById('emotionPromptBox');if(el)el.textContent=emotionHypothesisPromptText();}
+window.copyEmotionPrompt=function(){renderEmotionHypothesisPrompt();navigator.clipboard.writeText(document.getElementById('emotionPromptBox').textContent).then(()=>toast('감정 가설 프롬프트 복사 완료'))}
+window.showEmotionHypothesisPrompt=function(){openModal('감정 가설 프롬프트',emotionHypothesisPromptText())}
+function extractJson(text){let t=String(text||'').trim();let m=t.match(/```(?:json)?\s*([\s\S]*?)```/i);if(m)t=m[1].trim();let start=t.indexOf('{'), end=t.lastIndexOf('}');if(start>=0&&end>start)t=t.slice(start,end+1);return JSON.parse(t)}
+window.applyHypothesisResult=function(){let raw=document.getElementById('hypothesisJsonInput').value;try{let parsed=extractJson(raw);state.emotionHypothesis={raw,parsed,appliedAt:new Date().toISOString()};save();renderHypothesisVisuals();toast('감정 가설 결과를 적용했습니다')}catch(e){alert('JSON을 읽을 수 없습니다. GPT 결과가 JSON 형식인지 확인해 주세요.\n\n오류: '+e.message)}}
+window.loadSampleHypothesis=function(){const sample={hypotheses:[{emotion:'피로',level:4,confidence:3,reason:'업무 부담과 변화 피로 가능성',design_implication:'초반 정보량을 낮추고 조용한 자기 정리로 시작하는 것이 안전함'},{emotion:'냉소',level:4,confidence:2,reason:'반복된 조직문화 프로그램에 대한 회의감 가능성',design_implication:'회사 메시지보다 참여자 경험에서 출발해야 함'},{emotion:'방어',level:3,confidence:3,reason:'평가/책임론으로 들릴 수 있는 주제',design_implication:'개인 탓이 아니라 구조와 조건을 보는 프레임 필요'},{emotion:'안전감',level:2,confidence:3,reason:'공유 부담과 관계 리스크 단서',design_implication:'전체 공유보다 개인 작성과 선택 공유 중심'}],risks:[{title:'회사 메시지처럼 들릴 위험',detail:'초반에 변화/주도성/긍정 메시지를 강조하면 냉소가 올라갈 수 있음',question:'참여자 경험에서 시작할 수 있는가?',revision_hint:'팀장 자리가 왜 어려워졌는지를 먼저 인정'},{title:'안전감 이전 공유 요구',detail:'안전감이 낮은 상태에서 전체 공유를 요구하면 방어가 커질 수 있음',question:'전체 공유를 선택 공유로 낮출 수 있는가?',revision_hint:'개인 작성 → 2인 선택 공유 → 전체 패턴 요약'}],questions_to_ask:['이들의 냉소는 변화 자체에 대한 것인가, 반복된 미이행 경험 때문인가?','피로는 업무량 때문인가, 통제감 상실 때문인가?'],recommended_entry:'조용한 개인 작성과 현실 인정 문장으로 시작',avoid:['감정 고백 유도','회사 약속처럼 들리는 표현','전체 공유 강제'],guardrails:['개인 발언 기록 금지','워크시트 미제출','전체 공유는 패턴만 요약']};document.getElementById('hypothesisJsonInput').value=JSON.stringify(sample,null,2);}
+function renderHypothesisVisuals(){
+  let data=state.emotionHypothesis&&state.emotionHypothesis.parsed;
+  let sum=document.getElementById('hypothesisSummary'), bars=document.getElementById('hypothesisBars'), warn=document.getElementById('hypothesisWarnings');
+  if(!sum||!bars||!warn)return;
+  if(!data){
+    sum.innerHTML='아직 적용된 감정 가설 분석이 없습니다.';
+    bars.innerHTML='JSON 적용 후 표시됩니다.';
+    warn.innerHTML='JSON 적용 후 표시됩니다.';
+    return;
   }
-  state=defaultState(); current=0; state.current=0; save(); render(); notify('새 프로젝트를 시작했습니다.');
+  let hy=data.hypotheses||[];
+  sum.innerHTML=`<span class="pill amber">Hypothesis, not diagnosis</span><p class="confidenceNote">이 결과는 실제 감정 측정이 아니라 입력 맥락 기반의 설계용 가설입니다. 강도와 확신도를 분리해서 보세요.</p><ul class="miniList"><li>추천 진입 방식: ${esc(data.recommended_entry||'-')}</li><li>피해야 할 것: ${esc((data.avoid||[]).join(', ')||'-')}</li><li>적용 시점: ${state.emotionHypothesis.appliedAt?new Date(state.emotionHypothesis.appliedAt).toLocaleString('ko-KR'):'-'}</li></ul>`;
+  bars.innerHTML='<div class="barViz">'+hy.map(h=>`<div class="barRow"><b>${esc(h.emotion)}</b><div><div class="barBg"><div class="barFill" style="width:${Math.max(0,Math.min(5,+h.level||0))*20}%"></div></div><div class="barBg" style="margin-top:5px"><div class="barFill confFill" style="width:${Math.max(0,Math.min(5,+h.confidence||0))*20}%"></div></div></div><span>${h.level||'-'}/5 · C${h.confidence||'-'}</span></div><div class="confidenceNote"><b>근거:</b> ${esc(h.reason||'-')}<br><b>설계 영향:</b> ${esc(h.design_implication||'-')}</div>`).join('')+'</div>';
+  let risks=data.risks||[];let qs=data.questions_to_ask||[];let guards=data.guardrails||[];
+  warn.innerHTML=(risks.length?risks.map(r=>`<div class="warnCard"><b>${esc(r.title||'Risk')}</b><div>${esc(r.detail||'')}</div><div class="confidenceNote"><b>질문:</b> ${esc(r.question||'')}<br><b>수정 방향:</b> ${esc(r.revision_hint||'')}</div></div>`).join(''):'<div class="okCard">명시된 리스크가 없습니다. 그래도 가설의 확신도를 확인하세요.</div>')+`<h4>Questions to Validate</h4><ul class="miniList">${qs.map(q=>`<li>${esc(q)}</li>`).join('')||'<li>-</li>'}</ul><h4>Design Guardrails</h4><ul class="miniList">${guards.map(g=>`<li>${esc(g)}</li>`).join('')||'<li>-</li>'}</ul>`;
 }
-function projectSummaryLine(st){const r=(st&&st.raw)||{};return `${r.audience||'-'} · ${r.size||'-'}명 · ${r.duration||'-'} · ${r.count||'-'}`}
-function currentStepTitle(st){const idx=(st&&Number.isInteger(st.current))?st.current:0;const step=steps[idx]||steps[0];return `${step.id}. ${step.title}`}
-function fmtDate(x){try{return new Date(x).toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(e){return '-'}}
-function saveProjectToBoard(){
-  const defaultName=projectTitleFromState(state);
-  const name=prompt('프로젝트 이름을 입력하세요.', defaultName)||defaultName;
-  const list=boardLoad();
-  const now=new Date().toISOString();
-  let id=state.projectId;
-  let existing=id?list.find(p=>p.id===id):null;
-  if(!id||!existing){id='p_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);state.projectId=id;}
-  state.projectName=name;
-  const progress=projectProgress(state);
-  const record={
-    id,name,createdAt:existing?existing.createdAt:now,updatedAt:now,
-    topic:(state.raw&&state.raw.topic)||'',audience:(state.raw&&state.raw.audience)||'',
-    current:state.current||0, currentTitle:currentStepTitle(state), progress,
-    summary:projectSummaryLine(state), state:deepClone(state)
-  };
-  const next=list.filter(p=>p.id!==id);next.unshift(record);boardSave(next);save();render();notify('프로젝트 보드에 저장했습니다.');
-}
-function showProjectBoard(){
-  const list=boardLoad();
-  const done=list.filter(p=>(p.progress&&p.progress.pct===100)).length;
-  const active=list.length-done;
-  document.getElementById('modalTitle').textContent='프로젝트 보드 / 히스토리 관리';
-  document.getElementById('helpBody').innerHTML=`<div class="projectBoardTop"><div><p class="lead"><b>프로젝트 게시판</b>입니다. 여러 기획 프로젝트를 로컬에 저장하고, 각 프로젝트의 진행률을 비교하며, 기존 프로젝트를 불러오거나 템플릿으로 재사용할 수 있습니다.</p><div class="boardGuide"><div class="box"><b>1. 저장</b><span>현재 작업을 프로젝트 카드로 저장합니다.</span></div><div class="box"><b>2. 이어서 작업</b><span>저장된 단계/결과/검증 상태 그대로 불러옵니다.</span></div><div class="box"><b>3. 재사용</b><span>템플릿은 Raw Input만, 전체 복제는 모든 결과까지 복사합니다.</span></div></div><div class="storageNote"><b>저장 위치:</b> 이 보드는 현재 브라우저 localStorage에 저장됩니다. 다른 PC/브라우저로 옮기려면 <b>보드 JSON 내보내기</b>를 사용하세요.</div></div><div class="boardStats"><div class="boardStat"><b>${list.length}</b><span>전체 프로젝트</span></div><div class="boardStat"><b>${active}</b><span>진행 중</span></div><div class="boardStat"><b>${done}</b><span>완료</span></div></div></div><div class="btns"><button class="green" onclick="saveProjectToBoard();showProjectBoard()">현재 프로젝트 저장/업데이트</button><button class="primary" onclick="newProject();closeHelp()">+ 새 프로젝트 시작</button><div class="dropdown"><button class="secondary dropdownBtn" onclick="toggleDropdown('boardExportMenu', event)">보드 관리</button><div class="menu" id="boardExportMenu"><button onclick="exportProjectBoard();closeDropdowns()">보드 JSON 내보내기</button><button onclick="importProjectBoard();closeDropdowns()">보드 JSON 가져오기</button><button onclick="downloadJSON();closeDropdowns()">현재 작업 JSON 다운로드</button></div></div></div><div class="boardFilters"><input id="boardSearch" placeholder="프로젝트명 / 대상 / 주제로 검색" oninput="renderProjectCards(this.value)"><select id="boardStatus" class="selectSmall" onchange="renderProjectCards(document.getElementById('boardSearch').value)"><option value="all">전체 상태</option><option value="active">진행 중</option><option value="done">완료</option></select><button class="ghost" onclick="renderProjectCards(document.getElementById('boardSearch').value)">검색</button></div><div id="projectCards"></div>`;
-  document.getElementById('helpModal').classList.add('show');
-  renderProjectCards('');
-}
-function renderProjectCards(q){
-  const el=document.getElementById('projectCards');if(!el)return;const list=projects();const keyword=(q||'').toLowerCase();const statusEl=document.getElementById('boardStatus');const status=statusEl?statusEl.value:'all';let filtered=list.filter(p=>{const hay=(p.name+' '+(p.summary||'')+' '+((p.state&&p.state.raw&&p.state.raw.topic)||'')).toLowerCase();const pct=(p.progress&&p.progress.pct)||0;const okText=!keyword||hay.includes(keyword);const okStatus=status==='all'||(status==='done'?pct===100:pct<100);return okText&&okStatus});
-  if(!filtered.length){el.innerHTML='<div class="boardEmpty"><strong>아직 표시할 프로젝트가 없습니다.</strong>현재 작업을 저장하거나 검색 조건을 바꿔보세요.<div class="btns" style="justify-content:center"><button class="green" onclick="saveProjectToBoard();showProjectBoard()">현재 프로젝트 저장</button><button class="primary" onclick="newProject();closeHelp()">+ 새 프로젝트</button></div></div>';return}
-  el.innerHTML=`<div class="projectGrid">${filtered.map(p=>{const pct=(p.progress&&p.progress.pct)||0;const menuId='projectMenu_'+p.id;const done=(p.progress&&p.progress.done)||0;const total=(p.progress&&p.progress.total)||steps.length;return `<div class="projectCard"><div class="projectCardHeader"><div><h3>${escapeHtml(p.name)}</h3><div class="projectMeta">${escapeHtml(p.summary||'-')}<br>현재 위치: <b>${escapeHtml(p.currentTitle||'-')}</b><br>수정: ${fmtDate(p.updatedAt)}</div></div><span class="chip ${pct===100?'approved':'saved'}">${pct===100?'완료':'진행 중'}</span></div><div class="progressTiny"><div style="width:${pct}%"></div></div><div class="mini">진행률 ${pct}% · ${done}/${total} 승인</div><div class="projectCardTopActions"><button class="primary" onclick="loadProject('${p.id}')">이 상태부터 불러오기</button><button class="secondary" onclick="startFromTemplate('${p.id}')">템플릿으로 새 프로젝트</button></div><div class="projectCardFooterActions"><button class="ghost" onclick="cloneWholeProject('${p.id}')">전체 복제</button><button class="ghost" onclick="exportSingleProject('${p.id}')">JSON 내보내기</button><div class="dropdown"><button class="ghost dropdownBtn projectMenuBtn" onclick="toggleDropdown('${menuId}', event)">더보기</button><div class="menu" id="${menuId}"><button onclick="loadProject('${p.id}');closeDropdowns()">이 상태부터 불러오기</button><button onclick="startFromTemplate('${p.id}');closeDropdowns()">템플릿으로 새 프로젝트</button><button onclick="cloneWholeProject('${p.id}');closeDropdowns()">전체 복제</button><div class="menuDivider"></div><button onclick="exportSingleProject('${p.id}');closeDropdowns()">JSON 내보내기</button><button class="dangerItem" onclick="deleteProject('${p.id}');closeDropdowns()">삭제</button></div></div></div></div>`}).join('')}</div>`;
-}
+window.addHypothesisToDecisionLog=function(){let data=state.emotionHypothesis&&state.emotionHypothesis.parsed;if(!data){alert('먼저 GPT 감정 가설 결과를 적용하세요.');return}let top=(data.hypotheses||[]).slice(0,4).map(h=>`${h.emotion} 강도 ${h.level}/5, 확신도 ${h.confidence}/5`).join('; ');state.decisions.push({title:'감정 가설 반영',body:`설계용 감정 가설: ${top}. 추천 진입 방식: ${data.recommended_entry||'-'}`,source:'Emotion Hypothesis',date:new Date().toISOString()});renderDecisions();save();toast('Decision Log에 반영했습니다')}
 
-function loadProject(id){const rec=boardLoad().find(p=>p.id===id);if(!rec)return alert('프로젝트를 찾을 수 없습니다.'); if(!confirm('현재 작업을 이 프로젝트 상태로 교체할까요? 현재 작업은 먼저 저장해두는 것이 안전합니다.'))return; state=migrate(deepClone(rec.state)); current=state.current||0; save(); closeHelp(); render();}
-function startFromTemplate(id){const rec=boardLoad().find(p=>p.id===id);if(!rec)return alert('프로젝트를 찾을 수 없습니다.'); if(!confirm('이 프로젝트의 Raw Input을 템플릿으로 가져와 새 프로젝트를 시작할까요? 기존 단계 결과는 비워집니다.'))return; const ns=defaultState(); ns.raw=deepClone((rec.state&&rec.state.raw)||{}); ns.raw.topic=(ns.raw.topic||rec.name||'')+' - copy'; ns.projectName=(rec.name||'Template')+' 템플릿'; ns.current=0; state=ns; current=0; save(); closeHelp(); render();}
-function cloneWholeProject(id){const rec=boardLoad().find(p=>p.id===id);if(!rec)return alert('프로젝트를 찾을 수 없습니다.'); if(!confirm('이 프로젝트의 모든 단계 결과까지 복제해 새 프로젝트로 열까요?'))return; const ns=migrate(deepClone(rec.state)); ns.projectId=null; ns.projectName=(rec.name||'Project')+' 복제본'; ns.current=ns.current||0; state=ns; current=state.current; save(); closeHelp(); render();}
-function deleteProject(id){if(!confirm('이 프로젝트를 보드에서 삭제할까요? 현재 작업 화면의 데이터는 별도로 유지됩니다.'))return; boardSave(boardLoad().filter(p=>p.id!==id)); renderProjectCards(document.getElementById('boardSearch')?document.getElementById('boardSearch').value:'');}
-function exportSingleProject(id){const rec=boardLoad().find(p=>p.id===id);if(!rec)return alert('프로젝트를 찾을 수 없습니다.'); downloadText(`${safeFileName(rec.name)}_project.json`, JSON.stringify(rec,null,2),'application/json')}
-function exportProjectBoard(){downloadText(`purpose_adaptive_project_board_${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(boardLoad(),null,2),'application/json')}
-function importProjectBoard(){const input=document.createElement('input');input.type='file';input.accept='application/json';input.onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{let data=JSON.parse(reader.result);let incoming=Array.isArray(data)?data:[data];let list=boardLoad();let byId=new Map(list.map(p=>[p.id,p]));incoming.forEach(p=>{if(!p.id)p.id='p_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);p.updatedAt=p.updatedAt||new Date().toISOString();byId.set(p.id,p)});boardSave(Array.from(byId.values()).sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt))));showProjectBoard();alert('보드 가져오기를 완료했습니다.')}catch(err){alert('JSON 파일을 읽을 수 없습니다.')}};reader.readAsText(file)};input.click()}
+function contextPack(){return `프로젝트명: ${state.brief.name}\n대상: ${state.brief.audience}\n회차/시간: ${state.brief.sessionCount}\n공식 목적: ${state.brief.officialGoal}\n숨은 목적: ${state.brief.hiddenJob}\n조직 맥락: ${state.brief.context}\n성공 후 참여자 속마음: ${state.brief.successVoice}\n실패 리스크: ${state.brief.failureRisk}\n피해야 할 것: ${state.brief.avoid}\n기록/보고: ${state.brief.reporting}\n\nQuestion Board:\n${state.questions.map((q,i)=>`Q${i+1}. ${q.q}\nA. ${q.answer}`).join('\n')}\n\nParticipant Emotion DB:\n${state.participants.map(p=>`${p.id} / ${p.age} / ${p.gender} / ${p.year} / ${p.role} / ${p.team} / ${p.emotion} / safety:${p.safety} / resistance:${p.resistance} / risk:${p.risk}`).join('\n')}\n\nBig Frame:\n${state.frames.map(f=>`${f.round}회차 | 목적:${f.purpose} | 시작:${f.start} | 종료:${f.end} | 경험:${f.experience} | 산출물:${f.output}`).join('\n')}\n\nDecision Log:\n${state.decisions.map(d=>`- ${d.title}: ${d.body}`).join('\n')}`}
+const promptGuide={brief:'현재 Project Brief의 빈칸과 모호한 표현을 찾아 질문으로 돌려주세요. 답을 대신 쓰지 말고, 제가 더 구체화해야 할 질문 10개와 우선순위를 제안하세요.',questions:'아래 Question Board 답변을 보고 사고가 얕거나 추상적인 부분을 찾아주세요. 각 답변을 더 날카롭게 만들 후속 질문을 제안하세요.',emotion:'참여자의 실제 감정을 단정하지 말고, 제한된 맥락 정보로 가능한 감정 가설을 분석해주세요. 반드시 JSON 형식으로 감정 강도(level), 확신도(confidence), 설계 영향, 확인 질문, 피해야 할 표현을 출력하세요.',frame:'Big Frame을 냉정하게 검토해주세요. 회차 간 비약, 중복, 참여자 방어 리스크, 감정선의 급격한 점프를 찾아 질문과 대안을 주세요.',lens:'아래 초안을 참여자/스폰서/운영자/냉소적 참여자/행동 전이 관점에서 압박 테스트할 질문을 만들어주세요.',story:'아래 Story Cards를 보고 전체 흐름이 자연스러운지 검토해주세요. 카드 간 비약, 중복, 약한 연결, 참여자 반감 리스크를 질문 형태로 제안해주세요. 답을 대신 완성하지 말고 제가 더 깊게 생각해야 할 질문을 주세요.',slots:'Slot Completion 내용을 보고 각 슬롯의 Clear Condition이 충분한지, 현장에서 막힐 리스크가 있는지 질문해주세요.',feedback:'직원 피드백을 설계 질문으로 변환해주세요. 피드백을 무조건 반영하지 말고, 무엇을 고려하고 무엇을 수정할지 판단 기준을 주세요.',format:'세션 목적과 참여자 감정 상태를 바탕으로 활동/영상/PPT/토론/개인 작성 중 무엇이 적합한지 판단 기준과 질문을 주세요.',runbook:'최종 PPT Script를 냉정하게 점검해주세요. 논리 흐름, 감정 전환, 참여자 반감, 실행 가능성 관점에서 수정 질문을 주세요.'}
+window.showPrompt=function(type){let txt=`당신은 조직문화/리더십 세션 설계를 돕는 비판적 사고 파트너입니다.\n\n역할:\n- 답을 대신 완성하지 마세요.\n- 제 초안을 더 선명하게 만들 질문을 던지세요.\n- 리스크, 빈칸, 모순, 대안을 제안하세요.\n- 제가 최종 판단할 수 있도록 선택지를 구조화하세요.\n\n요청:\n${promptGuide[type]||promptGuide.brief}\n\n[현재 입력값]\n${contextPack()}\n\n출력 형식:\n1. 가장 먼저 확인해야 할 질문 5개\n2. 현재 초안의 강점\n3. 위험한 가정 / 모순\n4. 대안 선택지 3개\n5. 내가 결정해야 할 것\n`;openModal('GPT 질문 프롬프트',txt)}
+window.lensPrompt=function(type){showPrompt('lens')}
+function openModal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').textContent=body;document.getElementById('modal').classList.add('show')}
+window.closeModal=function(){document.getElementById('modal').classList.remove('show')}
+window.copyModal=function(){navigator.clipboard.writeText(document.getElementById('modalBody').textContent).then(()=>toast('복사 완료'))}
+window.compileRunbook=function(showToast=true){let md=buildRunbook();document.getElementById('runbookBox').textContent=md;if(showToast)toast('최종 스크립트를 조립했습니다')}
+function buildRunbook(){return `# ${state.brief.name||'Final Session Script'}
 
-function showHelp(i){const st=steps[i];document.getElementById('modalTitle').textContent=`Step ${st.id}. ${st.title}`;document.getElementById('helpBody').innerHTML=`<p class="lead"><b>${st.title}</b> 단계는 ${st.goal}</p><div class="box"><h3>기대 산출물</h3><p>${st.output}</p></div><div class="box" style="margin-top:12px"><h3>검증 기준</h3><ul class="checklist">${st.checklist.map(x=>`<li>${x}</li>`).join('')}</ul></div><div class="box" style="margin-top:12px"><h3>피드백 예시</h3><p>${st.feedbackHelp}</p></div>`;document.getElementById('helpModal').classList.add('show')}
-function showRoadmap(){document.getElementById('modalTitle').textContent='v4 로드맵';document.getElementById('helpBody').innerHTML=`<p class="lead">v4는 기존 세션 설계 10단계에 실행력을 높이는 Implementation 단계가 추가되었습니다.</p><table class="table"><tr><th>구간</th><th>핵심</th></tr><tr><td>0~1</td><td>원본 조건과 사전진단 / 관계 위험도</td></tr><tr><td>2~8</td><td>목적, 참여자, 기능, 감정선, 구조, 활동, 언어 설계</td></tr><tr><td>9~10</td><td>실행 자료 생성과 리스크 검증</td></tr><tr><td>11~15</td><td>측정, 운영자 훈련, 공간, 보고, 후속 전이</td></tr><tr><td>16</td><td>최종 실행 패키지로 조립</td></tr></table>`;document.getElementById('helpModal').classList.add('show')}
-function showPrinciples(){document.getElementById('modalTitle').textContent='핵심 설계 원칙';document.getElementById('helpBody').innerHTML=`<div class="quick">${CORE_PRINCIPLES.map(x=>`<div class="box"><p class="mini" style="margin:0">${x}</p></div>`).join('')}</div>`;document.getElementById('helpModal').classList.add('show')}
+## 1. Decision Rationale
+${state.decisions.map(d=>`- ${d.title}: ${d.body}`).join('\n')||'- 아직 확정한 결정 없음'}
 
-function resetMenuPosition(menu){
-  if(!menu)return;
-  menu.style.position='';
-  menu.style.left='';
-  menu.style.right='';
-  menu.style.top='';
-  menu.style.bottom='';
-  menu.style.maxHeight='';
-  menu.style.overflowY='';
-}
-function placeMenuInViewport(menu, trigger){
-  if(!menu||!trigger)return;
-  const margin=12;
-  menu.style.position='fixed';
-  menu.style.right='auto';
-  menu.style.bottom='auto';
-  menu.style.maxHeight='calc(100vh - 24px)';
-  menu.style.overflowY='auto';
-  const tr=trigger.getBoundingClientRect();
-  const mr=menu.getBoundingClientRect();
-  let left=tr.right-mr.width;
-  let top=tr.bottom+8;
-  if(left<margin) left=margin;
-  if(left+mr.width>window.innerWidth-margin) left=window.innerWidth-mr.width-margin;
-  if(top+mr.height>window.innerHeight-margin){
-    top=tr.top-mr.height-8;
-  }
-  if(top<margin) top=margin;
-  menu.style.left=left+'px';
-  menu.style.top=top+'px';
-}
-function toggleDropdown(id, ev){
-  if(ev)ev.stopPropagation();
-  const trigger=ev?ev.currentTarget:null;
-  document.querySelectorAll('.menu.open').forEach(m=>{
-    if(m.id!==id){m.classList.remove('open');resetMenuPosition(m)}
-  });
-  const el=document.getElementById(id);
-  if(!el)return;
-  const willOpen=!el.classList.contains('open');
-  if(willOpen){
-    el.classList.add('open');
-    placeMenuInViewport(el, trigger);
-  }else{
-    el.classList.remove('open');
-    resetMenuPosition(el);
-  }
-}
-function closeDropdowns(){document.querySelectorAll('.menu.open').forEach(m=>{m.classList.remove('open');resetMenuPosition(m)})}
-window.addEventListener('resize',closeDropdowns);
-window.addEventListener('scroll',closeDropdowns,true);
-document.addEventListener('click',()=>closeDropdowns());
-function notify(msg){const t=document.getElementById('toast');if(!t){alert(msg);return}t.textContent=msg;t.classList.add('show');clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>t.classList.remove('show'),1800)}
+## 2. Project Brief
+- 대상: ${state.brief.audience||'-'}
+- 회차/시간: ${state.brief.sessionCount||'-'}
+- 공식 목적: ${state.brief.officialGoal||'-'}
+- 숨은 목적: ${state.brief.hiddenJob||'-'}
+- 피해야 할 것: ${state.brief.avoid||'-'}
 
-function closeHelp(){document.getElementById('helpModal').classList.remove('show')}
+## 3. Big Frame
+${state.frames.map(f=>`### ${f.round}회차
+- 목적: ${f.purpose||'-'}
+- 시작 상태: ${f.start||'-'}
+- 종료 상태: ${f.end||'-'}
+- 주요 경험: ${f.experience||'-'}
+- 산출물: ${f.output||'-'}`).join('\n\n')}
+
+## 4. Story Cards
+${state.slides.map((s,i)=>`### Card ${i+1}. ${s.title||'-'}
+${s.story||s.message||s.script||'-'}
+
+- 메모 / 보류 질문: ${s.note||s.role||s.transition||'-'}`).join('\n\n')}
+
+## 5. Slot Action Plan
+${state.slots.map(s=>`### ${s.session+1}회차 / ${s.name}
+- 상태: ${s.done?'Clear':'Open'}
+- Mission: ${s.prompt||'-'}
+- Clear Condition: ${s.clear||'-'}
+- My Decision: ${s.decision||'-'}
+- Risk: ${s.risk||'-'}`).join('\n\n')}
+
+## 6. Feedback Considerations
+${state.feedback.analysis||'-'}
+
+## 7. Format Recommendation
+${state.format.output||'-'}
+`}
+window.downloadRunbook=function(){compileRunbook(false);download((state.brief.name||'session_design')+'_ppt_script.md',document.getElementById('runbookBox').textContent,'text/markdown')}
+window.saveProject=function(){state.meta.updatedAt=new Date().toISOString();let list=JSON.parse(localStorage.getItem(BOARD)||'[]');if(!state.meta.projectId)state.meta.projectId='p_'+Date.now();let rec={id:state.meta.projectId,name:state.brief.name||'Untitled Project',updatedAt:state.meta.updatedAt,completion:completion(),state:state};list=list.filter(x=>x.id!==rec.id);list.unshift(rec);localStorage.setItem(BOARD,JSON.stringify(list));save();toast('프로젝트 저장 완료')}
+function renderBoard(){let el=document.getElementById('projectCards');if(!el)return;let list=JSON.parse(localStorage.getItem(BOARD)||'[]');el.innerHTML=list.length?list.map(p=>`<div class="boardCard"><h3>${esc(p.name)}</h3><p>진행률 ${p.completion}%<br>수정: ${new Date(p.updatedAt).toLocaleString('ko-KR')}</p><div class="progress"><div style="width:${p.completion}%"></div></div><div class="actions"><button class="primary" onclick="loadProject('${p.id}')">불러오기</button><button class="secondary" onclick="templateProject('${p.id}')">템플릿</button><button class="danger" onclick="deleteProject('${p.id}')">삭제</button></div></div>`).join(''):'<div class="note">저장된 프로젝트가 없습니다.</div>'}
+window.loadProject=function(id){let p=JSON.parse(localStorage.getItem(BOARD)||'[]').find(x=>x.id===id);if(!p)return;state=merge(base(),p.state);localStorage.setItem(STORE,JSON.stringify(state));location.reload()}
+window.templateProject=function(id){let p=JSON.parse(localStorage.getItem(BOARD)||'[]').find(x=>x.id===id);if(!p)return;state=merge(base(),p.state);state.meta.projectId=null;state.brief.name=(state.brief.name||'Template')+' copy';localStorage.setItem(STORE,JSON.stringify(state));location.reload()}
+window.deleteProject=function(id){let list=JSON.parse(localStorage.getItem(BOARD)||'[]').filter(x=>x.id!==id);localStorage.setItem(BOARD,JSON.stringify(list));renderBoard()}
+window.newProject=function(){if(confirm('새 프로젝트를 시작할까요? 현재 작업은 먼저 저장해두는 것이 안전합니다.')){localStorage.removeItem(STORE);location.reload()}}
+window.exportJSON=function(){download((state.brief.name||'session_design')+'.json',JSON.stringify(state,null,2),'application/json')}
+function download(name,text,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__to);window.__to=setTimeout(()=>t.classList.remove('show'),1700)}
+function esc(s){return String(s??'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}function escAttr(s){return String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}function sel(a,b){return a===b?'selected':''}
+window.state=state;window.save=save;window.renderSlots=renderSlots;
+})();
 </script>
 </body>
 </html>
