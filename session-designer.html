@@ -113,7 +113,10 @@ body:before{
   min-height:56px;
   margin-bottom:22px;
   padding:4px 4px 4px 2px;
+  cursor:pointer;
+  border-radius:16px;
 }
+.brand:hover{background:rgba(255,255,255,.06);transform:translateY(-1px)}
 .logo{
   width:48px;height:48px;border-radius:17px;
   background:
@@ -335,7 +338,7 @@ body.print-onepager .app{display:block}body.print-onepager .side,body.print-onep
 <body>
 <div class="app">
   <aside class="side">
-    <div class="brand"><div class="logo"></div><div><h1>Session Design Studio</h1><p>Question-Led Planning Canvas</p></div></div>
+    <div class="brand" role="button" tabindex="0" title="전체 현황판으로 이동" onclick="location.href='index.html#home'" onkeydown="if(event.key==='Enter'||event.key===' ')location.href='index.html#home'"><div class="logo"></div><div><h1>Session Design Studio</h1><p>Question-Led Planning Canvas</p></div></div>
     <div class="projectMini">
       <div class="name" id="miniName">Untitled Project</div>
       <div class="meta" id="miniMeta">진행률 0% · 저장 전</div>
