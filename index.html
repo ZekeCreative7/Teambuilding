@@ -256,9 +256,36 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 	.compareTable{min-width:680px}
 	.compareTable .qTitle{display:block;font-weight:900;color:#0f172a;line-height:1.35}
 	.compareTable .qText{display:block;color:#64748b;font-size:11px;line-height:1.35;margin-top:3px}
-	.deltaPill{display:inline-flex;justify-content:center;min-width:54px;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:950;background:#f1f5f9;color:#475569}
-	.deltaPill.up{background:#ecfdf5;color:#047857}
-	.deltaPill.down{background:#fef2f2;color:#b91c1c}
+		.deltaPill{display:inline-flex;justify-content:center;min-width:54px;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:950;background:#f1f5f9;color:#475569}
+		.deltaPill.up{background:#ecfdf5;color:#047857}
+		.deltaPill.down{background:#fef2f2;color:#b91c1c}
+		.pulseScopePanel{margin:16px 0 14px;padding:20px;border-radius:24px;background:linear-gradient(135deg,#111827,#1e1b4b 58%,#0f766e);color:#fff;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.14)}
+		.pulseScopePanel label{color:#bfdbfe;margin:0 0 9px;font-size:12px;letter-spacing:.06em}
+		.pulseScopePanel select{height:58px;border-radius:18px;border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.96);font-size:21px;font-weight:950;color:#0f172a;padding:0 18px;box-shadow:0 18px 46px rgba(0,0,0,.18)}
+		.scopeHint{margin-top:10px;color:#dbeafe;font-size:13px;line-height:1.5}
+		.scopeHint b{color:#fff}
+		.pulseYearCard{margin-top:14px}
+		.yearTable{min-width:1180px}
+		.yearTable th{text-align:left}
+		.yearTable tbody tr:hover{background:#f8fbff}
+		.yearTable .qCol{width:310px}
+		.yearTable .catCol{width:142px}
+		.yearTable .trendCol{width:142px}
+		.yearTable th span{display:block;margin-top:3px;color:#94a3b8;font-size:9.5px;font-weight:950;text-transform:none}
+		.yearCell{min-width:170px}
+		.yearStack{display:grid;gap:6px}
+		.yearMetric{display:grid;grid-template-columns:36px 1fr 40px;gap:7px;align-items:center;font-size:10.5px;color:#64748b;font-weight:950}
+		.yearMetric b{text-align:right;color:#0f172a}
+		.yearTrack{height:9px;border-radius:999px;background:#edf2f7;overflow:hidden;position:relative}
+		.yearFill{height:100%;border-radius:999px;background:linear-gradient(90deg,#5b5ce2,#14b8a6)}
+		.yearFill.low{background:linear-gradient(90deg,#fb7185,#dc2626)}
+		.yearMissing{color:#cbd5e1;font-size:11px;font-weight:950}
+		.miniTrend{width:128px;height:44px;display:block}
+		.miniTrend text{font-size:9px;font-weight:900;fill:#94a3b8}
+		.scopeOnlyDivision{display:none}
+		.isDivisionScope .scopeOnlyCompany{display:none!important}
+		.isDivisionScope .scopeOnlyDivision{display:block}
+		.scopeOnlyCompany{display:block}
 
 	/* ----- Communication board ----- */
 .commToolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
@@ -340,9 +367,10 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
   .actionHub .homeModule{min-height:166px;padding:18px;border-radius:20px}
   .actionHub .homeModule strong{font-size:19px}
   .actionHub .homeModule em{position:static;margin-top:16px;width:max-content}
-  .priorityItem{grid-template-columns:38px 1fr;align-items:flex-start}
-  .priorityItem em{grid-column:2;font-size:16px}
-}
+	  .priorityItem{grid-template-columns:38px 1fr;align-items:flex-start}
+	  .priorityItem em{grid-column:2;font-size:16px}
+	  .pulseScopePanel{padding:16px;border-radius:20px}.pulseScopePanel select{height:52px;font-size:17px}.yearTable{min-width:980px}
+	}
 </style>
 <style>
 /* ----- First-run guide / onboarding ----- */
@@ -529,17 +557,27 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 	        <button class="ghost" onclick="downloadTemplate()">템플릿 다운로드</button>
 	        <button class="green" onclick="persistDataset('manual')">Firebase 저장</button>
 	      </div>
-	      <div class="grid4" id="pulseMetrics" style="margin:16px 0"></div>
+	      <div class="pulseScopePanel">
+	        <label for="pulseScopeSelect">분석 대상 선택</label>
+	        <select id="pulseScopeSelect" onchange="onPulseScopeChange()"></select>
+	        <div id="pulseScopeHint" class="scopeHint">전사 전체 기준으로 핵심 인사이트와 문항별 추세를 먼저 보여줍니다.</div>
+	      </div>
 	      <div class="card ahaDeck">
-	        <div class="panelTitle"><div><h3>한눈에 보는 아하 인사이트</h3><p class="sub">낮은 점수만 보지 않고, 서로 같이 움직여야 할 문항들이 어긋난 지점을 먼저 잡습니다.</p></div></div>
+	        <div class="panelTitle"><div><h3 id="ahaTitle">한눈에 보는 아하 인사이트</h3><p class="sub" id="ahaSubtitle">낮은 점수만 보지 않고, 서로 같이 움직여야 할 문항들이 어긋난 지점을 먼저 잡습니다.</p></div></div>
 	        <div id="pulseAhaInsights" class="ahaGrid"></div>
 	        <div id="categoryGlossary" class="termGlossary"></div>
 	      </div>
-	      <div class="grid2 pulseCompareGrid">
-	        <div class="card"><h3>카테고리별 현황 및 2025-2026 비교</h3><p class="sub">카테고리별 긍정 응답의 현재 수준과 전년 대비 변화를 함께 봅니다.</p><div id="categoryBars"></div></div>
-	        <div class="card"><h3>문항별 2025-2026 비교</h3><p class="sub">전체 문항의 긍정 응답 변화폭을 빠르게 확인합니다.</p><div id="questionCompare"></div></div>
+	      <div class="card pulseYearCard">
+	        <div class="panelTitle"><div><h3 id="yearCompareTitle">전사 문항별 2024-2026 비교</h3><p class="sub" id="yearCompareSubtitle">각 문항의 Favorability(4,5)와 Unfavorability(1,2)를 함께 보며, 긍정 추세선을 확인합니다.</p></div></div>
+	        <div class="compareLegend"><span><i style="background:linear-gradient(90deg,#5b5ce2,#14b8a6)"></i>Favorability(4,5)</span><span><i style="background:linear-gradient(90deg,#fb7185,#dc2626)"></i>Unfavorability(1,2)</span><span><i style="background:#cbd5e1"></i>데이터 없음</span></div>
+	        <div id="yearQuestionCompare"></div>
 	      </div>
-	      <div class="card" style="margin-top:14px"><h3>본부별 순위</h3><p class="sub" style="margin-bottom:12px">행을 누르거나 세부 분석 버튼을 누르면 아래 본부별 상세 분석 영역으로 이동합니다.</p><div class="tableWrap"><table class="table" id="rankTable"><colgroup><col class="rankNo"><col class="rankDiv"><col class="rankFav"><col class="rankLow"><col class="rankTier"><col class="rankAction"></colgroup><thead><tr><th class="num">#</th><th>본부</th><th class="num">평균 긍정<span class="info" tabindex="0" role="img" aria-label="용어 설명" data-tip="긍정 응답(Favorable) 평균: 본부의 전체 문항에서 4~5점(긍정) 비율의 평균. 높을수록 좋습니다.">i</span></th><th class="num">평균 부정<span class="info" tabindex="0" role="img" aria-label="용어 설명" data-tip="부정 응답(Low) 평균: 본부의 전체 문항에서 1~2점(부정) 비율의 평균. 낮을수록 좋습니다.">i</span></th><th>등급</th><th>액션</th></tr></thead><tbody></tbody></table></div></div>
+	      <div class="card scopeOnlyCompany" id="rankCard" style="margin-top:14px"><h3>본부별 순위</h3><p class="sub" style="margin-bottom:12px">행을 누르거나 세부 분석 버튼을 누르면 해당 본부 기준의 Pulse Survey 화면으로 이동합니다.</p><div class="tableWrap"><table class="table" id="rankTable"><colgroup><col class="rankNo"><col class="rankDiv"><col class="rankFav"><col class="rankLow"><col class="rankTier"><col class="rankAction"></colgroup><thead><tr><th class="num">#</th><th>본부</th><th class="num">평균 긍정<span class="info" tabindex="0" role="img" aria-label="용어 설명" data-tip="긍정 응답(Favorable) 평균: 본부의 전체 문항에서 4~5점(긍정) 비율의 평균. 높을수록 좋습니다.">i</span></th><th class="num">평균 부정<span class="info" tabindex="0" role="img" aria-label="용어 설명" data-tip="부정 응답(Low) 평균: 본부의 전체 문항에서 1~2점(부정) 비율의 평균. 낮을수록 좋습니다.">i</span></th><th>등급</th><th>액션</th></tr></thead><tbody></tbody></table></div></div>
+	      <div class="grid4" id="pulseMetrics" style="margin:14px 0"></div>
+	      <div class="grid2 pulseCompareGrid">
+	        <div class="card"><h3 id="categoryCompareTitle">카테고리별 현황 및 2025-2026 비교</h3><p class="sub" id="categoryCompareSubtitle">카테고리별 긍정 응답의 현재 수준과 전년 대비 변화를 함께 봅니다.</p><div id="categoryBars"></div></div>
+	        <div class="card"><h3 id="questionCompareTitle">문항별 2025-2026 변화 요약</h3><p class="sub" id="questionCompareSubtitle">선택 대상의 전년 대비 변화폭을 빠르게 확인합니다.</p><div id="questionCompare"></div></div>
+	      </div>
       <div class="card deepDive" id="divisionDeepDive">
         <div class="deepHeader">
           <div>
@@ -1030,10 +1068,10 @@ async function loadSeedData(forceSeed=false){
 }
 function enrichData(data){
   data=JSON.parse(JSON.stringify(data));
-  data.company.cats=catMap.map(([name,qs])=>({name,qs,fav:{'25':avg(qs.map(no=>data.company.questions[no-1]?.fav?.['25'])),'26':avg(qs.map(no=>data.company.questions[no-1]?.fav?.['26']))},low:{'26':avg(qs.map(no=>data.company.questions[no-1]?.low?.['26']))}}));
+  data.company.cats=catMap.map(([name,qs])=>({name,qs,fav:{'24':avg(qs.map(no=>data.company.questions[no-1]?.fav?.['24'])),'25':avg(qs.map(no=>data.company.questions[no-1]?.fav?.['25'])),'26':avg(qs.map(no=>data.company.questions[no-1]?.fav?.['26']))},low:{'24':avg(qs.map(no=>data.company.questions[no-1]?.low?.['24'])),'25':avg(qs.map(no=>data.company.questions[no-1]?.low?.['25'])),'26':avg(qs.map(no=>data.company.questions[no-1]?.low?.['26']))}}));
   data.divisions.forEach(d=>{
     d.avgFav=avg(d.qs.map(q=>q.fav));d.avgLow=avg(d.qs.map(q=>q.low));d.hi90=d.qs.filter(q=>num(q.fav)>=90).length;d.tier=d.tier||tier(d.avgFav,d.hi90);
-    d.cats=catMap.map(([name,qs])=>({name,fav:avg(d.qs.filter(q=>qs.includes(q.no)).map(q=>q.fav)),low:avg(d.qs.filter(q=>qs.includes(q.no)).map(q=>q.low)),fav25:avg(d.qs.filter(q=>qs.includes(q.no)).map(q=>q.fav25))}));
+    d.cats=catMap.map(([name,qs])=>({name,fav:avg(d.qs.filter(q=>qs.includes(q.no)).map(q=>q.fav)),low:avg(d.qs.filter(q=>qs.includes(q.no)).map(q=>q.low)),fav25:avg(d.qs.filter(q=>qs.includes(q.no)).map(q=>q.fav25)),fav24:avg(d.qs.filter(q=>qs.includes(q.no)).map(q=>q.fav24)),low25:avg(d.qs.filter(q=>qs.includes(q.no)).map(q=>q.low25)),low24:avg(d.qs.filter(q=>qs.includes(q.no)).map(q=>q.low24))}));
   });
   data.meta=data.meta||{};data.meta.companyFav26=data.meta.companyFav26||avg(data.company.questions.map(q=>q.fav['26']));data.meta.companyLow26=data.meta.companyLow26||avg(data.company.questions.map(q=>q.low['26']));data.meta.companyFav25=data.meta.companyFav25||avg(data.company.questions.map(q=>q.fav['25']));data.meta.divCount=data.divisions.length;data.meta.qCount=data.company.questions.length;
   return data;
@@ -1146,18 +1184,109 @@ function renderSparkline(id,labelsId,series){
     labels.innerHTML=pts.map((pt,i)=>`<span class="${i===pts.length-1?'active':''}" style="left:${(pt.x/w)*100}%">${pt.year}</span>`).join('');
   }
 }
+function firstNum(...vals){for(let v of vals){let n=num(v);if(n!=null)return n}return null}
+function setSelectValue(id,value,fallback){
+  let el=$('#'+id); if(!el)return;
+  let target=Array.from(el.options).some(o=>o.value===value)?value:fallback;
+  if(target&&Array.from(el.options).some(o=>o.value===target))el.value=target;
+}
 function fillSelects(){
+  let current={};['divisionSelect','pulseScopeSelect','promptScope','sessionScope','speechScope'].forEach(id=>{let el=$('#'+id);if(el)current[id]=el.value});
   let opts='<option value="__company__">전사 전체</option>'+sortedDivs().map(d=>`<option value="${esc(d.name)}">${esc(d.name)} (${pct(d.avgFav)}, ${tierLabel[d.tier]})</option>`).join('');
-  ['divisionSelect','promptScope','sessionScope','speechScope'].forEach(id=>{$('#'+id).innerHTML=id==='divisionSelect'?opts.replace('<option value="__company__">전사 전체</option>',''):opts});
+  let divOpts=opts.replace('<option value="__company__">전사 전체</option>','');
+  ['pulseScopeSelect','promptScope','sessionScope','speechScope'].forEach(id=>{let el=$('#'+id);if(el)el.innerHTML=opts});
+  let divSel=$('#divisionSelect');if(divSel)divSel.innerHTML=divOpts;
+  let firstDiv=sortedDivs()[0]?.name||'';
+  setSelectValue('pulseScopeSelect',current.pulseScopeSelect||'__company__','__company__');
+  setSelectValue('promptScope',current.promptScope||'__company__','__company__');
+  setSelectValue('sessionScope',current.sessionScope||'__company__','__company__');
+  setSelectValue('speechScope',current.speechScope||'__company__','__company__');
+  setSelectValue('divisionSelect',current.divisionSelect||firstDiv,firstDiv);
+}
+function currentPulseScope(){
+  let el=$('#pulseScopeSelect');
+  return el&&el.value?el.value:'__company__';
+}
+function scopeCategoryRows(scope){
+  if(scope==='__company__'){
+    return data().company.cats.map(c=>({name:c.name,fav24:firstNum(c.fav?.['24']),fav25:firstNum(c.fav?.['25']),fav26:firstNum(c.fav?.['26']),low26:firstNum(c.low?.['26'])}));
+  }
+  let dv=getDiv(scope);if(!dv)return[];
+  return dv.cats.map(c=>({name:c.name,fav24:firstNum(c.fav24),fav25:firstNum(c.fav25),fav26:firstNum(c.fav),low26:firstNum(c.low)}));
+}
+function scopeQuestionRows(scope){
+  if(scope==='__company__'){
+    return data().company.questions.map(q=>({no:q.no,short:q.short||'',text:q.text||q.short||'',cat:qCategory(q.no),fav24:firstNum(q.fav?.['24']),fav25:firstNum(q.fav?.['25']),fav26:firstNum(q.fav?.['26']),low24:firstNum(q.low?.['24']),low25:firstNum(q.low?.['25']),low26:firstNum(q.low?.['26'])}));
+  }
+  let dv=getDiv(scope);if(!dv)return[];
+  return dv.qs.map(q=>{let m=questionMeta(q.no);return {no:q.no,short:m.short||'',text:m.text||m.short||'',cat:qCategory(q.no),fav24:firstNum(q.fav24,q.fav?.['24']),fav25:firstNum(q.fav25,q.fav?.['25']),fav26:firstNum(q.fav,q.fav?.['26']),low24:firstNum(q.low24,q.low?.['24']),low25:firstNum(q.low25,q.low?.['25']),low26:firstNum(q.low,q.low?.['26'])}}).sort((a,b)=>a.no-b.no);
+}
+function scopeMetricsHTML(scope){
+  let d=data();
+  if(scope==='__company__'){
+    let risks=d.divisions.filter(x=>x.tier==='risk').length, watch=d.divisions.filter(x=>x.tier==='watch').length;
+    return [['전사 평균 긍정',pct(d.meta.companyFav26)],['전사 평균 부정',pct(d.meta.companyLow26)],['위험/주의 본부',risks+' / '+watch],['문항 수',d.meta.qCount]].map(x=>`<div class="metric"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+  }
+  let dv=getDiv(scope);if(!dv)return'';
+  let weak=dv.cats.slice().sort((a,b)=>(num(a.fav)||999)-(num(b.fav)||999))[0];
+  let highLow=dv.qs.slice().sort((a,b)=>(num(b.low)||0)-(num(a.low)||0))[0];
+  let hm=questionMeta(highLow?.no);
+  return [
+    ['평균 긍정',pct(dv.avgFav),'전사 대비 '+plainDelta(dv.avgFav,d.meta.companyFav26)],
+    ['평균 부정',pct(dv.avgLow),'전사 대비 '+plainDelta(dv.avgLow,d.meta.companyLow26)],
+    ['취약 항목',weak?.name||'-',pct(weak?.fav)+' 긍정'],
+    ['부정 집중 문항',highLow?`Q${highLow.no}`:'-',hm.short?`${hm.short} · ${pct(highLow?.low)} 부정`:'-']
+  ].map(x=>`<div class="metric"><b>${esc(x[1])}</b><span>${esc(x[0])} · ${esc(x[2])}</span></div>`).join('');
+}
+function yearMetricHTML(label,val,low=false){
+  let n=num(val);
+  return `<div class="yearMetric"><span>${label}</span><div class="yearTrack">${n==null?'':`<div class="yearFill ${low?'low':''}" style="width:${Math.max(0,Math.min(100,n))}%"></div>`}</div><b>${pct(n)}</b></div>`;
+}
+function yearCellHTML(fav,low){
+  if(num(fav)==null&&num(low)==null)return'<span class="yearMissing">데이터 없음</span>';
+  return `<div class="yearStack">${yearMetricHTML('Fav',fav,false)}${yearMetricHTML('Unfav',low,true)}</div>`;
+}
+function miniTrendHTML(vals){
+  let years=['24','25','26'], actual=vals.map(num);
+  let pts=actual.map((v,i)=>({v,i})).filter(p=>p.v!=null);
+  if(pts.length<2)return'<span class="yearMissing">추세 없음</span>';
+  let min=Math.max(0,Math.min(...pts.map(p=>p.v))-8), max=Math.min(100,Math.max(...pts.map(p=>p.v))+8);if(max<=min)max=min+1;
+  let x=i=>12+i*52, y=v=>34-((v-min)/(max-min))*24;
+  let line=pts.map(p=>`${x(p.i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+  let dots=pts.map(p=>`<circle cx="${x(p.i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="3.4" fill="#fff" stroke="#5b5ce2" stroke-width="2"><title>${years[p.i]}년 ${pct(p.v)}</title></circle>`).join('');
+  return `<svg class="miniTrend" viewBox="0 0 128 44" aria-label="Favorability trend"><polyline points="${line}" fill="none" stroke="#5b5ce2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>${dots}${years.map((yr,i)=>`<text x="${x(i)}" y="43" text-anchor="middle">${yr}</text>`).join('')}</svg>`;
+}
+function yearQuestionCompareHTML(scope){
+  let rows=scopeQuestionRows(scope).map(q=>`<tr><td><span class="qTitle">Q${q.no}. ${esc(q.short||'')}</span><span class="qText">${esc(q.text||'')}</span></td><td>${termTip(q.cat)}</td><td class="yearCell">${yearCellHTML(q.fav24,q.low24)}</td><td class="yearCell">${yearCellHTML(q.fav25,q.low25)}</td><td class="yearCell">${yearCellHTML(q.fav26,q.low26)}</td><td>${miniTrendHTML([q.fav24,q.fav25,q.fav26])}</td></tr>`).join('');
+  return `<div class="tableWrap questionCompareWrap"><table class="miniTable compareTable yearTable"><thead><tr><th class="qCol">문항</th><th class="catCol">항목</th><th>2024<span>Fav / Unfav</span></th><th>2025<span>Fav / Unfav</span></th><th>2026<span>Fav / Unfav</span></th><th class="trendCol">긍정 추세</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function renderPulse(){
-  let d=data(), risks=d.divisions.filter(x=>x.tier==='risk').length, watch=d.divisions.filter(x=>x.tier==='watch').length;
-  $('#pulseMetrics').innerHTML=[['전사 평균 긍정',pct(d.meta.companyFav26)],['전사 평균 부정',pct(d.meta.companyLow26)],['위험/주의 본부',risks+' / '+watch],['문항 수',d.meta.qCount]].map(x=>`<div class="metric"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
-  $('#pulseAhaInsights').innerHTML=insightCardsHTML(relationshipInsights(null),3,true);
+  let tbody=$('#rankTable tbody');
+  if(tbody)tbody.innerHTML=sortedDivs().map((dv,i)=>`<tr onclick="selectDivision('${escAttr(dv.name)}')"><td class="num">${i+1}</td><td><b>${esc(dv.name)}</b></td><td class="num" style="color:${favColor(dv.avgFav)};font-weight:950">${pct(dv.avgFav)}</td><td class="num">${pct(dv.avgLow)}</td><td><span class="chip ${dv.tier}">${tierLabel[dv.tier]}</span></td><td><button class="ghost rankBtn" onclick="event.stopPropagation();selectDivision('${escAttr(dv.name)}')">세부 분석</button></td></tr>`).join('');
+  let scope=currentPulseScope();
+  if(scope!=='__company__'&&!getDiv(scope))scope='__company__';
+  renderPulseScope(scope);
+}
+function renderPulseScope(scope){
+  if(scope!=='__company__'&&!getDiv(scope))scope='__company__';
+  let isDiv=scope!=='__company__', dv=isDiv?getDiv(scope):null;
+  let pulse=$('#pulse');if(pulse)pulse.classList.toggle('isDivisionScope',isDiv);
+  setSelectValue('pulseScopeSelect',scope,'__company__');
+  let label=isDiv?dv.name:'전사 전체';
+  $('#pulseScopeHint').innerHTML=isDiv?`<b>${esc(label)}</b> 기준으로 아하 인사이트와 문항별 2024/2025/2026 비교를 다시 계산했습니다. 아래 세부 분석까지 같은 본부 데이터로 이어집니다.`:`<b>전사 전체</b> 기준으로 회사 전체의 구조적 신호를 먼저 보고, 본부별 순위에서 관심 본부로 들어갈 수 있습니다.`;
+  $('#ahaTitle').textContent=isDiv?`${label} 아하 인사이트`:'한눈에 보는 아하 인사이트';
+  $('#ahaSubtitle').textContent=isDiv?'해당 본부에서 서로 같이 움직여야 할 문항들이 어긋난 지점을 먼저 잡습니다.':'낮은 점수만 보지 않고, 서로 같이 움직여야 할 문항들이 어긋난 지점을 먼저 잡습니다.';
+  $('#pulseMetrics').innerHTML=scopeMetricsHTML(scope);
+  $('#pulseAhaInsights').innerHTML=insightCardsHTML(relationshipInsights(isDiv?dv:null),isDiv?4:3,true);
   $('#categoryGlossary').innerHTML=Object.keys(TERM_DEFS).map(termTip).join('');
-  $('#categoryBars').innerHTML=categoryCompareHTML(d.company.cats);
-  $('#questionCompare').innerHTML=questionCompareHTML(d.company.questions);
-  $('#rankTable tbody').innerHTML=sortedDivs().map((dv,i)=>`<tr onclick="selectDivision('${escAttr(dv.name)}')"><td class="num">${i+1}</td><td><b>${esc(dv.name)}</b></td><td class="num" style="color:${favColor(dv.avgFav)};font-weight:950">${pct(dv.avgFav)}</td><td class="num">${pct(dv.avgLow)}</td><td><span class="chip ${dv.tier}">${tierLabel[dv.tier]}</span></td><td><button class="ghost rankBtn" onclick="event.stopPropagation();selectDivision('${escAttr(dv.name)}')">세부 분석</button></td></tr>`).join('');
+  $('#yearCompareTitle').textContent=isDiv?`${label} 문항별 2024-2026 비교`:'전사 문항별 2024-2026 비교';
+  $('#yearCompareSubtitle').textContent=isDiv?'본부 데이터에 2024 또는 일부 부정 비교값이 없는 경우는 데이터 없음으로 표시됩니다.':'각 문항의 Favorability(4,5)와 Unfavorability(1,2)를 함께 보며, 긍정 추세선을 확인합니다.';
+  $('#yearQuestionCompare').innerHTML=yearQuestionCompareHTML(scope);
+  $('#categoryCompareTitle').textContent=isDiv?`${label} 카테고리별 현황 및 2025-2026 비교`:'카테고리별 현황 및 2025-2026 비교';
+  $('#categoryCompareSubtitle').textContent=isDiv?'선택 본부의 카테고리별 현재 수준과 전년 대비 변화를 봅니다.':'카테고리별 긍정 응답의 현재 수준과 전년 대비 변화를 함께 봅니다.';
+  $('#categoryBars').innerHTML=categoryCompareHTML(scopeCategoryRows(scope));
+  $('#questionCompareTitle').textContent=isDiv?`${label} 문항별 2025-2026 변화 요약`:'문항별 2025-2026 변화 요약';
+  $('#questionCompare').innerHTML=questionCompareHTML(scope);
 }
 function escAttr(v){return String(v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
 function barRow(label,fav,low,delta){return`<div class="barRow"><div class="barLabel">${esc(label)}</div><div class="track"><div class="fill" style="width:${num(fav)||0}%"></div>${low!=null?`<div class="lowFill" style="width:${num(low)||0}%"></div>`:''}</div><div class="barVal">${pct(fav)} <span style="color:#94a3b8">${delta||''}</span></div></div>`}
@@ -1165,23 +1294,32 @@ function deltaClass(cur,prev){cur=num(cur);prev=num(prev);if(cur==null||prev==nu
 function deltaColor(cur,prev){let cls=deltaClass(cur,prev);return cls==='up'?'#047857':cls==='down'?'#b91c1c':'#64748b'}
 function categoryCompareHTML(cats){
   return `<div class="compareLegend"><span><i style="background:linear-gradient(90deg,#6457f4,#14b8a6)"></i>2026 긍정</span><span><i style="background:#c3ccd9"></i>2025 긍정</span></div><div class="catCompare pulseCatCompare">${cats.map(c=>{
-    let f26=num(c.fav?.['26'])||0, f25=num(c.fav?.['25']);
-    return `<div class="ccRow"><div class="ccLabel">${termTip(c.name)}</div><div class="ccBars"><div class="ccBar ccFav"><i style="width:${f26}%"></i></div><div class="ccBar ccPrev"><i style="width:${f25!=null?f25:0}%"></i></div></div><div class="ccVal">${pct(c.fav?.['26'])}<div class="ccDelta" style="color:${deltaColor(c.fav?.['26'],c.fav?.['25'])}">${plainDelta(c.fav?.['26'],c.fav?.['25'])}</div></div></div>`;
+    let f26=firstNum(c.fav26,c.fav?.['26'],c.fav), f25=firstNum(c.fav25,c.fav?.['25']), low=firstNum(c.low26,c.low?.['26'],c.low);
+    return `<div class="ccRow"><div class="ccLabel">${termTip(c.name)}</div><div class="ccBars"><div class="ccBar ccFav"><i style="width:${f26||0}%"></i></div><div class="ccBar ccPrev"><i style="width:${f25!=null?f25:0}%"></i></div></div><div class="ccVal">${pct(f26)}<div class="ccDelta" style="color:${deltaColor(f26,f25)}">${plainDelta(f26,f25)} · 부정 ${pct(low)}</div></div></div>`;
   }).join('')}</div>`;
 }
-function questionCompareHTML(questions){
-  let rows=questions.map(q=>{
-    let f25=q.fav?.['25'], f26=q.fav?.['26'], cls=deltaClass(f26,f25);
+function questionCompareHTML(scope){
+  let rows=scopeQuestionRows(scope).map(q=>{
+    let f25=q.fav25, f26=q.fav26, cls=deltaClass(f26,f25);
     return `<tr><td><span class="qTitle">Q${q.no}. ${esc(q.short||'')}</span><span class="qText">${esc(q.text||'')}</span></td><td>${termTip(qCategory(q.no))}</td><td class="num">${pct(f25)}</td><td class="num" style="color:${favColor(f26)};font-weight:950">${pct(f26)}</td><td class="num"><span class="deltaPill ${cls}">${plainDelta(f26,f25)}</span></td></tr>`;
   }).join('');
   return `<div class="tableWrap questionCompareWrap"><table class="miniTable compareTable"><thead><tr><th>문항</th><th>카테고리</th><th class="num">2025</th><th class="num">2026</th><th class="num">증감</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function syncScopeSelects(name){
-  ['promptScope','sessionScope','speechScope'].forEach(id=>{let el=$('#'+id);if(el&&Array.from(el.options).some(o=>o.value===name))el.value=name});
+  ['pulseScopeSelect','promptScope','sessionScope','speechScope'].forEach(id=>{let el=$('#'+id);if(el&&Array.from(el.options).some(o=>o.value===name))el.value=name});
+  let div=$('#divisionSelect');if(name!=='__company__'&&div&&Array.from(div.options).some(o=>o.value===name))div.value=name;
+}
+function onPulseScopeChange(){
+  let scope=currentPulseScope();
+  syncScopeSelects(scope);
+  renderPulseScope(scope);
+  if(scope!=='__company__')renderDivisionDetail();
+  renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();
 }
 function onDivisionScopeChange(){
   let name=$('#divisionSelect').value;
   syncScopeSelects(name);
+  renderPulseScope(name);
   renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();
 }
 function openSelectedDivisionDeepDive(){
@@ -1191,8 +1329,8 @@ function openSelectedDivisionDeepDive(){
 }
 function selectDivision(name,focus=true){
   $('#divisionSelect').value=name;syncScopeSelects(name);
-  renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();showView('pulse');
-  if(focus)setTimeout(()=>$('#divisionDeepDive')?.scrollIntoView({behavior:'smooth',block:'start'}),80);
+  renderPulseScope(name);renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();showView('pulse');
+  if(focus)setTimeout(()=>$('#pulseScopeSelect')?.scrollIntoView({behavior:'smooth',block:'center'}),80);
 }
 function renderDivisionDetail(){
   let name=$('#divisionSelect').value, dv=getDiv(name);if(!dv)return;
@@ -1392,9 +1530,9 @@ async function copyComm(id){
 }
 function csvCell(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
 function downloadTemplate(){
-  let rows=[['recordType','year','division','category','questionNo','questionShort','questionText','fav','low','fav25','benchMed','benchChubb']];
-  data().company.questions.forEach(q=>rows.push(['company_question',currentDataset.year,'',qCategory(q.no),q.no,q.short,q.text,q.fav?.['26'],q.low?.['26'],q.fav?.['25'],q.benchMed,q.benchChubb]));
-  data().divisions.forEach(dv=>dv.qs.forEach(q=>{let m=data().company.questions[q.no-1]||{};rows.push(['division_question',currentDataset.year,dv.name,qCategory(q.no),q.no,m.short,m.text,q.fav,q.low,q.fav25,'',''])}));
+  let rows=[['recordType','year','division','category','questionNo','questionShort','questionText','fav','low','fav25','low25','fav24','low24','benchMed','benchChubb']];
+  data().company.questions.forEach(q=>rows.push(['company_question',currentDataset.year,'',qCategory(q.no),q.no,q.short,q.text,q.fav?.['26'],q.low?.['26'],q.fav?.['25'],q.low?.['25'],q.fav?.['24'],q.low?.['24'],q.benchMed,q.benchChubb]));
+  data().divisions.forEach(dv=>dv.qs.forEach(q=>{let m=data().company.questions[q.no-1]||{};rows.push(['division_question',currentDataset.year,dv.name,qCategory(q.no),q.no,m.short,m.text,q.fav,q.low,q.fav25,q.low25,q.fav24,q.low24,'',''])}));
   download('lina_pulse_survey_upload_template.csv',rows.map(r=>r.map(csvCell).join(',')).join('\n'),'text/csv;charset=utf-8');
 }
 function parseCSV(text){
@@ -1406,9 +1544,9 @@ async function handleCsvUpload(ev){
   let file=ev.target.files[0];if(!file)return;let rows=parseCSV(await file.text());currentDataset={id:'pulse_'+Date.now(),name:'Lina Pulse Survey '+(rows[0]?.year||new Date().getFullYear()),year:rows[0]?.year||new Date().getFullYear(),source:'csv-upload',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:buildDataFromRows(rows),analysis:{company:'',divisions:{}},speech:{}};await persistDataset('upload');renderAll();toast('업로드 데이터로 대시보드를 업데이트했습니다')}
 function buildDataFromRows(rows){
   let qRows=rows.filter(r=>r.recordType==='company_question'), divRows=rows.filter(r=>r.recordType==='division_question'), qBase=data().company.questions;
-  let questions=qRows.map(r=>({no:Number(r.questionNo),short:r.questionShort,text:r.questionText||r.questionShort,benchMed:num(r.benchMed),benchChubb:num(r.benchChubb),fav:{'24':null,'25':num(r.fav25),'26':num(r.fav)},low:{'24':null,'25':null,'26':num(r.low)},dist26:{}})).sort((a,b)=>a.no-b.no);
+  let questions=qRows.map(r=>({no:Number(r.questionNo),short:r.questionShort,text:r.questionText||r.questionShort,benchMed:num(r.benchMed),benchChubb:num(r.benchChubb),fav:{'24':num(r.fav24),'25':num(r.fav25),'26':num(r.fav)},low:{'24':num(r.low24),'25':num(r.low25),'26':num(r.low)},dist26:{}})).sort((a,b)=>a.no-b.no);
   if(!questions.length)questions=qBase;
-  let groups={};divRows.forEach(r=>{let n=r.division||'Unnamed';(groups[n]=groups[n]||[]).push({no:Number(r.questionNo),fav:num(r.fav),low:num(r.low),fav25:num(r.fav25)})});
+  let groups={};divRows.forEach(r=>{let n=r.division||'Unnamed';(groups[n]=groups[n]||[]).push({no:Number(r.questionNo),fav:num(r.fav),low:num(r.low),fav25:num(r.fav25),low25:num(r.low25),fav24:num(r.fav24),low24:num(r.low24)})});
   let divisions=Object.keys(groups).map(name=>({name,qs:groups[name],hasYoY:groups[name].some(q=>q.fav25!=null)}));
   let next={company:{questions,cats:[]},divisions,meta:{}};return enrichData(next);
 }
