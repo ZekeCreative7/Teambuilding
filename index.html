@@ -425,7 +425,25 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 	.ahaEmpty{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:16px;padding:14px;color:#64748b;font-size:13px;line-height:1.55}
 	.crossIntro{background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:12px 13px;color:#334155;font-size:12.5px;line-height:1.58;margin-bottom:12px}
 	.crossIntro b{color:#0f172a}
-	@media(max-width:980px){.ahaGrid{grid-template-columns:1fr}.termHint:hover:before,.termHint:focus:before{left:auto;right:0;width:min(270px,calc(100vw - 40px))}}
+	.crossSignalBoard{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+	.crossSignalCard{position:relative;overflow:hidden;background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid #e5e7eb;border-radius:18px;padding:14px;box-shadow:0 8px 24px rgba(15,23,42,.055)}
+	.crossSignalCard:before{content:"";position:absolute;left:14px;right:14px;top:0;height:4px;border-radius:0 0 999px 999px;background:#5b5ce2}
+	.crossSignalCard.warn:before{background:#f59e0b}.crossSignalCard.risk:before{background:#ef4444}.crossSignalCard.green:before{background:#10b981}
+	.crossSignalHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:2px 0 8px}
+	.crossBadge{display:inline-flex;align-items:center;border-radius:999px;background:#eef2ff;color:#4338ca;border:1px solid #dbe2ff;padding:5px 8px;font-size:10.5px;font-weight:950;white-space:nowrap}
+	.crossSignalCard.risk .crossBadge{background:#fff1f2;color:#b91c1c;border-color:#fecaca}.crossSignalCard.warn .crossBadge{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+	.crossSignalCard h5{margin:0;color:#0f172a;font-size:14px;line-height:1.35;font-weight:950;letter-spacing:-.02em}
+	.crossSignalCard p{margin:0 0 10px;color:#334155;font-size:12px;line-height:1.5}
+	.crossEvidence{display:inline-flex;align-items:center;border-radius:12px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:7px 9px;font-size:11px;font-weight:850;line-height:1.35;margin-bottom:10px}
+	.crossPair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+	.crossPairItem{border:1px solid #e5e7eb;background:#fff;border-radius:14px;padding:10px;min-height:96px}
+	.crossPairItem b{display:flex;align-items:center;gap:6px;margin-bottom:6px;color:#0f172a;font-size:11px;font-weight:950}
+	.crossPairItem span{display:block;color:#475569;font-size:12px;line-height:1.45}
+	.crossPairItem.question b:before,.crossPairItem.action b:before{content:"";width:8px;height:8px;border-radius:50%;display:inline-block;flex:0 0 auto}
+	.crossPairItem.question b:before{background:#5b5ce2}.crossPairItem.action b:before{background:#0f9f7f}
+	.crossSignalEmpty{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:16px;padding:14px;color:#64748b;font-size:12.5px;font-weight:850}
+	@media(max-width:980px){.ahaGrid,.crossSignalBoard{grid-template-columns:1fr}.termHint:hover:before,.termHint:focus:before{left:auto;right:0;width:min(270px,calc(100vw - 40px))}}
+	@media(max-width:620px){.crossPair{grid-template-columns:1fr}.crossSignalCard{padding:13px}.crossEvidence{display:block}}
 
 /* ----- Reliability-review (신뢰도검토) inline callout ----- */
 .reliabCallout{display:flex;gap:12px;align-items:flex-start;background:linear-gradient(180deg,#faf5ff,#f5f3ff);border:1px solid #ddd6fe;border-left:5px solid #a78bfa;border-radius:16px;padding:14px 16px;margin-bottom:14px}
@@ -683,7 +701,6 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
           <h3>CSV 템플릿 / 업로드</h3>
           <p class="sub">템플릿은 현재 데이터 구조를 그대로 내려받습니다. 값을 수정한 뒤 업로드하면 대시보드가 새 데이터로 바뀝니다.</p>
           <div class="toolbar" style="margin:12px 0"><button class="primary" onclick="downloadTemplate()">템플릿 다운로드</button><input type="file" id="uploadCsv" accept=".csv,text/csv" onchange="handleCsvUpload(event)"></div>
-          <div class="note">필드: recordType, year, division, category, questionNo, questionShort, questionText, fav, low, fav25, benchMed, benchChubb</div>
         </div>
         <div class="card">
           <h3>Firebase 구조</h3>
@@ -849,6 +866,11 @@ function insightCardsHTML(items,limit=3,compact=false){
   let list=(items||[]).slice(0,limit);
   if(!list.length)return '<div class="ahaEmpty">문항 간 기대관계가 크게 어긋난 신호는 없습니다. 아래 카테고리와 문항별 상세 수치를 확인하세요.</div>';
   return list.map(x=>`<div class="ahaCard ${x.tone}"><b>${esc(x.title)}</b><p>${esc(x.body)}</p><small>${esc(x.evidence)}</small>${compact?'':`<div class="ask"><b>확인 질문</b><br>${esc(x.ask)}<br><br><b>권장 액션</b><br>${esc(x.action)}</div>`}</div>`).join('');
+}
+function crossSignalHTML(items,limit=4){
+  let list=(items||[]).slice(0,limit);
+  if(!list.length)return '<div class="crossSignalEmpty">문항 간 기대관계가 크게 어긋난 신호는 없습니다. 아래 카테고리별 대표 리스크 문항을 확인하세요.</div>';
+  return `<div class="crossSignalBoard">${list.map(x=>`<article class="crossSignalCard ${x.tone}"><div class="crossSignalHead"><span class="crossBadge">차이 ${Math.round(x.gap||0)}p</span></div><h5>${esc(x.title)}</h5><p>${esc(x.body)}</p><div class="crossEvidence">${esc(x.evidence)}</div><div class="crossPair"><div class="crossPairItem question"><b>확인 질문</b><span>${esc(x.ask)}</span></div><div class="crossPairItem action"><b>권장 액션</b><span>${esc(x.action)}</span></div></div></article>`).join('')}</div>`;
 }
 function tier(avgFav,hi90){if(hi90>=20)return'check';if(avgFav>=65)return'stable';if(avgFav>=55)return'watch';return'risk'}
 function showView(id,skipHash){$all('.view').forEach(v=>v.classList.toggle('active',v.id===id));$all('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(!skipHash&&location.hash!=='#'+id)history.replaceState(null,'','#'+id);window.scrollTo({top:0,behavior:'smooth'});if(id==='speech')buildSpeechPrompt()}
@@ -1384,7 +1406,7 @@ function renderDivisionDeepDive(dv){
     return `<tr><td><b>Q${q.no}</b> ${esc(m.short||m.text||'')}</td><td>${termTip(qCategory(q.no))}</td><td class="num" style="color:${favColor(q.fav)};font-weight:950">${pct(q.fav)}</td><td class="num">${pct(q.low)}</td><td><span class="chip ${tone==='risk'?'risk':(tone==='warn'?'watch':'stable')}">${label}</span><br><span class="sub">전년 대비 ${plainDelta(q.fav,q.fav25)}</span></td></tr>`;
   }).join('')}</tbody></table></div>`;
   let relation=relationshipInsights(dv);
-  $('#deepCrossAnalysis').innerHTML=`<div class="crossIntro"><b>교차검증 읽는 법</b><br>같이 움직여야 할 문항의 점수 차이가 크게 벌어진 지점을 찾습니다. 예를 들어 잔류 의향은 높은데 추천 의향이 낮으면 “남아는 있지만 추천할 만큼 매력적이지 않다”는 가설을 세울 수 있습니다.</div><div class="ahaGrid">${insightCardsHTML(relation,4,false)}</div><div class="tableWrap" style="margin-top:12px"><table class="miniTable"><thead><tr><th>카테고리</th><th>대표 리스크 문항</th><th class="num">카테고리 긍정</th><th class="num">문항 긍정</th><th>교차 해석</th></tr></thead><tbody>${catMap.map(([cat,qs])=>{
+  $('#deepCrossAnalysis').innerHTML=`<div class="crossIntro"><b>교차검증 읽는 법</b><br>같이 움직여야 할 문항의 점수 차이가 크게 벌어진 지점을 찾습니다. 예를 들어 잔류 의향은 높은데 추천 의향이 낮으면 “남아는 있지만 추천할 만큼 매력적이지 않다”는 가설을 세울 수 있습니다.</div>${crossSignalHTML(relation,4)}<div class="tableWrap" style="margin-top:12px"><table class="miniTable"><thead><tr><th>카테고리</th><th>대표 리스크 문항</th><th class="num">카테고리 긍정</th><th class="num">문항 긍정</th><th>교차 해석</th></tr></thead><tbody>${catMap.map(([cat,qs])=>{
     let catData=cats.find(c=>c.name===cat)||{};
     let q=dv.qs.filter(x=>qs.includes(x.no)).sort((a,b)=>(num(a.fav)||999)-(num(b.fav)||999))[0];
     let m=questionMeta(q?.no);
