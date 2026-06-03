@@ -38,6 +38,7 @@ label{display:block;font-size:11px;font-weight:950;color:#475569;text-transform:
 .brand{display:flex;gap:11px;align-items:center;padding-bottom:16px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,.09);cursor:pointer;border-radius:16px}
 .brand:hover{background:rgba(255,255,255,.06);transform:translateY(-1px);padding-left:8px;padding-right:8px}
 .logo{width:40px;height:40px;border-radius:14px;background:conic-gradient(from 220deg,var(--brand),var(--brand2),var(--cyan),var(--brand));box-shadow:0 16px 34px rgba(91,92,226,.35)}
+.brandLogo{width:42px;height:40px;object-fit:contain;border-radius:10px;background:#fff;box-shadow:0 16px 34px rgba(15,23,42,.22);padding:4px;flex:0 0 auto}
 .brand b{display:block;font-size:16px}.brand span{display:block;color:#aab6ca;font-size:10px;font-weight:900;text-transform:uppercase;margin-top:3px}
 .nav{display:flex;flex-direction:column;gap:5px}.nav button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;color:#b8c4d8;border:1px solid transparent;justify-content:flex-start}
 .nav button:hover{background:rgba(255,255,255,.075);transform:none;color:#fff}.nav button.active{background:rgba(91,92,226,.27);border-color:rgba(167,139,250,.32);color:#fff}
@@ -231,11 +232,24 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 .divLeadFill{height:100%;border-radius:999px}
 .divLeadRow .lv{text-align:right;font-weight:950;font-size:12.5px}
 
-/* clickable rank rows */
-#rankTable tbody tr{cursor:pointer;transition:.1s}
-#rankTable tbody tr:hover{background:#f1f5ff}
+	/* clickable rank rows */
+	#rankTable tbody tr{cursor:pointer;transition:.1s}
+	#rankTable tbody tr:hover{background:#f1f5ff}
+	.pulseCompareGrid{align-items:start}
+	.compareLegend{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 10px}
+	.compareLegend span{display:inline-flex;align-items:center;gap:6px;border:1px solid #e5e7eb;background:#f8fafc;border-radius:999px;padding:5px 8px;color:#475569;font-size:11px;font-weight:900}
+	.compareLegend i{width:20px;height:7px;border-radius:999px;display:inline-block}
+	.pulseCatCompare{gap:12px}
+	.pulseCatCompare .ccRow{grid-template-columns:132px 1fr 76px}
+	.questionCompareWrap{max-height:438px;overflow:auto}
+	.compareTable{min-width:680px}
+	.compareTable .qTitle{display:block;font-weight:900;color:#0f172a;line-height:1.35}
+	.compareTable .qText{display:block;color:#64748b;font-size:11px;line-height:1.35;margin-top:3px}
+	.deltaPill{display:inline-flex;justify-content:center;min-width:54px;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:950;background:#f1f5f9;color:#475569}
+	.deltaPill.up{background:#ecfdf5;color:#047857}
+	.deltaPill.down{background:#fef2f2;color:#b91c1c}
 
-/* ----- Communication board ----- */
+	/* ----- Communication board ----- */
 .commToolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
 .commGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:14px;margin-top:8px}
 .commCard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;box-shadow:var(--soft);display:flex;flex-direction:column;gap:8px;min-height:172px}
@@ -251,10 +265,13 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 .commEmpty{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:16px;padding:20px;color:#64748b;font-size:13px;font-weight:800;text-align:center}
 
 /* ----- Pulse division deep dive ----- */
-.deepDive{margin-top:16px}
-.deepHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
-.deepHeader h3{font-size:20px;margin:0 0 5px}
-.deepSummary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+	.deepDive{margin-top:16px}
+	.deepHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+	.deepHeader h3{font-size:20px;margin:0 0 5px}
+	.deepSelectPanel{background:linear-gradient(180deg,#ffffff,#f8fafc);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 5px 18px rgba(15,23,42,.045)}
+	.deepSelectTop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px}
+	.deepSelectTop h4{font-size:15px;margin:0 0 4px}
+	.deepSummary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
 .deepMetric{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 5px 18px rgba(15,23,42,.045)}
 .deepMetric b{display:block;font-size:24px;line-height:1.05}
 .deepMetric span{display:block;color:#64748b;font-size:11px;font-weight:950;text-transform:uppercase;margin-top:7px}
@@ -270,19 +287,57 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 .heatRow b{font-size:12px;color:#334155}
 .heatTrack{height:18px;background:#edf2f7;border-radius:999px;overflow:hidden;position:relative}
 .heatTrack i{display:block;height:100%;border-radius:999px}
-.lensBox{display:grid;gap:10px}
-.lensItem{border-left:4px solid var(--brand);background:#f8fafc;border-radius:16px;padding:12px;color:#334155;line-height:1.55;font-size:13px}
-.lensItem.warn{border-left-color:var(--amber)}
-.lensItem.risk{border-left-color:var(--red)}
-.lensItem.green{border-left-color:var(--green)}
+.lensBox{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.lensItem{background:linear-gradient(180deg,#ffffff,#f8fafc);border:1px solid #e5e7eb;border-radius:18px;padding:13px;color:#334155;line-height:1.55;font-size:13px;box-shadow:0 5px 18px rgba(15,23,42,.045)}
+.lensItem b{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;margin-bottom:7px;background:#eef2ff;color:#4338ca;font-size:11px;font-weight:950}
+.lensItem.warn{border-color:#fed7aa;background:linear-gradient(180deg,#fff,#fff8ed)}
+.lensItem.warn b{background:#fff7ed;color:#9a3412}
+.lensItem.risk{border-color:#fecaca;background:linear-gradient(180deg,#fff,#fff5f5)}
+.lensItem.risk b{background:#fff1f2;color:#b91c1c}
+.lensItem.green{border-color:#bbf7d0;background:linear-gradient(180deg,#fff,#f0fdf4)}
+.lensItem.green b{background:#ecfdf5;color:#047857}
 .deepPrompt{font-family:"SFMono-Regular","Cascadia Mono","Menlo",monospace;font-size:12.5px;white-space:pre-wrap;min-height:260px}
-@media(max-width:900px){.deepSummary,.deepGrid{grid-template-columns:1fr}.deepHeader{display:block}.deepHeader .toolbar{margin-top:12px}.heatRow{grid-template-columns:1fr}}
+	@media(max-width:900px){.deepSummary,.deepGrid,.lensBox{grid-template-columns:1fr}.deepHeader,.deepSelectTop{display:block}.deepHeader .toolbar,.deepSelectTop .toolbar{margin-top:12px}.heatRow{grid-template-columns:1fr}.pulseCatCompare .ccRow{grid-template-columns:1fr}.questionCompareWrap{max-height:none}}
+@media(max-width:620px){
+  body{overflow-x:hidden}
+  .app{grid-template-columns:1fr}
+  .side{position:relative;height:auto;padding:14px 12px;box-shadow:none}
+  .brand{margin-bottom:10px;padding-bottom:12px}
+  .brandLogo{width:38px;height:36px}
+  .nav{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .nav button{font-size:11px;padding:9px 8px;gap:7px}
+  .main{padding:16px 12px 42px}
+  .dashTop,.dashGrid2,.dashGrid3,.statStrip{grid-template-columns:1fr;gap:12px;margin-bottom:12px}
+  .dashIntro{min-height:0;padding:22px;border-radius:22px}
+  .dashIntro h1{font-size:30px;line-height:1.05}
+  .dashIntro p{font-size:13px}
+  .dashIntro .homeHeroActions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:18px}
+  .gaugeCard,.dashCard{border-radius:20px;padding:15px}
+  .gaugeWrap{grid-template-columns:1fr;gap:10px;text-align:center}
+  .gaugeSvg,.tierDonut{width:150px;height:150px;margin:0 auto}
+  .gaugeLegend{gap:8px}
+  .statCard{padding:15px 15px 15px 18px;border-radius:16px}
+  .statCard b{font-size:26px}
+  .panelTitle{display:block}
+  .panelTitle .dashboardBadge,.panelTitle button{margin-top:8px}
+  .trendSvg,.scatterSvg{height:230px}
+  .ccRow{grid-template-columns:1fr;gap:6px}
+  .ccVal{text-align:left}
+  .distLegend{grid-template-columns:1fr 1fr}
+  .tierWrap{grid-template-columns:1fr;gap:10px}
+  .homeModulesV2.actionHub{grid-template-columns:1fr;gap:12px;margin-top:16px}
+  .actionHub .homeModule{min-height:166px;padding:18px;border-radius:20px}
+  .actionHub .homeModule strong{font-size:19px}
+  .actionHub .homeModule em{position:static;margin-top:16px;width:max-content}
+  .priorityItem{grid-template-columns:38px 1fr;align-items:flex-start}
+  .priorityItem em{grid-column:2;font-size:16px}
+}
 </style>
 </head>
 <body>
 <div class="app" id="appRoot" style="display:none">
   <aside class="side">
-    <div class="brand" role="button" tabindex="0" title="전체 현황판으로 이동" onclick="goHome()" onkeydown="if(event.key==='Enter'||event.key===' ')goHome()"><div class="logo"></div><div><b>Lina Culture Platform</b><span>Culture Workspace</span></div></div>
+    <div class="brand" role="button" tabindex="0" title="전체 현황판으로 이동" onclick="goHome()" onkeydown="if(event.key==='Enter'||event.key===' ')goHome()"><img class="brandLogo" src="lina_logo.png" alt="Lina"><div><b>Lina Culture Platform</b><span>Culture Workspace</span></div></div>
     <nav class="nav">
       <button class="active" data-view="home" onclick="showView('home')"><span class="mark"></span>전체 현황판</button>
       <button data-view="pulse" onclick="showView('pulse')"><span class="mark"></span>Pulse Survey 분석</button>
@@ -401,11 +456,11 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
         <button class="green" onclick="persistDataset('manual')">Firebase/로컬 저장</button>
       </div>
       <div class="grid4" id="pulseMetrics" style="margin:16px 0"></div>
-      <div class="grid2">
-        <div class="card"><h3>카테고리 현황</h3><div id="categoryBars"></div></div>
-        <div class="card"><h3>본부 선택 분석</h3><label>대상 본부</label><select id="divisionSelect" onchange="onDivisionScopeChange()"></select><div id="divisionDetail" style="margin-top:12px"></div><div class="toolbar" style="margin-top:12px"><button class="primary" onclick="createSessionFromSelection()">이 조직 데이터로 세션 만들기</button><button class="ghost" onclick="showView('speech')">솔루션에 반영</button></div></div>
+      <div class="grid2 pulseCompareGrid">
+        <div class="card"><h3>카테고리별 현황 및 2025-2026 비교</h3><p class="sub">카테고리별 긍정 응답의 현재 수준과 전년 대비 변화를 함께 봅니다.</p><div id="categoryBars"></div></div>
+        <div class="card"><h3>문항별 2025-2026 비교</h3><p class="sub">전체 문항의 긍정 응답 변화폭을 빠르게 확인합니다.</p><div id="questionCompare"></div></div>
       </div>
-      <div class="card" style="margin-top:14px"><h3>본부 순위</h3><div class="tableWrap"><table class="table" id="rankTable"><thead><tr><th class="num">#</th><th>본부</th><th class="num">평균 긍정</th><th class="num">평균 부정</th><th>등급</th><th>액션</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card" style="margin-top:14px"><h3>본부별 순위</h3><p class="sub" style="margin-bottom:12px">행을 누르거나 세부 분석 버튼을 누르면 아래 본부별 상세 분석 영역으로 이동합니다.</p><div class="tableWrap"><table class="table" id="rankTable"><thead><tr><th class="num">#</th><th>본부</th><th class="num">평균 긍정</th><th class="num">평균 부정</th><th>등급</th><th>액션</th></tr></thead><tbody></tbody></table></div></div>
       <div class="card deepDive" id="divisionDeepDive">
         <div class="deepHeader">
           <div>
@@ -417,6 +472,15 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
             <button class="ghost" onclick="createSessionFromSelection()">세션 만들기에 적용</button>
           </div>
         </div>
+        <div class="deepSelectPanel">
+          <div class="deepSelectTop">
+            <div><h4>본부 선택 비교</h4><p class="sub">본부 순위에서 선택한 조직을 기준으로 전사 평균, 하위 문항, 부정 집중 문항을 비교합니다.</p></div>
+            <div class="toolbar"><button class="primary" onclick="openSelectedDivisionDeepDive()">선택 본부 분석 갱신</button><button class="ghost" onclick="showView('speech')">솔루션에 반영</button></div>
+          </div>
+          <label>대상 본부</label>
+          <select id="divisionSelect" onchange="onDivisionScopeChange()"></select>
+          <div id="divisionDetail" style="margin-top:12px"></div>
+        </div>
         <div id="deepSummary" class="deepSummary"></div>
         <div class="deepGrid">
           <div class="deepCard"><h4>카테고리별 분석</h4><div id="deepCategoryAnalysis"></div></div>
@@ -427,7 +491,7 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
           <div class="deepCard"><h4>심리학적 분석</h4><div id="deepPsychAnalysis"></div></div>
         </div>
         <div class="deepGrid">
-          <div class="deepCard"><h4>조직전문가 관점 분석</h4><div id="deepOrgAnalysis"></div></div>
+          <div class="deepCard"><h4>조직문화 분석</h4><div id="deepOrgAnalysis"></div></div>
           <div class="deepCard"><h4>GPT 추가 인사이트 프롬프트</h4><textarea id="divisionDeepPrompt" class="deepPrompt" readonly></textarea></div>
         </div>
       </div>
@@ -939,11 +1003,27 @@ function fillSelects(){
 function renderPulse(){
   let d=data(), risks=d.divisions.filter(x=>x.tier==='risk').length, watch=d.divisions.filter(x=>x.tier==='watch').length;
   $('#pulseMetrics').innerHTML=[['전사 평균 긍정',pct(d.meta.companyFav26)],['전사 평균 부정',pct(d.meta.companyLow26)],['위험/주의 본부',risks+' / '+watch],['문항 수',d.meta.qCount]].map(x=>`<div class="metric"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
-  $('#categoryBars').innerHTML=d.company.cats.map(c=>barRow(c.name,c.fav['26'],c.low['26'],plainDelta(c.fav['26'],c.fav['25']))).join('');
+  $('#categoryBars').innerHTML=categoryCompareHTML(d.company.cats);
+  $('#questionCompare').innerHTML=questionCompareHTML(d.company.questions);
   $('#rankTable tbody').innerHTML=sortedDivs().map((dv,i)=>`<tr onclick="selectDivision('${escAttr(dv.name)}')"><td class="num">${i+1}</td><td><b>${esc(dv.name)}</b></td><td class="num" style="color:${favColor(dv.avgFav)};font-weight:950">${pct(dv.avgFav)}</td><td class="num">${pct(dv.avgLow)}</td><td><span class="chip ${dv.tier}">${tierLabel[dv.tier]}</span></td><td><button class="ghost" onclick="event.stopPropagation();selectDivision('${escAttr(dv.name)}')">세부 분석</button></td></tr>`).join('');
 }
 function escAttr(v){return String(v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
 function barRow(label,fav,low,delta){return`<div class="barRow"><div class="barLabel">${esc(label)}</div><div class="track"><div class="fill" style="width:${num(fav)||0}%"></div>${low!=null?`<div class="lowFill" style="width:${num(low)||0}%"></div>`:''}</div><div class="barVal">${pct(fav)} <span style="color:#94a3b8">${delta||''}</span></div></div>`}
+function deltaClass(cur,prev){cur=num(cur);prev=num(prev);if(cur==null||prev==null)return'';let d=Math.round(cur-prev);return d>0?'up':d<0?'down':''}
+function deltaColor(cur,prev){let cls=deltaClass(cur,prev);return cls==='up'?'#047857':cls==='down'?'#b91c1c':'#64748b'}
+function categoryCompareHTML(cats){
+  return `<div class="compareLegend"><span><i style="background:linear-gradient(90deg,#6457f4,#14b8a6)"></i>2026 긍정</span><span><i style="background:#c3ccd9"></i>2025 긍정</span></div><div class="catCompare pulseCatCompare">${cats.map(c=>{
+    let f26=num(c.fav?.['26'])||0, f25=num(c.fav?.['25']);
+    return `<div class="ccRow"><div class="ccLabel">${esc(c.name)}</div><div class="ccBars"><div class="ccBar ccFav"><i style="width:${f26}%"></i></div><div class="ccBar ccPrev"><i style="width:${f25!=null?f25:0}%"></i></div></div><div class="ccVal">${pct(c.fav?.['26'])}<div class="ccDelta" style="color:${deltaColor(c.fav?.['26'],c.fav?.['25'])}">${plainDelta(c.fav?.['26'],c.fav?.['25'])}</div></div></div>`;
+  }).join('')}</div>`;
+}
+function questionCompareHTML(questions){
+  let rows=questions.map(q=>{
+    let f25=q.fav?.['25'], f26=q.fav?.['26'], cls=deltaClass(f26,f25);
+    return `<tr><td><span class="qTitle">Q${q.no}. ${esc(q.short||'')}</span><span class="qText">${esc(q.text||'')}</span></td><td>${esc(qCategory(q.no))}</td><td class="num">${pct(f25)}</td><td class="num" style="color:${favColor(f26)};font-weight:950">${pct(f26)}</td><td class="num"><span class="deltaPill ${cls}">${plainDelta(f26,f25)}</span></td></tr>`;
+  }).join('');
+  return `<div class="tableWrap questionCompareWrap"><table class="miniTable compareTable"><thead><tr><th>문항</th><th>카테고리</th><th class="num">2025</th><th class="num">2026</th><th class="num">증감</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
 function syncScopeSelects(name){
   ['promptScope','sessionScope','speechScope'].forEach(id=>{let el=$('#'+id);if(el&&Array.from(el.options).some(o=>o.value===name))el.value=name});
 }
@@ -951,6 +1031,11 @@ function onDivisionScopeChange(){
   let name=$('#divisionSelect').value;
   syncScopeSelects(name);
   renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();
+}
+function openSelectedDivisionDeepDive(){
+  let name=$('#divisionSelect').value;
+  if(!name)return;
+  selectDivision(name,true);
 }
 function selectDivision(name,focus=true){
   $('#divisionSelect').value=name;syncScopeSelects(name);
