@@ -169,6 +169,11 @@ body:before{
 }
 .nav button.active .dot{background:#a78bfa;box-shadow:0 0 0 4px rgba(167,139,250,.14),0 0 22px rgba(167,139,250,.55)}
 .nav button.done .dot{background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.12),0 0 20px rgba(52,211,153,.45)}
+.nav button .navText{display:flex;flex-direction:column;gap:1px;line-height:1.2;min-width:0}
+.nav button .navEn{font-size:13px;font-weight:850}
+.nav button .navKo{font-size:10.5px;font-weight:700;color:#8b95a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav button.active .navKo{color:#cbc4ff}
+.nav button.done .navKo{color:#86d7b8}
 .sideActions{gap:9px;}
 .sideActions button{
   border-radius:15px;
@@ -390,18 +395,18 @@ body.print-onepager .app{display:block}body.print-onepager .side,body.print-onep
       <div id="authBar" style="display:none;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:11px;color:#aab3c5"><span id="authWho" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><button onclick="logoutUser()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);color:#fff;padding:6px 10px;font-size:11px">로그아웃</button></div>
     </div>
     <nav class="nav" id="nav">
-      <button class="active" data-page="overview" onclick="go('overview')"><span class="left"><span class="dot"></span>Overview</span><span>⌘</span></button>
-      <button data-page="brief" onclick="go('brief')"><span class="left"><span class="dot"></span>Project Brief</span><span>1</span></button>
-      <button data-page="questions" onclick="go('questions')"><span class="left"><span class="dot"></span>Question Board</span><span>2</span></button>
-	      <button data-page="emotion" onclick="go('emotion')"><span class="left"><span class="dot"></span>Participant DB</span><span>3</span></button>
-	      <button data-page="frame" onclick="go('frame')"><span class="left"><span class="dot"></span>Big Frame</span><span>4</span></button>
-	      <button data-page="activities" onclick="go('activities')"><span class="left"><span class="dot"></span>Activity Library</span><span>5</span></button>
-	      <button data-page="lens" onclick="go('lens')"><span class="left"><span class="dot"></span>Thinking Lens</span><span>6</span></button>
-	      <button data-page="story" onclick="go('story')"><span class="left"><span class="dot"></span>Story Cards</span><span>7</span></button>
-	      <button data-page="slots" onclick="go('slots')"><span class="left"><span class="dot"></span>Slot Game</span><span>8</span></button>
-	      <button data-page="feedback" onclick="go('feedback')"><span class="left"><span class="dot"></span>Feedback</span><span>9</span></button>
-	      <button data-page="format" onclick="go('format')"><span class="left"><span class="dot"></span>Format Advisor</span><span>10</span></button>
-	      <button data-page="runbook" onclick="go('runbook')"><span class="left"><span class="dot"></span>PPT Script</span><span>11</span></button>
+      <button class="active" data-page="overview" onclick="go('overview')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Overview</span><span class="navKo">전체 개요</span></span></span><span>⌘</span></button>
+      <button data-page="brief" onclick="go('brief')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Project Brief</span><span class="navKo">프로젝트 개요</span></span></span><span>1</span></button>
+      <button data-page="questions" onclick="go('questions')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Question Board</span><span class="navKo">질문 보드</span></span></span><span>2</span></button>
+	      <button data-page="emotion" onclick="go('emotion')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Participant DB</span><span class="navKo">참여자·감정</span></span></span><span>3</span></button>
+	      <button data-page="frame" onclick="go('frame')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Big Frame</span><span class="navKo">세션 구조</span></span></span><span>4</span></button>
+	      <button data-page="activities" onclick="go('activities')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Activity Library</span><span class="navKo">활동 라이브러리</span></span></span><span>5</span></button>
+	      <button data-page="lens" onclick="go('lens')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Thinking Lens</span><span class="navKo">생각 렌즈</span></span></span><span>6</span></button>
+	      <button data-page="story" onclick="go('story')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Story Cards</span><span class="navKo">스토리 카드</span></span></span><span>7</span></button>
+	      <button data-page="slots" onclick="go('slots')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Slot Game</span><span class="navKo">슬롯 채우기</span></span></span><span>8</span></button>
+	      <button data-page="feedback" onclick="go('feedback')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Feedback</span><span class="navKo">직원 피드백</span></span></span><span>9</span></button>
+	      <button data-page="format" onclick="go('format')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">Format Advisor</span><span class="navKo">포맷 추천</span></span></span><span>10</span></button>
+	      <button data-page="runbook" onclick="go('runbook')"><span class="left"><span class="dot"></span><span class="navText"><span class="navEn">PPT Script</span><span class="navKo">PPT 스크립트</span></span></span><span>11</span></button>
     </nav>
     <div class="sideActions"><button onclick="exportJSON()">JSON</button><button onclick="downloadRunbook()">MD</button></div>
   </aside>
@@ -434,7 +439,7 @@ body.print-onepager .app{display:block}body.print-onepager .side,body.print-onep
     </section>
 
     <section id="emotion" class="page">
-      <div class="topbar"><div><div class="eyebrow">Step 3</div><h2>Participant Context & Emotion Hypothesis</h2><p>참여자의 감정을 단정하지 않고, 제한된 맥락 정보로 감정 가설을 만들고 검토합니다.</p></div><div class="actions"><button class="secondary" onclick="showEmotionHypothesisPrompt()">감정 가설 프롬프트 생성</button><button class="ghost" onclick="addParticipant()">참여자 추가</button><button class="ghost" onclick="downloadCSVTemplate()">CSV 템플릿</button></div></div>
+      <div class="topbar"><div><div class="eyebrow">Step 3</div><h2>Participant DB — Context & Emotion Hypothesis</h2><p>참여자의 감정을 단정하지 않고, 제한된 맥락 정보로 감정 가설을 만들고 검토합니다.</p></div><div class="actions"><button class="secondary" onclick="showEmotionHypothesisPrompt()">감정 가설 프롬프트 생성</button><button class="ghost" onclick="addParticipant()">참여자 추가</button><button class="ghost" onclick="downloadCSVTemplate()">CSV 템플릿</button></div></div>
       <div class="hintStrip">이 화면은 감정을 측정하거나 진단하지 않습니다. 입력된 맥락을 바탕으로 <b>설계용 감정 가설</b>을 만들고, GPT 분석 결과를 붙여넣으면 강도·확신도·전환 목표·설계 경고를 시각화합니다.</div>
       <div class="hypoTabs"><button class="hypoTab active" onclick="switchHypoTab('context',this)">1. Context Input</button><button class="hypoTab" onclick="switchHypoTab('prompt',this)">2. Hypothesis Prompt</button><button class="hypoTab" onclick="switchHypoTab('result',this)">3. GPT Result & Visualization</button></div>
       <div id="hypo_context" class="hypoPane">
@@ -451,7 +456,7 @@ body.print-onepager .app{display:block}body.print-onepager .side,body.print-onep
     </section>
 
 	    <section id="frame" class="page">
-      <div class="topbar"><div><div class="eyebrow">Step 4</div><h2>Session Architecture Builder</h2><p>하나의 큰 회차 안에 1개 또는 여러 개의 세션 블록을 자유롭게 넣고, Wellness / 조직문화 / 통합 흐름을 따로 또는 함께 확인합니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('frame')">프레임 리뷰 프롬프트</button><button class="ghost" onclick="addFrameRow()">회차 추가</button><button class="green" onclick="createFrameReviewCards()">리뷰 카드 생성</button></div></div>
+      <div class="topbar"><div><div class="eyebrow">Step 4</div><h2>Big Frame — Session Architecture Builder</h2><p>하나의 큰 회차 안에 1개 또는 여러 개의 세션 블록을 자유롭게 넣고, Wellness / 조직문화 / 통합 흐름을 따로 또는 함께 확인합니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('frame')">프레임 리뷰 프롬프트</button><button class="ghost" onclick="addFrameRow()">회차 추가</button><button class="green" onclick="createFrameReviewCards()">리뷰 카드 생성</button></div></div>
       <div class="card flowControl"><div><h3>Flow View Mode</h3><p class="sub">같은 데이터를 다른 관점으로 재배열합니다. 세션은 Wellness만 있어도 되고, 조직문화만 있어도 되고, 둘을 섞어도 됩니다.</p></div><div class="flowTabs"><button class="flowTab active" onclick="setFlowView('all',this)">All / 운영 전체</button><button class="flowTab" onclick="setFlowView('wellness',this)">Wellness Flow</button><button class="flowTab" onclick="setFlowView('org',this)">조직문화 Flow</button><button class="flowTab" onclick="setFlowView('integrated',this)">Integrated Logic</button></div></div>
       <div id="frameBuilder" class="frameBuilder"></div>
       <div class="grid g2" style="margin-top:16px"><div class="card"><h3>Selected Flow Preview</h3><div id="flowPreview" class="flowPreview note">회차와 세션 블록을 입력하면 흐름이 표시됩니다.</div></div><div class="card"><h3>One-pager Preview / PDF</h3><p class="sub">현재 Flow View 기준으로 원페이저를 생성합니다. PDF 버튼은 브라우저의 인쇄/저장 기능을 사용합니다.</p><div class="actions"><button class="primary" onclick="renderOnePager()">원페이저 생성</button><button class="ghost" onclick="printOnePager()">PDF 저장/인쇄</button></div><div id="onePagerPreview" class="onePagerPreview">아직 생성 전입니다.</div></div></div>
@@ -497,7 +502,7 @@ body.print-onepager .app{display:block}body.print-onepager .side,body.print-onep
 	    </section>
 
 	    <section id="lens" class="page">
-      <div class="topbar"><div><div class="eyebrow">Step 5</div><h2>Thinking Lens</h2><p>같은 초안을 여러 관점에서 흔들어보고, 유지/수정/보류 결정을 남깁니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('lens')">렌즈 질문 프롬프트</button><button class="green" onclick="addDecision()">결정 추가</button></div></div>
+      <div class="topbar"><div><div class="eyebrow">Step 6</div><h2>Thinking Lens</h2><p>같은 초안을 여러 관점에서 흔들어보고, 유지/수정/보류 결정을 남깁니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('lens')">렌즈 질문 프롬프트</button><button class="green" onclick="addDecision()">결정 추가</button></div></div>
       <div class="lensGrid">
         <div class="lens"><b>참여자 관점</b><p>이 구성이 참여자에게 안전하고 실질적으로 느껴지는가?</p><button class="secondary" onclick="lensPrompt('participant')">질문 만들기</button></div>
         <div class="lens"><b>CEO / HR 관점</b><p>조직 메시지와 연결되지만 강요처럼 보이지 않는가?</p><button class="secondary" onclick="lensPrompt('sponsor')">질문 만들기</button></div>
@@ -509,12 +514,12 @@ body.print-onepager .app{display:block}body.print-onepager .side,body.print-onep
     </section>
 
     <section id="story" class="page">
-      <div class="topbar"><div><div class="eyebrow">Step 6</div><h2>Story Cards</h2><p>복잡한 PPT 슬라이드 설계가 아니라, 카드 1~5에 전체 흐름을 줄글로 써서 한눈에 스토리를 봅니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('story')">스토리 점검 프롬프트</button><button class="ghost" onclick="addSlide()">카드 추가</button></div></div>
+      <div class="topbar"><div><div class="eyebrow">Step 7</div><h2>Story Cards</h2><p>복잡한 PPT 슬라이드 설계가 아니라, 카드 1~5에 전체 흐름을 줄글로 써서 한눈에 스토리를 봅니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('story')">스토리 점검 프롬프트</button><button class="ghost" onclick="addSlide()">카드 추가</button></div></div>
       <div id="slideList"></div>
     </section>
 
     <section id="slots" class="page">
-      <div class="topbar"><div><div class="eyebrow">Step 7</div><h2>Slot Completion Game</h2><p>회차별 탭을 이동하면서 슬롯을 하나씩 클리어합니다. GPT가 만든 슬롯 초안을 붙여넣으면 입력창에 자동 반영되고, 이후 직접 수정할 수 있습니다.</p></div><div class="actions"><button class="secondary" onclick="showSlotDraftPrompt()">슬롯 질문 프롬프트</button><button class="ghost" onclick="syncSessionsFromFrame()">회차 동기화</button></div></div>
+      <div class="topbar"><div><div class="eyebrow">Step 8</div><h2>Slot Game — Completion</h2><p>회차별 탭을 이동하면서 슬롯을 하나씩 클리어합니다. GPT가 만든 슬롯 초안을 붙여넣으면 입력창에 자동 반영되고, 이후 직접 수정할 수 있습니다.</p></div><div class="actions"><button class="secondary" onclick="showSlotDraftPrompt()">슬롯 질문 프롬프트</button><button class="ghost" onclick="syncSessionsFromFrame()">회차 동기화</button></div></div>
       <div class="tabs" id="sessionTabs"></div>
       <div class="card" style="margin-bottom:16px">
         <div class="cardHead"><div><h3>GPT Slot Draft Import</h3><p class="sub">현재 선택된 회차의 슬롯 초안을 GPT에게 받은 뒤, 아래에 JSON을 붙여넣으면 각 슬롯 입력창에 자동으로 채워집니다. 자동 반영 후에는 직접 하나씩 수정하면 됩니다.</p></div><div class="actions"><button class="primary" onclick="applySlotDraftResult()">GPT 답변 적용</button><button class="ghost" onclick="clearSlotDraftInput()">입력창 비우기</button></div></div>
@@ -525,17 +530,17 @@ body.print-onepager .app{display:block}body.print-onepager .side,body.print-onep
     </section>
 
     <section id="feedback" class="page">
-      <div class="topbar"><div><div class="eyebrow">Step 8</div><h2>Employee Feedback Review</h2><p>직원 피드백을 수정 지시가 아니라, 고려해야 할 설계 질문으로 바꿉니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('feedback')">피드백 분석 프롬프트</button><button class="green" onclick="analyzeFeedback()">고려사항 생성</button></div></div>
+      <div class="topbar"><div><div class="eyebrow">Step 9</div><h2>Employee Feedback Review</h2><p>직원 피드백을 수정 지시가 아니라, 고려해야 할 설계 질문으로 바꿉니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('feedback')">피드백 분석 프롬프트</button><button class="green" onclick="analyzeFeedback()">고려사항 생성</button></div></div>
       <div class="grid g2"><div class="card"><h3>Feedback Input</h3><textarea data-key="feedback.raw" placeholder="직원 피드백, FGD 발언, 설문 의견 등을 붙여넣으세요." style="min-height:260px"></textarea></div><div class="card"><h3>Design Questions from Feedback</h3><div id="feedbackOutput" class="note">피드백을 입력한 뒤 고려사항 생성을 누르세요.</div></div></div>
     </section>
 
     <section id="format" class="page">
-      <div class="topbar"><div><div class="eyebrow">Step 9</div><h2>Format Advisor</h2><p>활동, 영상, PPT 설명, 토론, 개인 작성 중 어떤 방식이 적합한지 판단 기준을 생성합니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('format')">매체 판단 프롬프트</button><button class="green" onclick="adviseFormat()">추천 생성</button></div></div>
+      <div class="topbar"><div><div class="eyebrow">Step 10</div><h2>Format Advisor</h2><p>활동, 영상, PPT 설명, 토론, 개인 작성 중 어떤 방식이 적합한지 판단 기준을 생성합니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('format')">매체 판단 프롬프트</button><button class="green" onclick="adviseFormat()">추천 생성</button></div></div>
       <div class="grid g2"><div class="card"><h3>Conditions</h3><label>정보 복잡도</label><select data-key="format.complexity"><option>낮음</option><option>중간</option><option>높음</option></select><label>참여자 에너지</label><select data-key="format.energy"><option>낮음</option><option>중간</option><option>높음</option></select><label>심리적 안전감</label><select data-key="format.safety"><option>낮음</option><option>중간</option><option>높음</option></select><label>목표</label><select data-key="format.goal"><option>공감 형성</option><option>정보 이해</option><option>문제 분석</option><option>행동 합의</option><option>감정 환기</option></select></div><div class="card"><h3>Recommendation</h3><div id="formatOutput" class="note">추천 생성 버튼을 누르세요.</div></div></div>
     </section>
 
     <section id="runbook" class="page">
-      <div class="topbar"><div><div class="eyebrow">Step 10</div><h2>Final PPT Script</h2><p>입력값과 결정 로그를 조립해 PPT 스크립트 형태로 정리합니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('runbook')">최종 점검 프롬프트</button><button class="green" onclick="compileRunbook()">스크립트 조립</button><button class="ghost" onclick="downloadRunbook()">Markdown 다운로드</button></div></div>
+      <div class="topbar"><div><div class="eyebrow">Step 11</div><h2>PPT Script — Final Output</h2><p>입력값과 결정 로그를 조립해 PPT 스크립트 형태로 정리합니다.</p></div><div class="actions"><button class="secondary" onclick="showPrompt('runbook')">최종 점검 프롬프트</button><button class="green" onclick="compileRunbook()">스크립트 조립</button><button class="ghost" onclick="downloadRunbook()">Markdown 다운로드</button></div></div>
       <div class="promptBox" id="runbookBox">아직 조립 전입니다. “스크립트 조립” 버튼을 누르세요.</div>
     </section>
   </main>
