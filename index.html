@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lina Culture OS</title>
+<title>Lina Culture Platform</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="app.js"></script>
 <style>
 :root{
   --bg:#eef2f7;--panel:#ffffff;--panel2:#f8fafc;--ink:#0f172a;--muted:#64748b;--line:#dbe3ee;
@@ -121,11 +122,139 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 @media(max-width:900px){.actionHub .homeModule{min-height:190px}.actionHub .homeModule strong{font-size:20px}}
 
 </style>
+<style>
+/* ============================================================
+   v4 — Login redesign · Sidebar account · Dashboard rebuild · Comms board
+   ============================================================ */
+
+/* ----- Login immersive scene ----- */
+.authOverlay{padding:24px;background:#f1f4fb}
+.authShell{position:relative;width:min(1040px,100%);min-height:640px;background:#f1f4fb;border-radius:30px;overflow:hidden;box-shadow:0 44px 130px rgba(64,92,150,.28)}
+.authMedia{position:absolute;left:0;top:0;bottom:0;width:min(74%,770px);background:#f1f4fb;overflow:visible}
+.authMedia img{position:absolute;left:-4%;top:-8%;width:112%;height:116%;max-width:none;object-fit:cover;object-position:center 42%;display:block}
+.authMedia .authMediaCap{display:none;position:absolute;left:0;right:0;bottom:0;padding:24px;background:linear-gradient(180deg,transparent,rgba(11,16,32,.55));color:#fff}
+.authMedia .authMediaCap b{display:block;font-size:15px;font-weight:950}
+.authMedia .authMediaCap span{display:block;font-size:12px;color:#e3ebf6;margin-top:5px;line-height:1.5}
+.authPane{position:relative;z-index:2;margin-left:auto;width:min(410px,42%);min-height:640px;padding:48px 42px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(90deg,rgba(241,244,251,.74),#f1f4fb 30%,#f1f4fb 100%)}
+.authBrandRow{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.authBrandRow img{width:50px;height:auto;object-fit:contain}
+.authBrandRow .authBrandName{font-size:12px;font-weight:950;letter-spacing:.05em;color:#64748b;text-transform:uppercase}
+.authWelcome{font-size:13px;font-weight:900;color:var(--brand);letter-spacing:.06em;text-transform:uppercase}
+.authBigTitle{font-size:33px;line-height:1.08;font-weight:950;letter-spacing:-.035em;margin:4px 0 10px;color:#0b1020}
+.authPane .authHint{font-size:12.5px;color:var(--muted);line-height:1.6}
+.authPane label{margin-top:14px}
+@media(max-width:780px){.authOverlay{padding:18px}.authShell{display:flex;flex-direction:column;min-height:0;width:min(440px,100%)}.authMedia{position:relative;width:100%;height:300px;overflow:hidden}.authMedia img{left:-8%;top:-13%;width:118%;height:126%;object-fit:cover;object-position:center 42%}.authPane{width:100%;min-height:0;margin:0;padding:26px 22px;background:#f1f4fb}.authBigTitle{font-size:26px}}
+
+/* ----- Sidebar account block (moved from top-right) ----- */
+.side{display:flex;flex-direction:column}
+.sideAccount{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:8px}
+.sideAccount .acctWho{font-size:11.5px;font-weight:850;color:#aab6ca;line-height:1.45;word-break:break-all;display:flex;align-items:flex-start;gap:8px}
+.sideAccount .acctWho:before{content:"";width:8px;height:8px;margin-top:4px;border-radius:50%;background:#34d399;flex:0 0 auto;box-shadow:0 0 0 3px rgba(52,211,153,.18)}
+.sideAccount button{width:100%;justify-content:center;font-size:11.5px;padding:9px 10px}
+.sideAccount .acctAdmin{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff}
+.sideAccount .acctLogout{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#dbe4f0}
+
+/* ----- Dashboard v4 ----- */
+.dashTop{display:grid;grid-template-columns:1.22fr .9fr;gap:18px;margin-bottom:18px}
+.dashIntro{position:relative;overflow:hidden;border-radius:28px;padding:32px;color:#fff;background:linear-gradient(135deg,#111827 0%,#1e1b4b 55%,#0f766e 100%);box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:space-between;min-height:316px;border:1px solid rgba(255,255,255,.12)}
+.dashIntro:after{content:"";position:absolute;right:-70px;bottom:-90px;width:270px;height:270px;border-radius:50%;background:rgba(255,255,255,.07)}
+.dashIntro .eyebrow{color:#8ddbd0}
+.dashIntro h1{font-size:40px;line-height:1.03;margin:8px 0 12px;letter-spacing:-.045em}
+.dashIntro p{max-width:560px;color:#dbe4f0;font-size:14px;line-height:1.62;margin:0}
+.dashIntro .heroChips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;position:relative;z-index:1}
+.dashIntro .heroChips span{font-size:12px;font-weight:900;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:7px 12px;color:#fff}
+.dashIntro .homeHeroActions{margin-top:22px}
+.gaugeCard{background:rgba(255,255,255,.95);border:1px solid rgba(255,255,255,.8);border-radius:28px;box-shadow:var(--soft);padding:22px;display:flex;flex-direction:column}
+.gaugeWrap{display:grid;grid-template-columns:172px 1fr;gap:18px;align-items:center;margin-top:10px}
+.gaugeSvg{width:172px;height:172px}
+.gaugeCenter{font-size:36px;font-weight:950;letter-spacing:-.04em;fill:#0b1020}
+.gaugeSub{font-size:11px;font-weight:900;fill:#94a3b8;text-transform:uppercase;letter-spacing:.06em}
+.gaugeLegend{display:flex;flex-direction:column;gap:12px}
+.gaugeLegend .lg{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:850;color:#334155}
+.gaugeLegend .dot{width:12px;height:12px;border-radius:4px;flex:0 0 auto}
+.gaugeLegend b{margin-left:auto;font-weight:950;color:#0b1020}
+
+.statStrip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.statCard{position:relative;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px 18px 18px 22px;box-shadow:var(--soft)}
+.statCard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px}
+.statCard.c1:before{background:linear-gradient(180deg,#6457f4,#2f7bf4)}
+.statCard.c2:before{background:linear-gradient(180deg,#fb7185,#dc2626)}
+.statCard.c3:before{background:linear-gradient(180deg,#f59e0b,#b7791f)}
+.statCard.c4:before{background:linear-gradient(180deg,#14b8a6,#0f9f7f)}
+.statCard b{display:block;font-size:31px;letter-spacing:-.045em;line-height:1;margin-top:4px;color:#0b1020}
+.statCard .stLabel{display:block;font-size:12px;font-weight:900;color:#64748b;margin-top:9px}
+.statCard .stTrend{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:950;border-radius:999px;padding:4px 9px;margin-top:11px}
+.stTrend.up{background:#ecfdf5;color:#047857}.stTrend.down{background:#fef2f2;color:#b91c1c}.stTrend.flat{background:#f1f5f9;color:#475569}
+
+.dashGrid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.dashGrid3{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:18px;margin-bottom:18px}
+.dashCard{background:rgba(255,255,255,.95);border:1px solid rgba(255,255,255,.8);border-radius:24px;box-shadow:var(--soft);padding:20px}
+.dashCard .panelTitle{margin-bottom:6px}
+.dashCard h3{margin:0 0 3px;font-size:16px;font-weight:950}
+
+.catCompare{display:flex;flex-direction:column;gap:13px;margin-top:10px}
+.ccRow{display:grid;grid-template-columns:118px 1fr 44px;gap:12px;align-items:center}
+.ccLabel{font-size:12.5px;font-weight:900;color:#334155}
+.ccBars{display:flex;flex-direction:column;gap:5px}
+.ccBar{height:13px;border-radius:999px;background:#eef2f7;position:relative;overflow:hidden}
+.ccBar i{position:absolute;left:0;top:0;height:100%;border-radius:999px;display:block}
+.ccFav i{background:linear-gradient(90deg,#6457f4,#14b8a6)}
+.ccPrev i{background:#c3ccd9}
+.ccVal{text-align:right;font-size:12px;font-weight:950;color:#0b1020}
+.ccDelta{font-size:10px;font-weight:900}
+
+.trendSvg{width:100%;height:210px;margin-top:8px;overflow:visible}
+
+.scatterSvg{width:100%;height:308px;margin-top:6px;overflow:visible}
+.scatterLegend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+.scatterLegend span{font-size:11px;font-weight:850;display:inline-flex;align-items:center;gap:6px;color:#475569}
+.scatterLegend i{width:10px;height:10px;border-radius:50%}
+
+.distStack{display:flex;height:36px;border-radius:12px;overflow:hidden;margin-top:12px;box-shadow:inset 0 0 0 1px rgba(15,23,42,.05)}
+.distStack div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:950;color:#fff;min-width:0}
+.distLegend{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:14px}
+.distLegend span{font-size:10px;font-weight:850;color:#475569;display:flex;align-items:center;gap:5px}
+.distLegend i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+
+.tierWrap{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;margin-top:8px}
+.tierDonut{width:150px;height:150px}
+.tierLegend{display:flex;flex-direction:column;gap:10px}
+.tierLegend .tl{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:850;color:#334155}
+.tierLegend .tl i{width:12px;height:12px;border-radius:4px;flex:0 0 auto}
+.tierLegend .tl b{margin-left:auto;font-weight:950;color:#0b1020}
+
+.divLead{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.divLeadRow{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;cursor:pointer;border-radius:12px;padding:7px 8px;transition:.12s;border:1px solid transparent}
+.divLeadRow:hover{background:#f1f5ff;border-color:#dbe2ff}
+.divLeadRow strong{display:block;font-size:12.5px;color:#334155;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.divLeadTrack{height:10px;border-radius:999px;background:#e8edf5;overflow:hidden}
+.divLeadFill{height:100%;border-radius:999px}
+.divLeadRow .lv{text-align:right;font-weight:950;font-size:12.5px}
+
+/* clickable rank rows */
+#rankTable tbody tr{cursor:pointer;transition:.1s}
+#rankTable tbody tr:hover{background:#f1f5ff}
+
+/* ----- Communication board ----- */
+.commToolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.commGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:14px;margin-top:8px}
+.commCard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;box-shadow:var(--soft);display:flex;flex-direction:column;gap:8px;min-height:172px}
+.commCard .commType{display:inline-flex;align-self:flex-start;font-size:10.5px;font-weight:950;border-radius:999px;padding:4px 9px}
+.commType.t_speech{background:#eef2ff;color:#4338ca}
+.commType.t_company{background:#ecfdf5;color:#047857}
+.commType.t_division{background:#fff7ed;color:#9a3412}
+.commCard h4{margin:0;font-size:14px;font-weight:900;line-height:1.35;color:#0b1020}
+.commCard .commMeta{font-size:11px;color:#94a3b8;font-weight:800}
+.commCard .commBody{font-size:12px;color:#475569;line-height:1.5;max-height:84px;overflow:hidden;white-space:pre-wrap}
+.commCard .commActions{display:flex;gap:6px;margin-top:auto;padding-top:8px;flex-wrap:wrap}
+.commCard .commActions button{padding:7px 9px;font-size:11px}
+.commEmpty{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:16px;padding:20px;color:#64748b;font-size:13px;font-weight:800;text-align:center}
+</style>
 </head>
 <body>
 <div class="app" id="appRoot" style="display:none">
   <aside class="side">
-    <div class="brand" role="button" tabindex="0" title="전체 현황판으로 이동" onclick="goHome()" onkeydown="if(event.key==='Enter'||event.key===' ')goHome()"><div class="logo"></div><div><b>Lina Culture OS</b><span>Culture Workspace</span></div></div>
+    <div class="brand" role="button" tabindex="0" title="전체 현황판으로 이동" onclick="goHome()" onkeydown="if(event.key==='Enter'||event.key===' ')goHome()"><div class="logo"></div><div><b>Lina Culture Platform</b><span>Culture Workspace</span></div></div>
     <nav class="nav">
       <button class="active" data-view="home" onclick="showView('home')"><span class="mark"></span>전체 현황판</button>
       <button data-view="pulse" onclick="showView('pulse')"><span class="mark"></span>Pulse Survey 분석</button>
@@ -133,64 +262,84 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
       <button data-view="speech" onclick="showView('speech')"><span class="mark"></span>커뮤니케이션 솔루션</button>
       <button data-view="data" onclick="showView('data')"><span class="mark"></span>데이터/Firebase 관리</button>
     </nav>
+    <div id="accountBar" class="sideAccount" style="display:none">
+      <span id="authWho" class="acctWho"></span>
+      <button id="adminReviewBtn" class="acctAdmin" style="display:none" onclick="openAdminPanel()">승인 관리</button>
+      <button class="acctLogout" onclick="logoutUser()">로그아웃</button>
+    </div>
   </aside>
   <main class="main">
     <section id="home" class="view active">
-      <div class="homeHeroV2">
-        <div class="homeHeroCopy">
-          <div class="eyebrow">Lina Culture OS · Overall Status</div>
-          <h1>전체 현황</h1>
-          <p>Pulse Survey의 전사 신호, 본부별 위험도, 취약 문항을 한 화면에서 읽고 다음 분석으로 넘어가는 대시보드입니다.</p>
+      <div class="dashTop">
+        <div class="dashIntro">
+          <div>
+            <div class="eyebrow">Lina Culture Platform · Overall Status</div>
+            <h1>전체 현황판</h1>
+            <p>Pulse Survey의 전사 신호, 본부 위험도, 취약 문항을 한 화면에서 읽고 바로 실행으로 연결합니다.</p>
+            <div class="heroChips" id="dashHeroChips"></div>
+          </div>
           <div class="homeHeroActions">
             <button class="primary" onclick="showView('pulse')">Pulse Survey 분석</button>
-            <button class="ghost" onclick="showView('session')">세션 설계로 연결</button>
-            <button class="ghost" onclick="showView('speech')">리더 메시지 작성</button>
+            <button class="ghost" onclick="showView('session')">세션 설계</button>
+            <button class="ghost" onclick="showView('speech')">커뮤니케이션</button>
           </div>
         </div>
-        <div class="homeHeroPanel">
-          <div class="panelTitle">
-            <div>
-              <h3>전사 조직문화 건강도</h3>
-              <p class="sub" id="datasetName">데이터 로딩 중</p>
-            </div>
-            <span class="dashboardBadge" id="dashboardBadge">Status</span>
-          </div>
-          <div class="healthNumber"><span id="homeMainScore">--%</span><em>Favorable</em></div>
-          <div class="sparkWrap">
-            <svg id="homeSparkline" class="homeSparkline" viewBox="0 0 420 120" preserveAspectRatio="none"></svg>
-            <div id="yearDots" class="yearDots"></div>
+        <div class="gaugeCard">
+          <div class="panelTitle"><div><h3>전사 조직문화 건강도</h3><p class="sub" id="datasetName">데이터 로딩 중</p></div><span class="dashboardBadge" id="dashboardBadge">Status</span></div>
+          <div class="gaugeWrap">
+            <svg id="favGauge" class="gaugeSvg" viewBox="0 0 170 170"></svg>
+            <div class="gaugeLegend" id="gaugeLegend"></div>
           </div>
         </div>
       </div>
 
-      <div class="homeKpis" id="homeMetrics"></div>
+      <div class="statStrip" id="statStrip"></div>
 
-      <div class="homeGridV2">
-        <div class="homeCardV2 wide">
-          <div class="panelTitle">
-            <div><h3>카테고리별 긍정 응답</h3><p class="sub">전사 기준 2026 Favorable과 부정 응답을 함께 표시합니다.</p></div>
-            <button class="ghost" onclick="showView('pulse')">자세히 보기</button>
-          </div>
-          <div id="homeCategoryChart" class="homeCategoryChart"></div>
+      <div class="dashGrid2">
+        <div class="dashCard">
+          <div class="panelTitle"><div><h3>연도별 긍정 응답 추세</h3><p class="sub">2024 → 2025 → 2026 전사 Favorable</p></div></div>
+          <svg id="trendChart" class="trendSvg" viewBox="0 0 440 200"></svg>
         </div>
-        <div class="homeCardV2">
-          <div class="panelTitle"><div><h3>본부 위험도 분포</h3><p class="sub">안정·주의·위험·검토 대상 분포</p></div></div>
-          <div id="homeRiskStack" class="riskStack"></div>
-          <div id="homeRiskLegend" class="riskLegend"></div>
+        <div class="dashCard">
+          <div class="panelTitle"><div><h3>카테고리별 긍정 · 전년 대비</h3><p class="sub">진한 막대 2026 · 옅은 막대 2025</p></div><button class="ghost" onclick="showView('pulse')">자세히</button></div>
+          <div id="catCompare" class="catCompare"></div>
         </div>
       </div>
 
-      <div class="homeGridV2 bottom">
-        <div class="homeCardV2">
-          <div class="panelTitle"><div><h3>우선 확인 문항</h3><p class="sub">긍정 응답이 낮은 문항부터 확인합니다.</p></div></div>
-          <div id="homePriorityList" class="priorityList"></div>
+      <div class="dashGrid2">
+        <div class="dashCard">
+          <div class="panelTitle"><div><h3>본부 포지셔닝 매트릭스</h3><p class="sub">가로 평균 긍정 · 세로 평균 부정 · 점을 누르면 세부 분석</p></div></div>
+          <svg id="divScatter" class="scatterSvg" viewBox="0 0 480 308"></svg>
+          <div class="scatterLegend">
+            <span><i style="background:#10b981"></i>안정</span>
+            <span><i style="background:#f59e0b"></i>주의</span>
+            <span><i style="background:#ef4444"></i>위험</span>
+            <span><i style="background:#a78bfa"></i>신뢰도검토</span>
+          </div>
         </div>
-        <div class="homeCardV2">
-          <div class="panelTitle"><div><h3>본부별 하위 신호</h3><p class="sub">평균 긍정 기준 하위 본부</p></div></div>
-          <div id="homeDivisionBars" class="divisionBars"></div>
+        <div class="dashCard">
+          <div class="panelTitle"><div><h3>전사 응답 분포</h3><p class="sub">강한 긍정 → 강한 부정 (문항 평균)</p></div></div>
+          <div id="distStack" class="distStack"></div>
+          <div id="distLegend" class="distLegend"></div>
+          <div class="panelTitle" style="margin-top:20px"><div><h3>본부 위험 등급 분포</h3><p class="sub">안정·주의·위험·검토</p></div></div>
+          <div class="tierWrap">
+            <svg id="tierDonut" class="tierDonut" viewBox="0 0 170 170"></svg>
+            <div class="tierLegend" id="tierLegend"></div>
+          </div>
         </div>
-        <div class="homeCardV2">
-          <div class="panelTitle"><div><h3>해석 메모</h3><p class="sub">GPT 분석을 저장하면 전사 진단 브리프로 업데이트됩니다.</p></div></div>
+      </div>
+
+      <div class="dashGrid3">
+        <div class="dashCard">
+          <div class="panelTitle"><div><h3>우선 확인 문항</h3><p class="sub">긍정 응답이 낮은 순</p></div></div>
+          <div id="priorityList" class="priorityList"></div>
+        </div>
+        <div class="dashCard">
+          <div class="panelTitle"><div><h3>하위 본부</h3><p class="sub">클릭하면 세부 분석으로 이동</p></div></div>
+          <div id="divLead" class="divLead"></div>
+        </div>
+        <div class="dashCard">
+          <div class="panelTitle"><div><h3>해석 메모</h3><p class="sub">GPT 분석 저장 시 전사 브리프로 갱신</p></div></div>
           <div class="analysisBrief" id="savedAnalysisSummary">저장된 GPT 분석이 있으면 여기에 표시됩니다.</div>
         </div>
       </div>
@@ -259,14 +408,15 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
     </section>
 
     <section id="speech" class="view">
-      <div class="toolbar"><div class="grow"><h2>커뮤니케이션 솔루션</h2><p class="sub">Pulse Survey 분석을 바탕으로 리더가 말할 목적, 메시지 구조, 스토리라인, 리스크를 점검합니다.</p></div><button class="primary" onclick="buildSpeechPrompt()">솔루션 프롬프트 생성</button></div>
+      <div class="toolbar"><div class="grow"><h2>커뮤니케이션 솔루션</h2><p class="sub">Pulse Survey 분석을 바탕으로 리더 스피치와 전사/본부 공지문을 설계하고, 작성 기록을 게시판으로 관리합니다.</p></div><button class="primary" onclick="buildSpeechPrompt()">프롬프트 생성</button></div>
       <div class="grid2" style="margin-top:14px">
         <div class="card">
-          <h3>솔루션 설계 입력</h3>
-          <div class="grid2"><div><label>대상 데이터</label><select id="speechScope" onchange="renderSpeechContext()"></select></div><div><label>청중</label><input id="speechAudience" placeholder="예: 본부 리더, 전사 임직원"></div></div>
-          <label>솔루션 목적</label><textarea id="speechPurpose" placeholder="예: Pulse Survey 결과를 투명하게 공유하고, 실행 약속을 납득시키기"></textarea>
-          <label>딜리버리 메시지</label><textarea id="deliveryMessage" placeholder="예: 여러분의 목소리가 다음 90일 실행 계획으로 이어집니다."></textarea>
-          <label>메시지 구조</label><select id="messageStructure"><option value="situation-meaning-action">상황 → 의미 → 행동</option><option value="you-said-we-did">You said → We did → We will</option><option value="problem-choice-commitment">문제 → 선택 → 약속</option><option value="story-data-action">스토리 → 데이터 → 액션</option></select>
+          <h3>설계 입력</h3>
+          <div class="grid2"><div><label>산출물 유형</label><select id="commType" onchange="onCommTypeChange()"><option value="speech">리더 스피치</option><option value="company">전사 공지문</option><option value="division">본부 공지문</option></select></div><div><label>대상 데이터</label><select id="speechScope" onchange="renderSpeechContext()"></select></div></div>
+          <label>제목 (저장·게시판 표시용)</label><input id="commTitle" placeholder="예: 2026 Pulse 결과 공유 — 전사 공지">
+          <div class="grid2"><div><label>청중</label><input id="speechAudience" placeholder="예: 본부 리더, 전사 임직원"></div><div><label>메시지 구조</label><select id="messageStructure"><option value="situation-meaning-action">상황 → 의미 → 행동</option><option value="you-said-we-did">You said → We did → We will</option><option value="problem-choice-commitment">문제 → 선택 → 약속</option><option value="story-data-action">스토리 → 데이터 → 액션</option></select></div></div>
+          <label>목적</label><textarea id="speechPurpose" placeholder="예: Pulse Survey 결과를 투명하게 공유하고, 실행 약속을 납득시키기"></textarea>
+          <label>핵심 메시지 / 딜리버리</label><textarea id="deliveryMessage" placeholder="예: 여러분의 목소리가 다음 90일 실행 계획으로 이어집니다."></textarea>
           <label>스토리텔링 단서</label><textarea id="storyCue" placeholder="예: 지난 서베이 이후 바뀐 것과 아직 미흡한 것을 솔직하게 연결"></textarea>
           <label>리스크 체크</label>
           <div class="grid2">
@@ -281,9 +431,13 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
           <h3>GPT 고도화 프롬프트</h3>
           <div class="toolbar" style="margin-bottom:10px"><button class="primary" onclick="copyText('speechPrompt')">프롬프트 복사</button><button class="ghost" onclick="buildSpeechPrompt()">다시 생성</button></div>
           <textarea id="speechPrompt" class="prompt" readonly></textarea>
-          <label>GPT 답변 붙여넣기</label><textarea id="speechResult" placeholder="GPT가 만든 커뮤니케이션 솔루션 초안을 붙여넣고 저장하세요."></textarea>
-          <div class="toolbar" style="margin-top:10px"><button class="green" onclick="saveSpeechResult()">솔루션 저장</button></div>
+          <label>GPT 답변 붙여넣기 (최종본)</label><textarea id="speechResult" placeholder="GPT가 만든 스피치/공지문 초안을 붙여넣고 저장하세요."></textarea>
+          <div class="toolbar" style="margin-top:10px"><button class="green" onclick="saveCommunication()">기록에 저장</button><button class="ghost" onclick="copyText('speechResult')">최종본 복사</button></div>
         </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="panelTitle"><div><h3>커뮤니케이션 기록</h3><p class="sub">저장한 스피치·공지문을 모아보고, 이전 작성본을 템플릿으로 다시 사용할 수 있습니다.</p></div><div class="commToolbar"><select id="commFilter" onchange="renderComms()" style="width:auto"><option value="all">전체 유형</option><option value="speech">리더 스피치</option><option value="company">전사 공지문</option><option value="division">본부 공지문</option></select></div></div>
+        <div id="commBoard"></div>
       </div>
     </section>
 
@@ -311,19 +465,13 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
   </main>
 </div>
 
-<div id="accountBar" class="accountBar">
-  <span id="authWho"></span>
-  <button id="adminReviewBtn" class="primary" style="display:none" onclick="openAdminPanel()">승인 관리</button>
-  <button class="ghost" onclick="logoutUser()">로그아웃</button>
-</div>
-
 <div id="adminModal" class="adminModal">
   <div class="adminPanel">
     <div class="adminTop">
       <div>
         <div class="eyebrow" style="color:var(--brand);margin-bottom:6px">Master Console</div>
         <h2>대기자 승인</h2>
-        <p class="sub">회원가입한 사용자를 확인하고 승인하면 바로 Lina Culture OS에 접속할 수 있습니다.</p>
+        <p class="sub">회원가입한 사용자를 확인하고 승인하면 바로 Lina Culture Platform에 접속할 수 있습니다.</p>
       </div>
       <div class="toolbar">
         <button class="ghost" onclick="loadPendingUsers()">새로고침</button>
@@ -335,30 +483,39 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 </div>
 
 <div id="authOverlay" class="authOverlay">
-  <div class="authCard">
-    <div class="authHead">
-      <div class="authLogo"></div>
-      <div>
-        <div class="authTitle">Lina Culture OS</div>
-        <div class="authHint">로그인하면 Pulse Survey와 조직문화 도구가 열립니다.</div>
+  <div class="authShell">
+    <div class="authMedia">
+      <img src="intro_img.GIF" alt="Lina Culture Platform">
+      <div class="authMediaCap">
+        <b>데이터로 만드는 조직문화 실행</b>
+        <span>Pulse Survey 진단부터 세션 설계, 리더 커뮤니케이션까지 한 곳에서.</span>
       </div>
     </div>
-    <label>이메일</label>
-    <input id="authEmail" type="email" autocomplete="username" placeholder="you@example.com">
-    <label>비밀번호</label>
-    <input id="authPass" type="password" autocomplete="current-password" placeholder="6자 이상" onkeydown="if(event.key==='Enter')loginUser()">
-    <div id="authMsg" class="authMsg"></div>
-    <div id="authActions" class="authActions">
-      <button class="primary" onclick="loginUser()">로그인</button>
-      <button class="ghost" onclick="signupUser()">회원가입</button>
+    <div class="authPane">
+      <div class="authBrandRow">
+        <img src="lina_logo.png" alt="Lina">
+        <span class="authBrandName">Culture Workspace</span>
+      </div>
+      <div class="authWelcome">Welcome to</div>
+      <h2 class="authBigTitle">Lina Culture Platform</h2>
+      <div class="authHint">로그인하면 Pulse Survey와 조직문화 도구가 열립니다.</div>
+      <label>이메일</label>
+      <input id="authEmail" type="email" autocomplete="username" placeholder="you@example.com">
+      <label>비밀번호</label>
+      <input id="authPass" type="password" autocomplete="current-password" placeholder="6자 이상" onkeydown="if(event.key==='Enter')loginUser()">
+      <div id="authMsg" class="authMsg"></div>
+      <div id="authActions" class="authActions">
+        <button class="primary" onclick="loginUser()">로그인</button>
+        <button class="ghost" onclick="signupUser()">회원가입</button>
+      </div>
+      <div style="margin-top:10px">
+        <button class="dark" style="width:100%" onclick="enterLocalPreview()">Source 데이터로 바로 보기</button>
+      </div>
+      <div id="pendingActions" style="display:none;margin-top:16px">
+        <button class="ghost" style="width:100%" onclick="logoutUser()">다른 계정으로 로그인</button>
+      </div>
+      <div class="authHint" style="margin-top:14px">처음이면 이메일과 비밀번호를 입력하고 회원가입을 누르세요. 화면 확인만 할 때는 Source 데이터로 바로 보기를 누르면 됩니다.</div>
     </div>
-    <div style="margin-top:10px">
-      <button class="dark" style="width:100%" onclick="enterLocalPreview()">Source 데이터로 바로 보기</button>
-    </div>
-    <div id="pendingActions" style="display:none;margin-top:16px">
-      <button class="ghost" style="width:100%" onclick="logoutUser()">다른 계정으로 로그인</button>
-    </div>
-    <div class="authHint" style="margin-top:12px">처음이면 이메일과 비밀번호를 입력하고 회원가입을 누르세요. 화면 확인만 할 때는 Source 데이터로 바로 보기를 누르면 됩니다.</div>
   </div>
 </div>
 
@@ -366,11 +523,13 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 
 <script>
 const SEED_URL='pulse-seed-data.json';
-const EMBEDDED_PULSE_SEED={"company":{"questions":[{"no":1,"text":"나는 우리 회사를 일하기 좋은 회사로 추천할 의향이 있다.","short":"회사 추천 의향","benchMed":72,"benchChubb":54,"fav":{"24":52,"25":64,"26":55},"low":{"24":11,"25":12,"26":16},"dist26":{"p5":23,"p4":32,"p3":29,"p2":11,"p1":5}},{"no":2,"text":"나는 우리 회사에서 일하는 것이 자랑스럽다.","short":"재직 자부심","benchMed":73,"benchChubb":52,"fav":{"24":55,"25":66,"26":61},"low":{"24":9,"25":6,"26":7},"dist26":{"p5":25,"p4":36,"p3":32,"p2":5,"p1":2}},{"no":3,"text":"나에게 주어진 일은 개인적인 성취감을 가질 수 있도록 해준다.","short":"개인적 성취감","benchMed":71,"benchChubb":57,"fav":{"24":57,"25":63,"26":61},"low":{"24":15,"25":11,"26":15},"dist26":{"p5":25,"p4":36,"p3":25,"p2":10,"p1":5}},{"no":4,"text":"나는 우리 회사에서 앞으로 최소 12개월 이상 더 근무할 의향이 있다.","short":"12개월+ 잔류 의향","benchMed":75,"benchChubb":75,"fav":{"24":75,"25":80,"26":71},"low":{"24":5,"25":6,"26":8},"dist26":{"p5":38,"p4":33,"p3":22,"p2":5,"p1":3}},{"no":5,"text":"조직 내에서 나의 의견은 존중받는다.","short":"의견 존중","benchMed":67,"benchChubb":61,"fav":{"24":61,"25":72,"26":67},"low":{"24":12,"25":9,"26":10},"dist26":{"p5":29,"p4":38,"p3":22,"p2":6,"p1":4}},{"no":6,"text":"나는 내 업무를 효과적으로 수행하기 위해 필요한 자료에 접근할 수 있는 권한이 있다.","short":"업무 자료 접근권","benchMed":72,"benchChubb":69,"fav":{"24":69,"25":69,"26":69},"low":{"24":10,"25":9,"26":8},"dist26":{"p5":26,"p4":43,"p3":22,"p2":6,"p1":2}},{"no":7,"text":"나는 내 업무가 우리 회사의 목표에 어떻게 기여하는지 이해하고 있다.","short":"목표 기여 이해","benchMed":76,"benchChubb":73,"fav":{"24":74,"25":80,"26":78},"low":{"24":6,"25":2,"26":4},"dist26":{"p5":32,"p4":46,"p3":18,"p2":2,"p1":2}},{"no":8,"text":"나는 나에게 기대되는 역할에 대해 명확하게 이해하고 있다.","short":"역할 명확성","benchMed":79,"benchChubb":75,"fav":{"24":75,"25":79,"26":75},"low":{"24":7,"25":5,"26":6},"dist26":{"p5":33,"p4":42,"p3":19,"p2":4,"p1":2}},{"no":9,"text":"나는 우리 회사에서 나의 역할을 수행하는데 적절한 행동이 무엇인지 이해하고 있다.","short":"적절한 행동 이해","benchMed":0,"benchChubb":79,"fav":{"24":79,"25":84,"26":79},"low":{"24":4,"25":2,"26":4},"dist26":{"p5":30,"p4":49,"p3":16,"p2":3,"p1":1}},{"no":10,"text":"나의 업무를 잘 수행하기 위해 필요한 스킬을 배울 수 있는 기회가 있다.","short":"스킬 학습 기회","benchMed":72,"benchChubb":55,"fav":{"24":55,"25":54,"26":55},"low":{"24":12,"25":16,"26":17},"dist26":{"p5":21,"p4":34,"p3":27,"p2":10,"p1":7}},{"no":11,"text":"나는 회사에서 개인적인 웰빙과 관련하여 필요할 때 편하게 지원을 요청할 수 있다. (2026 NEW)","short":"웰빙 지원 요청 가능","benchMed":0,"benchChubb":52,"fav":{"24":15,"25":36,"26":55},"low":{"24":62,"25":41,"26":16},"dist26":{"p5":24,"p4":31,"p3":29,"p2":10,"p1":6}},{"no":12,"text":"우리 회사는 개인적인 웰빙에 도움이 되는 가이드와 실질적인 프로그램을 제공한다. (2026 NEW)","short":"웰빙 프로그램 제공","benchMed":0,"benchChubb":15,"fav":{"24":37,"25":48,"26":63},"low":{"24":24,"25":22,"26":10},"dist26":{"p5":25,"p4":38,"p3":27,"p2":6,"p1":4}},{"no":13,"text":"나의 매니저는 내 성과를 향상시키는 데 도움이 되는 피드백을 적시에 제공한다.","short":"매니저 적시 피드백","benchMed":0,"benchChubb":37,"fav":{"24":54,"25":59,"26":66},"low":{"24":18,"25":16,"26":13},"dist26":{"p5":30,"p4":36,"p3":21,"p2":6,"p1":7}},{"no":14,"text":"나의 매니저는 내가 잘한 일을 인정해준다.","short":"매니저의 인정","benchMed":72,"benchChubb":53,"fav":{"24":64,"25":68,"26":69},"low":{"24":12,"25":13,"26":12},"dist26":{"p5":32,"p4":37,"p3":18,"p2":6,"p1":6}},{"no":15,"text":"나의 매니저는 내가 문제 상황을 가져갔을 때 해결하기 위해 돕는다.","short":"매니저 문제해결 지원","benchMed":76,"benchChubb":64,"fav":{"24":64,"25":73,"26":71},"low":{"24":11,"25":10,"26":11},"dist26":{"p5":33,"p4":38,"p3":17,"p2":6,"p1":5}},{"no":16,"text":"나는 나의 매니저와 나의 역량개발과 성장에 대해서 정기적으로 대화한다.","short":"매니저와 성장 대화","benchMed":0,"benchChubb":64,"fav":{"24":53,"25":55,"26":63},"low":{"24":16,"25":17,"26":16},"dist26":{"p5":27,"p4":36,"p3":22,"p2":9,"p1":7}},{"no":17,"text":"나는 부정적인 상황에 대한 두려움 없이 문제를 제기하거나 이슈를 이야기할 수 있다.","short":"두려움 없는 문제 제기","benchMed":66,"benchChubb":53,"fav":{"24":null,"25":62,"26":62},"low":{"24":null,"25":19,"26":17},"dist26":{"p5":26,"p4":36,"p3":21,"p2":10,"p1":7}},{"no":18,"text":"나의 차상위 리더는 회사에서 일어나는 일들을 적시에 공유한다.","short":"차상위 리더 소통","benchMed":70,"benchChubb":0,"fav":{"24":null,"25":58,"26":64},"low":{"24":null,"25":19,"26":15},"dist26":{"p5":25,"p4":39,"p3":21,"p2":8,"p1":7}},{"no":19,"text":"지난 서베이의 결과에 대해 피드백을 반영하여 조치가 취해졌다고 생각한다.","short":"서베이 조치 신뢰","benchMed":73,"benchChubb":0,"fav":{"24":null,"25":36,"26":37},"low":{"24":null,"25":25,"26":26},"dist26":{"p5":17,"p4":20,"p3":37,"p2":16,"p1":10}},{"no":20,"text":"나는 우리 회사가 포용적인 업무 환경을 조성하기 위해 노력한다고 생각한다.","short":"포용적 환경 노력","benchMed":0,"benchChubb":0,"fav":{"24":null,"25":57,"26":47},"low":{"24":null,"25":15,"26":25},"dist26":{"p5":20,"p4":27,"p3":29,"p2":15,"p1":10}},{"no":21,"text":"나는 우리 회사에 소속감을 느낀다.","short":"소속감","benchMed":0,"benchChubb":0,"fav":{"24":null,"25":63,"26":56},"low":{"24":null,"25":9,"26":14},"dist26":{"p5":23,"p4":33,"p3":30,"p2":9,"p1":5}},{"no":22,"text":"우리동료들은 업무를 수행하기 위해 같이 협업한다. (2026 NEW)","short":"동료 간 협업","benchMed":null,"benchChubb":null,"fav":{"24":null,"25":0,"26":61},"low":{"24":null,"25":null,"26":14},"dist26":{"p5":24,"p4":37,"p3":24,"p2":8,"p1":6}}],"cats":[{"name":"몰입·추천","qs":[1,2,3,4],"fav":{"24":59.8,"25":68.2,"26":62},"low":{"26":11.5}},{"name":"조직명확성","qs":[5,6,7,8,9,10],"fav":{"24":68.8,"25":73,"26":70.5},"low":{"26":8.2}},{"name":"웰빙","qs":[11,12],"fav":{"24":26,"25":42,"26":59},"low":{"26":13}},{"name":"매니저","qs":[13,14,15,16],"fav":{"24":58.8,"25":63.8,"26":67.2},"low":{"26":13}},{"name":"심리안전·소속감","qs":[17,18,19,20,21,22],"fav":{"24":null,"25":46,"26":54.5},"low":{"26":18.5}}]},"divisions":[{"name":"DataControl","avgFav":84.1,"avgLow":3.7,"hi90":4,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":84,"low":0,"fav25":63},{"no":2,"fav":74,"low":5,"fav25":61},{"no":3,"fav":84,"low":5,"fav25":61},{"no":4,"fav":89,"low":5,"fav25":77},{"no":5,"fav":95,"low":5,"fav25":73},{"no":6,"fav":89,"low":0,"fav25":63},{"no":7,"fav":89,"low":0,"fav25":80},{"no":8,"fav":79,"low":0,"fav25":73},{"no":9,"fav":89,"low":5,"fav25":80},{"no":10,"fav":79,"low":0,"fav25":43},{"no":11,"fav":95,"low":5,"fav25":29},{"no":12,"fav":89,"low":0,"fav25":43},{"no":13,"fav":89,"low":0,"fav25":64},{"no":14,"fav":89,"low":10,"fav25":68},{"no":15,"fav":95,"low":0,"fav25":79},{"no":16,"fav":74,"low":5,"fav25":55},{"no":17,"fav":79,"low":11,"fav25":66},{"no":18,"fav":95,"low":0,"fav25":73},{"no":19,"fav":53,"low":10,"fav25":35},{"no":20,"fav":79,"low":5,"fav25":57},{"no":21,"fav":79,"low":10,"fav25":71},{"no":22,"fav":84,"low":0,"fav25":null}],"cats":[{"name":"몰입·추천","fav":82.8,"low":3.8,"fav25":65.5},{"name":"조직명확성","fav":86.7,"low":1.7,"fav25":68.7},{"name":"웰빙","fav":92,"low":2.5,"fav25":36},{"name":"매니저","fav":86.8,"low":3.8,"fav25":66.5},{"name":"심리안전·소속감","fav":78.2,"low":6,"fav25":60.4}],"tier":"stable"},{"name":"DigitalSales","avgFav":47,"avgLow":27.5,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":25,"low":40,"fav25":55},{"no":2,"fav":40,"low":15,"fav25":66},{"no":3,"fav":40,"low":15,"fav25":54},{"no":4,"fav":45,"low":20,"fav25":74},{"no":5,"fav":50,"low":20,"fav25":67},{"no":6,"fav":50,"low":20,"fav25":60},{"no":7,"fav":70,"low":15,"fav25":70},{"no":8,"fav":50,"low":20,"fav25":71},{"no":9,"fav":60,"low":20,"fav25":74},{"no":10,"fav":45,"low":40,"fav25":46},{"no":11,"fav":35,"low":35,"fav25":45},{"no":12,"fav":65,"low":10,"fav25":49},{"no":13,"fav":45,"low":30,"fav25":59},{"no":14,"fav":55,"low":25,"fav25":68},{"no":15,"fav":60,"low":30,"fav25":65},{"no":16,"fav":65,"low":30,"fav25":48},{"no":17,"fav":45,"low":50,"fav25":67},{"no":18,"fav":55,"low":25,"fav25":56},{"no":19,"fav":20,"low":35,"fav25":24},{"no":20,"fav":35,"low":50,"fav25":52},{"no":21,"fav":40,"low":30,"fav25":57},{"no":22,"fav":40,"low":30,"fav25":null}],"cats":[{"name":"몰입·추천","fav":37.5,"low":22.5,"fav25":62.2},{"name":"조직명확성","fav":54.2,"low":22.5,"fav25":64.7},{"name":"웰빙","fav":50,"low":22.5,"fav25":47},{"name":"매니저","fav":56.2,"low":28.8,"fav25":60},{"name":"심리안전·소속감","fav":39.2,"low":36.7,"fav25":51.2}],"tier":"risk"},{"name":"DT운영본부","avgFav":45.1,"avgLow":23,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":31,"low":33,"fav25":55},{"no":2,"fav":45,"low":14,"fav25":66},{"no":3,"fav":36,"low":31,"fav25":54},{"no":4,"fav":60,"low":10,"fav25":74},{"no":5,"fav":43,"low":24,"fav25":67},{"no":6,"fav":60,"low":15,"fav25":60},{"no":7,"fav":62,"low":9,"fav25":70},{"no":8,"fav":55,"low":9,"fav25":71},{"no":9,"fav":24,"low":33,"fav25":74},{"no":10,"fav":36,"low":26,"fav25":46},{"no":11,"fav":43,"low":27,"fav25":45},{"no":12,"fav":52,"low":17,"fav25":49},{"no":13,"fav":43,"low":24,"fav25":59},{"no":14,"fav":55,"low":21,"fav25":68},{"no":15,"fav":55,"low":24,"fav25":65},{"no":16,"fav":48,"low":26,"fav25":48},{"no":17,"fav":55,"low":12,"fav25":67},{"no":18,"fav":55,"low":29,"fav25":56},{"no":19,"fav":14,"low":48,"fav25":24},{"no":20,"fav":36,"low":33,"fav25":52},{"no":21,"fav":45,"low":21,"fav25":57},{"no":22,"fav":40,"low":19,"fav25":null}],"cats":[{"name":"몰입·추천","fav":43,"low":22,"fav25":62.2},{"name":"조직명확성","fav":46.7,"low":19.3,"fav25":64.7},{"name":"웰빙","fav":47.5,"low":22,"fav25":47},{"name":"매니저","fav":50.2,"low":23.8,"fav25":60},{"name":"심리안전·소속감","fav":40.8,"low":27,"fav25":51.2}],"tier":"risk"},{"name":"DT혁신본부/CISO","avgFav":52.5,"avgLow":18.2,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":38,"low":31,"fav25":55},{"no":2,"fav":51,"low":6,"fav25":66},{"no":3,"fav":38,"low":18,"fav25":54},{"no":4,"fav":56,"low":16,"fav25":74},{"no":5,"fav":62,"low":13,"fav25":67},{"no":6,"fav":56,"low":16,"fav25":60},{"no":7,"fav":64,"low":3,"fav25":70},{"no":8,"fav":69,"low":11,"fav25":71},{"no":9,"fav":62,"low":10,"fav25":74},{"no":10,"fav":44,"low":31,"fav25":46},{"no":11,"fav":49,"low":16,"fav25":45},{"no":12,"fav":74,"low":6,"fav25":49},{"no":13,"fav":51,"low":25,"fav25":59},{"no":14,"fav":62,"low":16,"fav25":68},{"no":15,"fav":54,"low":20,"fav25":65},{"no":16,"fav":51,"low":20,"fav25":48},{"no":17,"fav":51,"low":20,"fav25":67},{"no":18,"fav":62,"low":18,"fav25":56},{"no":19,"fav":23,"low":33,"fav25":24},{"no":20,"fav":38,"low":33,"fav25":52},{"no":21,"fav":44,"low":18,"fav25":57},{"no":22,"fav":56,"low":20,"fav25":null}],"cats":[{"name":"몰입·추천","fav":45.8,"low":17.8,"fav25":62.2},{"name":"조직명확성","fav":59.5,"low":14,"fav25":64.7},{"name":"웰빙","fav":61.5,"low":11,"fav25":47},{"name":"매니저","fav":54.5,"low":20.2,"fav25":60},{"name":"심리안전·소속감","fav":45.7,"low":23.7,"fav25":51.2}],"tier":"risk"},{"name":"GA영업본부","avgFav":49.9,"avgLow":24,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":47,"low":27,"fav25":72},{"no":2,"fav":61,"low":16,"fav25":76},{"no":3,"fav":55,"low":24,"fav25":72},{"no":4,"fav":68,"low":14,"fav25":87},{"no":5,"fav":45,"low":18,"fav25":67},{"no":6,"fav":42,"low":21,"fav25":67},{"no":7,"fav":76,"low":0,"fav25":94},{"no":8,"fav":79,"low":3,"fav25":90},{"no":9,"fav":87,"low":3,"fav25":96},{"no":10,"fav":39,"low":29,"fav25":55},{"no":11,"fav":26,"low":35,"fav25":27},{"no":12,"fav":24,"low":39,"fav25":37},{"no":13,"fav":55,"low":19,"fav25":65},{"no":14,"fav":50,"low":21,"fav25":60},{"no":15,"fav":55,"low":24,"fav25":70},{"no":16,"fav":50,"low":34,"fav25":63},{"no":17,"fav":42,"low":37,"fav25":58},{"no":18,"fav":39,"low":34,"fav25":66},{"no":19,"fav":24,"low":53,"fav25":44},{"no":20,"fav":34,"low":37,"fav25":58},{"no":21,"fav":50,"low":19,"fav25":72},{"no":22,"fav":50,"low":21,"fav25":null}],"cats":[{"name":"몰입·추천","fav":57.8,"low":20.2,"fav25":76.8},{"name":"조직명확성","fav":61.3,"low":12.3,"fav25":78.2},{"name":"웰빙","fav":25,"low":37,"fav25":32},{"name":"매니저","fav":52.5,"low":24.5,"fav25":64.5},{"name":"심리안전·소속감","fav":39.8,"low":33.5,"fav25":59.6}],"tier":"risk"},{"name":"경영관리본부","avgFav":62.1,"avgLow":12.1,"hi90":1,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":42,"low":16,"fav25":77},{"no":2,"fav":58,"low":5,"fav25":69},{"no":3,"fav":53,"low":19,"fav25":73},{"no":4,"fav":68,"low":6,"fav25":77},{"no":5,"fav":74,"low":5,"fav25":85},{"no":6,"fav":66,"low":8,"fav25":69},{"no":7,"fav":87,"low":6,"fav25":88},{"no":8,"fav":87,"low":6,"fav25":92},{"no":9,"fav":92,"low":3,"fav25":88},{"no":10,"fav":55,"low":19,"fav25":69},{"no":11,"fav":63,"low":16,"fav25":42},{"no":12,"fav":74,"low":3,"fav25":42},{"no":13,"fav":63,"low":10,"fav25":65},{"no":14,"fav":71,"low":6,"fav25":81},{"no":15,"fav":61,"low":13,"fav25":85},{"no":16,"fav":58,"low":21,"fav25":73},{"no":17,"fav":63,"low":8,"fav25":65},{"no":18,"fav":63,"low":8,"fav25":69},{"no":19,"fav":32,"low":24,"fav25":31},{"no":20,"fav":34,"low":29,"fav25":62},{"no":21,"fav":55,"low":8,"fav25":69},{"no":22,"fav":47,"low":27,"fav25":null}],"cats":[{"name":"몰입·추천","fav":55.2,"low":11.5,"fav25":74},{"name":"조직명확성","fav":76.8,"low":7.8,"fav25":81.8},{"name":"웰빙","fav":68.5,"low":9.5,"fav25":42},{"name":"매니저","fav":63.2,"low":12.5,"fav25":76},{"name":"심리안전·소속감","fav":49,"low":17.3,"fav25":59.2}],"tier":"watch"},{"name":"계리RM본부","avgFav":65,"avgLow":9.1,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":56,"low":12,"fav25":66},{"no":2,"fav":47,"low":9,"fav25":57},{"no":3,"fav":69,"low":6,"fav25":64},{"no":4,"fav":75,"low":6,"fav25":80},{"no":5,"fav":81,"low":6,"fav25":80},{"no":6,"fav":67,"low":6,"fav25":81},{"no":7,"fav":75,"low":9,"fav25":80},{"no":8,"fav":72,"low":3,"fav25":81},{"no":9,"fav":81,"low":3,"fav25":84},{"no":10,"fav":67,"low":12,"fav25":64},{"no":11,"fav":47,"low":12,"fav25":32},{"no":12,"fav":56,"low":9,"fav25":56},{"no":13,"fav":83,"low":3,"fav25":59},{"no":14,"fav":81,"low":6,"fav25":74},{"no":15,"fav":83,"low":3,"fav25":77},{"no":16,"fav":78,"low":3,"fav25":60},{"no":17,"fav":58,"low":17,"fav25":73},{"no":18,"fav":72,"low":11,"fav25":60},{"no":19,"fav":28,"low":19,"fav25":35},{"no":20,"fav":39,"low":25,"fav25":56},{"no":21,"fav":47,"low":6,"fav25":55},{"no":22,"fav":69,"low":14,"fav25":null}],"cats":[{"name":"몰입·추천","fav":61.8,"low":8.2,"fav25":66.8},{"name":"조직명확성","fav":73.8,"low":6.5,"fav25":78.3},{"name":"웰빙","fav":51.5,"low":10.5,"fav25":44},{"name":"매니저","fav":81.2,"low":3.8,"fav25":67.5},{"name":"심리안전·소속감","fav":52.2,"low":15.3,"fav25":55.8}],"tier":"stable"},{"name":"계약서비스본부","avgFav":63.8,"avgLow":12.6,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":62,"low":12,"fav25":54},{"no":2,"fav":54,"low":6,"fav25":55},{"no":3,"fav":60,"low":19,"fav25":52},{"no":4,"fav":78,"low":4,"fav25":77},{"no":5,"fav":62,"low":11,"fav25":64},{"no":6,"fav":86,"low":4,"fav25":70},{"no":7,"fav":83,"low":0,"fav25":74},{"no":8,"fav":85,"low":4,"fav25":70},{"no":9,"fav":87,"low":4,"fav25":74},{"no":10,"fav":58,"low":22,"fav25":47},{"no":11,"fav":45,"low":19,"fav25":32},{"no":12,"fav":53,"low":13,"fav25":40},{"no":13,"fav":65,"low":13,"fav25":46},{"no":14,"fav":69,"low":16,"fav25":59},{"no":15,"fav":76,"low":9,"fav25":65},{"no":16,"fav":63,"low":14,"fav25":44},{"no":17,"fav":51,"low":22,"fav25":52},{"no":18,"fav":58,"low":20,"fav25":42},{"no":19,"fav":46,"low":25,"fav25":31},{"no":20,"fav":46,"low":20,"fav25":51},{"no":21,"fav":56,"low":9,"fav25":56},{"no":22,"fav":60,"low":11,"fav25":null}],"cats":[{"name":"몰입·추천","fav":63.5,"low":10.2,"fav25":59.5},{"name":"조직명확성","fav":76.8,"low":7.5,"fav25":66.5},{"name":"웰빙","fav":49,"low":16,"fav25":36},{"name":"매니저","fav":68.2,"low":13,"fav25":53.5},{"name":"심리안전·소속감","fav":52.8,"low":17.8,"fav25":46.4}],"tier":"watch"},{"name":"고객경험혁신본부CE","avgFav":95,"avgLow":2.5,"hi90":21,"reliab":"CE","hasYoY":true,"qs":[{"no":1,"fav":92,"low":2,"fav25":54},{"no":2,"fav":95,"low":2,"fav25":55},{"no":3,"fav":95,"low":2,"fav25":52},{"no":4,"fav":95,"low":2,"fav25":77},{"no":5,"fav":95,"low":2,"fav25":64},{"no":6,"fav":95,"low":2,"fav25":70},{"no":7,"fav":88,"low":2,"fav25":74},{"no":8,"fav":97,"low":2,"fav25":70},{"no":9,"fav":97,"low":2,"fav25":74},{"no":10,"fav":94,"low":2,"fav25":47},{"no":11,"fav":94,"low":4,"fav25":32},{"no":12,"fav":95,"low":2,"fav25":40},{"no":13,"fav":97,"low":2,"fav25":46},{"no":14,"fav":95,"low":4,"fav25":59},{"no":15,"fav":97,"low":2,"fav25":65},{"no":16,"fav":97,"low":2,"fav25":44},{"no":17,"fav":94,"low":5,"fav25":52},{"no":18,"fav":97,"low":2,"fav25":42},{"no":19,"fav":92,"low":2,"fav25":31},{"no":20,"fav":95,"low":5,"fav25":51},{"no":21,"fav":97,"low":4,"fav25":56},{"no":22,"fav":98,"low":2,"fav25":null}],"cats":[{"name":"몰입·추천","fav":94.2,"low":2,"fav25":59.5},{"name":"조직명확성","fav":94.3,"low":2,"fav25":66.5},{"name":"웰빙","fav":94.5,"low":3,"fav25":36},{"name":"매니저","fav":96.5,"low":2.5,"fav25":53.5},{"name":"심리안전·소속감","fav":95.5,"low":3.3,"fav25":46.4}],"tier":"check"},{"name":"고객경험혁신본부본사","avgFav":59.5,"avgLow":13.8,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":48,"low":10,"fav25":54},{"no":2,"fav":57,"low":14,"fav25":55},{"no":3,"fav":57,"low":15,"fav25":52},{"no":4,"fav":62,"low":10,"fav25":77},{"no":5,"fav":53,"low":10,"fav25":64},{"no":6,"fav":67,"low":5,"fav25":70},{"no":7,"fav":71,"low":5,"fav25":74},{"no":8,"fav":66,"low":5,"fav25":70},{"no":9,"fav":77,"low":5,"fav25":74},{"no":10,"fav":48,"low":15,"fav25":47},{"no":11,"fav":66,"low":15,"fav25":32},{"no":12,"fav":76,"low":10,"fav25":40},{"no":13,"fav":62,"low":15,"fav25":46},{"no":14,"fav":57,"low":10,"fav25":59},{"no":15,"fav":66,"low":5,"fav25":65},{"no":16,"fav":62,"low":24,"fav25":44},{"no":17,"fav":62,"low":20,"fav25":52},{"no":18,"fav":76,"low":0,"fav25":42},{"no":19,"fav":28,"low":33,"fav25":31},{"no":20,"fav":38,"low":34,"fav25":51},{"no":21,"fav":53,"low":29,"fav25":56},{"no":22,"fav":57,"low":14,"fav25":null}],"cats":[{"name":"몰입·추천","fav":56,"low":12.2,"fav25":59.5},{"name":"조직명확성","fav":63.7,"low":7.5,"fav25":66.5},{"name":"웰빙","fav":71,"low":12.5,"fav25":36},{"name":"매니저","fav":61.8,"low":13.5,"fav25":53.5},{"name":"심리안전·소속감","fav":52.3,"low":21.7,"fav25":46.4}],"tier":"watch"},{"name":"고객솔루션본부UW","avgFav":37.4,"avgLow":21.3,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":35,"low":28,"fav25":67},{"no":2,"fav":46,"low":14,"fav25":67},{"no":3,"fav":38,"low":23,"fav25":67},{"no":4,"fav":37,"low":17,"fav25":79},{"no":5,"fav":43,"low":17,"fav25":69},{"no":6,"fav":55,"low":6,"fav25":63},{"no":7,"fav":57,"low":9,"fav25":78},{"no":8,"fav":55,"low":15,"fav25":83},{"no":9,"fav":17,"low":34,"fav25":82},{"no":10,"fav":26,"low":20,"fav25":50},{"no":11,"fav":29,"low":40,"fav25":29},{"no":12,"fav":31,"low":25,"fav25":49},{"no":13,"fav":32,"low":20,"fav25":58},{"no":14,"fav":46,"low":17,"fav25":65},{"no":15,"fav":37,"low":26,"fav25":69},{"no":16,"fav":35,"low":18,"fav25":50},{"no":17,"fav":40,"low":9,"fav25":54},{"no":18,"fav":37,"low":22,"fav25":47},{"no":19,"fav":20,"low":34,"fav25":35},{"no":20,"fav":20,"low":37,"fav25":46},{"no":21,"fav":37,"low":17,"fav25":56},{"no":22,"fav":49,"low":20,"fav25":null}],"cats":[{"name":"몰입·추천","fav":39,"low":20.5,"fav25":70},{"name":"조직명확성","fav":42.2,"low":16.8,"fav25":70.8},{"name":"웰빙","fav":30,"low":32.5,"fav25":39},{"name":"매니저","fav":37.5,"low":20.2,"fav25":60.5},{"name":"심리안전·소속감","fav":33.8,"low":23.2,"fav25":47.6}],"tier":"risk"},{"name":"고객솔루션본부상품/헬스","avgFav":64.4,"avgLow":14.4,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":61,"low":21,"fav25":67},{"no":2,"fav":63,"low":14,"fav25":67},{"no":3,"fav":65,"low":14,"fav25":67},{"no":4,"fav":72,"low":5,"fav25":79},{"no":5,"fav":70,"low":11,"fav25":69},{"no":6,"fav":72,"low":10,"fav25":63},{"no":7,"fav":77,"low":2,"fav25":78},{"no":8,"fav":77,"low":2,"fav25":83},{"no":9,"fav":72,"low":2,"fav25":82},{"no":10,"fav":59,"low":21,"fav25":50},{"no":11,"fav":51,"low":16,"fav25":29},{"no":12,"fav":63,"low":7,"fav25":49},{"no":13,"fav":77,"low":18,"fav25":58},{"no":14,"fav":77,"low":14,"fav25":65},{"no":15,"fav":77,"low":12,"fav25":69},{"no":16,"fav":70,"low":19,"fav25":50},{"no":17,"fav":63,"low":18,"fav25":54},{"no":18,"fav":67,"low":23,"fav25":47},{"no":19,"fav":32,"low":23,"fav25":35},{"no":20,"fav":45,"low":28,"fav25":46},{"no":21,"fav":45,"low":21,"fav25":56},{"no":22,"fav":61,"low":16,"fav25":null}],"cats":[{"name":"몰입·추천","fav":65.2,"low":13.5,"fav25":70},{"name":"조직명확성","fav":71.2,"low":8,"fav25":70.8},{"name":"웰빙","fav":57,"low":11.5,"fav25":39},{"name":"매니저","fav":75.2,"low":15.8,"fav25":60.5},{"name":"심리안전·소속감","fav":52.2,"low":21.5,"fav25":47.6}],"tier":"watch"},{"name":"대면영업지원본부","avgFav":68.5,"avgLow":12.2,"hi90":0,"reliab":null,"hasYoY":false,"qs":[{"no":1,"fav":66,"low":12,"fav25":null},{"no":2,"fav":71,"low":3,"fav25":null},{"no":3,"fav":74,"low":9,"fav25":null},{"no":4,"fav":83,"low":6,"fav25":null},{"no":5,"fav":66,"low":12,"fav25":null},{"no":6,"fav":69,"low":6,"fav25":null},{"no":7,"fav":86,"low":9,"fav25":null},{"no":8,"fav":83,"low":9,"fav25":null},{"no":9,"fav":89,"low":3,"fav25":null},{"no":10,"fav":57,"low":9,"fav25":null},{"no":11,"fav":49,"low":14,"fav25":null},{"no":12,"fav":63,"low":3,"fav25":null},{"no":13,"fav":69,"low":15,"fav25":null},{"no":14,"fav":74,"low":17,"fav25":null},{"no":15,"fav":74,"low":12,"fav25":null},{"no":16,"fav":69,"low":14,"fav25":null},{"no":17,"fav":69,"low":17,"fav25":null},{"no":18,"fav":63,"low":12,"fav25":null},{"no":19,"fav":43,"low":29,"fav25":null},{"no":20,"fav":49,"low":26,"fav25":null},{"no":21,"fav":69,"low":14,"fav25":null},{"no":22,"fav":71,"low":18,"fav25":null}],"cats":[{"name":"몰입·추천","fav":73.5,"low":7.5,"fav25":null},{"name":"조직명확성","fav":75,"low":8,"fav25":null},{"name":"웰빙","fav":56,"low":8.5,"fav25":null},{"name":"매니저","fav":71.5,"low":14.5,"fav25":null},{"name":"심리안전·소속감","fav":60.7,"low":19.3,"fav25":null}],"tier":"stable"},{"name":"법무/준법/감사/대외협력","avgFav":70.7,"avgLow":11.2,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":62,"low":16,"fav25":78},{"no":2,"fav":70,"low":10,"fav25":76},{"no":3,"fav":68,"low":21,"fav25":61},{"no":4,"fav":81,"low":5,"fav25":89},{"no":5,"fav":84,"low":8,"fav25":74},{"no":6,"fav":65,"low":19,"fav25":78},{"no":7,"fav":70,"low":8,"fav25":83},{"no":8,"fav":76,"low":14,"fav25":80},{"no":9,"fav":86,"low":3,"fav25":87},{"no":10,"fav":59,"low":8,"fav25":63},{"no":11,"fav":65,"low":5,"fav25":59},{"no":12,"fav":81,"low":3,"fav25":70},{"no":13,"fav":81,"low":5,"fav25":67},{"no":14,"fav":84,"low":8,"fav25":72},{"no":15,"fav":86,"low":5,"fav25":85},{"no":16,"fav":65,"low":17,"fav25":57},{"no":17,"fav":70,"low":13,"fav25":63},{"no":18,"fav":76,"low":8,"fav25":63},{"no":19,"fav":43,"low":25,"fav25":41},{"no":20,"fav":49,"low":16,"fav25":72},{"no":21,"fav":76,"low":13,"fav25":76},{"no":22,"fav":59,"low":16,"fav25":null}],"cats":[{"name":"몰입·추천","fav":70.2,"low":13,"fav25":76},{"name":"조직명확성","fav":73.3,"low":10,"fav25":77.5},{"name":"웰빙","fav":73,"low":4,"fav25":64.5},{"name":"매니저","fav":79,"low":8.8,"fav25":70.2},{"name":"심리안전·소속감","fav":62.2,"low":15.2,"fav25":63}],"tier":"stable"},{"name":"소비자보호본부","avgFav":49.3,"avgLow":9.9,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":48,"low":10,"fav25":78},{"no":2,"fav":52,"low":5,"fav25":76},{"no":3,"fav":48,"low":10,"fav25":61},{"no":4,"fav":67,"low":10,"fav25":89},{"no":5,"fav":52,"low":5,"fav25":74},{"no":6,"fav":57,"low":0,"fav25":78},{"no":7,"fav":62,"low":5,"fav25":83},{"no":8,"fav":57,"low":0,"fav25":80},{"no":9,"fav":67,"low":0,"fav25":87},{"no":10,"fav":52,"low":15,"fav25":63},{"no":11,"fav":38,"low":10,"fav25":59},{"no":12,"fav":52,"low":10,"fav25":70},{"no":13,"fav":43,"low":10,"fav25":67},{"no":14,"fav":52,"low":10,"fav25":72},{"no":15,"fav":52,"low":10,"fav25":85},{"no":16,"fav":43,"low":15,"fav25":57},{"no":17,"fav":52,"low":19,"fav25":63},{"no":18,"fav":43,"low":15,"fav25":63},{"no":19,"fav":24,"low":15,"fav25":41},{"no":20,"fav":38,"low":24,"fav25":72},{"no":21,"fav":43,"low":15,"fav25":76},{"no":22,"fav":43,"low":5,"fav25":null}],"cats":[{"name":"몰입·추천","fav":53.8,"low":8.8,"fav25":76},{"name":"조직명확성","fav":57.8,"low":4.2,"fav25":77.5},{"name":"웰빙","fav":45,"low":10,"fav25":64.5},{"name":"매니저","fav":47.5,"low":11.2,"fav25":70.2},{"name":"심리안전·소속감","fav":40.5,"low":15.5,"fav25":63}],"tier":"risk"},{"name":"인사관리부문","avgFav":70.2,"avgLow":7,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":73,"low":0,"fav25":67},{"no":2,"fav":73,"low":0,"fav25":77},{"no":3,"fav":69,"low":15,"fav25":77},{"no":4,"fav":69,"low":4,"fav25":90},{"no":5,"fav":73,"low":0,"fav25":83},{"no":6,"fav":73,"low":4,"fav25":83},{"no":7,"fav":77,"low":4,"fav25":77},{"no":8,"fav":69,"low":4,"fav25":90},{"no":9,"fav":81,"low":4,"fav25":100},{"no":10,"fav":65,"low":16,"fav25":70},{"no":11,"fav":69,"low":0,"fav25":43},{"no":12,"fav":85,"low":0,"fav25":67},{"no":13,"fav":65,"low":8,"fav25":73},{"no":14,"fav":73,"low":12,"fav25":90},{"no":15,"fav":73,"low":12,"fav25":93},{"no":16,"fav":62,"low":12,"fav25":73},{"no":17,"fav":77,"low":8,"fav25":77},{"no":18,"fav":69,"low":12,"fav25":77},{"no":19,"fav":58,"low":8,"fav25":60},{"no":20,"fav":62,"low":12,"fav25":73},{"no":21,"fav":65,"low":12,"fav25":67},{"no":22,"fav":65,"low":8,"fav25":null}],"cats":[{"name":"몰입·추천","fav":71,"low":4.8,"fav25":77.8},{"name":"조직명확성","fav":73,"low":5.3,"fav25":83.8},{"name":"웰빙","fav":77,"low":0,"fav25":55},{"name":"매니저","fav":68.2,"low":11,"fav25":82.2},{"name":"심리안전·소속감","fav":66,"low":10,"fav25":70.8}],"tier":"stable"},{"name":"재무관리회계투자본부","avgFav":60.5,"avgLow":11,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":57,"low":11,"fav25":66},{"no":2,"fav":50,"low":6,"fav25":57},{"no":3,"fav":65,"low":13,"fav25":64},{"no":4,"fav":67,"low":6,"fav25":80},{"no":5,"fav":74,"low":9,"fav25":80},{"no":6,"fav":78,"low":4,"fav25":81},{"no":7,"fav":85,"low":2,"fav25":80},{"no":8,"fav":67,"low":9,"fav25":81},{"no":9,"fav":76,"low":2,"fav25":84},{"no":10,"fav":52,"low":15,"fav25":64},{"no":11,"fav":59,"low":13,"fav25":32},{"no":12,"fav":54,"low":9,"fav25":56},{"no":13,"fav":63,"low":11,"fav25":59},{"no":14,"fav":63,"low":11,"fav25":74},{"no":15,"fav":74,"low":6,"fav25":77},{"no":16,"fav":54,"low":13,"fav25":60},{"no":17,"fav":65,"low":13,"fav25":73},{"no":18,"fav":59,"low":9,"fav25":60},{"no":19,"fav":22,"low":26,"fav25":35},{"no":20,"fav":41,"low":26,"fav25":56},{"no":21,"fav":39,"low":17,"fav25":55},{"no":22,"fav":67,"low":11,"fav25":null}],"cats":[{"name":"몰입·추천","fav":59.8,"low":9,"fav25":66.8},{"name":"조직명확성","fav":72,"low":6.8,"fav25":78.3},{"name":"웰빙","fav":56.5,"low":11,"fav25":44},{"name":"매니저","fav":63.5,"low":10.2,"fav25":67.5},{"name":"심리안전·소속감","fav":48.8,"low":17,"fav25":55.8}],"tier":"watch"},{"name":"채널전략본부","avgFav":60.2,"avgLow":10.7,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":38,"low":12,"fav25":63},{"no":2,"fav":54,"low":4,"fav25":61},{"no":3,"fav":46,"low":4,"fav25":61},{"no":4,"fav":73,"low":8,"fav25":77},{"no":5,"fav":69,"low":12,"fav25":73},{"no":6,"fav":73,"low":4,"fav25":63},{"no":7,"fav":88,"low":0,"fav25":80},{"no":8,"fav":77,"low":12,"fav25":73},{"no":9,"fav":85,"low":4,"fav25":80},{"no":10,"fav":42,"low":12,"fav25":43},{"no":11,"fav":58,"low":8,"fav25":29},{"no":12,"fav":54,"low":12,"fav25":43},{"no":13,"fav":69,"low":15,"fav25":64},{"no":14,"fav":73,"low":8,"fav25":68},{"no":15,"fav":73,"low":8,"fav25":79},{"no":16,"fav":65,"low":8,"fav25":55},{"no":17,"fav":73,"low":12,"fav25":66},{"no":18,"fav":46,"low":31,"fav25":73},{"no":19,"fav":23,"low":46,"fav25":35},{"no":20,"fav":38,"low":8,"fav25":57},{"no":21,"fav":54,"low":4,"fav25":71},{"no":22,"fav":54,"low":4,"fav25":null}],"cats":[{"name":"몰입·추천","fav":52.8,"low":7,"fav25":65.5},{"name":"조직명확성","fav":72.3,"low":7.3,"fav25":68.7},{"name":"웰빙","fav":56,"low":10,"fav25":36},{"name":"매니저","fav":70,"low":9.8,"fav25":66.5},{"name":"심리안전·소속감","fav":48,"low":17.5,"fav25":60.4}],"tier":"watch"}],"meta":{"companyFav26":63,"companyLow26":12.9,"companyFav25":60.3,"divCount":18,"qCount":22,"integrity":["Result.csv의 「고객솔루션본부UW」 열에는 실제 「상품/헬스」 데이터가, 「상품/헬스」 열에는 「DT운영본부」 데이터가 들어가 있어 두 본부가 뒤바뀌고 DT운영본부가 중복 입력된 것으로 확인됨. 본 대시보드는 각 본부의 개별 원본 파일을 정본(authoritative)으로 사용해 교정함.","고객경험혁신본부CE는 22개 문항 중 21개가 FAV 90% 이상(평균 95%, LOW 2.5%)으로, 소규모 조직의 사회적 바람직성 편향·익명성 우려가 의심됨. 단순 성공 사례가 아니라 신뢰도 검토 대상으로 분류.","DataControl Q11(웰빙 지원)은 분포상 이례적 수치(FAV 95%)로, 입력 오류 가능성이 있어 해석에 주의.","대면영업지원본부는 개별 원본 파일이 없어 Result.csv 값을 사용했으며 2025년 비교값이 없음."]}};
+/* 정본(authoritative) 데이터는 pulse-seed-data.json 입니다.
+   아래 EMBEDDED_PULSE_SEED는 fetch가 막히는 환경(file:// 직접 열기 등)을 위한 오프라인 폴백 사본일 뿐입니다.
+   JSON을 수정했다면 반드시 `python3 sync-embedded.py`를 실행해 아래 한 줄을 재생성하세요. 두 사본은 항상 동일해야 합니다. */
+const EMBEDDED_PULSE_SEED={"company":{"questions":[{"no":1,"text":"나는 우리 회사를 일하기 좋은 회사로 추천할 의향이 있다.","short":"회사 추천 의향","benchMed":72,"benchChubb":54,"fav":{"24":52,"25":64,"26":55},"low":{"24":11,"25":12,"26":16},"dist26":{"p5":23,"p4":32,"p3":29,"p2":11,"p1":5}},{"no":2,"text":"나는 우리 회사에서 일하는 것이 자랑스럽다.","short":"재직 자부심","benchMed":73,"benchChubb":52,"fav":{"24":55,"25":66,"26":61},"low":{"24":9,"25":6,"26":7},"dist26":{"p5":25,"p4":36,"p3":32,"p2":5,"p1":2}},{"no":3,"text":"나에게 주어진 일은 개인적인 성취감을 가질 수 있도록 해준다.","short":"개인적 성취감","benchMed":71,"benchChubb":57,"fav":{"24":57,"25":63,"26":61},"low":{"24":15,"25":11,"26":15},"dist26":{"p5":25,"p4":36,"p3":25,"p2":10,"p1":5}},{"no":4,"text":"나는 우리 회사에서 앞으로 최소 12개월 이상 더 근무할 의향이 있다.","short":"12개월+ 잔류 의향","benchMed":75,"benchChubb":75,"fav":{"24":75,"25":80,"26":71},"low":{"24":5,"25":6,"26":8},"dist26":{"p5":38,"p4":33,"p3":22,"p2":5,"p1":3}},{"no":5,"text":"조직 내에서 나의 의견은 존중받는다.","short":"의견 존중","benchMed":67,"benchChubb":61,"fav":{"24":61,"25":72,"26":67},"low":{"24":12,"25":9,"26":10},"dist26":{"p5":29,"p4":38,"p3":22,"p2":6,"p1":4}},{"no":6,"text":"나는 내 업무를 효과적으로 수행하기 위해 필요한 자료에 접근할 수 있는 권한이 있다.","short":"업무 자료 접근권","benchMed":72,"benchChubb":69,"fav":{"24":69,"25":69,"26":69},"low":{"24":10,"25":9,"26":8},"dist26":{"p5":26,"p4":43,"p3":22,"p2":6,"p1":2}},{"no":7,"text":"나는 내 업무가 우리 회사의 목표에 어떻게 기여하는지 이해하고 있다.","short":"목표 기여 이해","benchMed":76,"benchChubb":73,"fav":{"24":74,"25":80,"26":78},"low":{"24":6,"25":2,"26":4},"dist26":{"p5":32,"p4":46,"p3":18,"p2":2,"p1":2}},{"no":8,"text":"나는 나에게 기대되는 역할에 대해 명확하게 이해하고 있다.","short":"역할 명확성","benchMed":79,"benchChubb":75,"fav":{"24":75,"25":79,"26":75},"low":{"24":7,"25":5,"26":6},"dist26":{"p5":33,"p4":42,"p3":19,"p2":4,"p1":2}},{"no":9,"text":"나는 우리 회사에서 나의 역할을 수행하는데 적절한 행동이 무엇인지 이해하고 있다.","short":"적절한 행동 이해","benchMed":null,"benchChubb":79,"fav":{"24":79,"25":84,"26":79},"low":{"24":4,"25":2,"26":4},"dist26":{"p5":30,"p4":49,"p3":16,"p2":3,"p1":1}},{"no":10,"text":"나의 업무를 잘 수행하기 위해 필요한 스킬을 배울 수 있는 기회가 있다.","short":"스킬 학습 기회","benchMed":72,"benchChubb":55,"fav":{"24":55,"25":54,"26":55},"low":{"24":12,"25":16,"26":17},"dist26":{"p5":21,"p4":34,"p3":27,"p2":10,"p1":7}},{"no":11,"text":"나는 회사에서 개인적인 웰빙과 관련하여 필요할 때 편하게 지원을 요청할 수 있다. (2026 NEW)","short":"웰빙 지원 요청 가능","benchMed":null,"benchChubb":52,"fav":{"24":15,"25":36,"26":55},"low":{"24":62,"25":41,"26":16},"dist26":{"p5":24,"p4":31,"p3":29,"p2":10,"p1":6}},{"no":12,"text":"우리 회사는 개인적인 웰빙에 도움이 되는 가이드와 실질적인 프로그램을 제공한다. (2026 NEW)","short":"웰빙 프로그램 제공","benchMed":null,"benchChubb":15,"fav":{"24":37,"25":48,"26":63},"low":{"24":24,"25":22,"26":10},"dist26":{"p5":25,"p4":38,"p3":27,"p2":6,"p1":4}},{"no":13,"text":"나의 매니저는 내 성과를 향상시키는 데 도움이 되는 피드백을 적시에 제공한다.","short":"매니저 적시 피드백","benchMed":null,"benchChubb":37,"fav":{"24":54,"25":59,"26":66},"low":{"24":18,"25":16,"26":13},"dist26":{"p5":30,"p4":36,"p3":21,"p2":6,"p1":7}},{"no":14,"text":"나의 매니저는 내가 잘한 일을 인정해준다.","short":"매니저의 인정","benchMed":72,"benchChubb":53,"fav":{"24":64,"25":68,"26":69},"low":{"24":12,"25":13,"26":12},"dist26":{"p5":32,"p4":37,"p3":18,"p2":6,"p1":6}},{"no":15,"text":"나의 매니저는 내가 문제 상황을 가져갔을 때 해결하기 위해 돕는다.","short":"매니저 문제해결 지원","benchMed":76,"benchChubb":64,"fav":{"24":64,"25":73,"26":71},"low":{"24":11,"25":10,"26":11},"dist26":{"p5":33,"p4":38,"p3":17,"p2":6,"p1":5}},{"no":16,"text":"나는 나의 매니저와 나의 역량개발과 성장에 대해서 정기적으로 대화한다.","short":"매니저와 성장 대화","benchMed":null,"benchChubb":64,"fav":{"24":53,"25":55,"26":63},"low":{"24":16,"25":17,"26":16},"dist26":{"p5":27,"p4":36,"p3":22,"p2":9,"p1":7}},{"no":17,"text":"나는 부정적인 상황에 대한 두려움 없이 문제를 제기하거나 이슈를 이야기할 수 있다.","short":"두려움 없는 문제 제기","benchMed":66,"benchChubb":53,"fav":{"24":null,"25":62,"26":62},"low":{"24":null,"25":19,"26":17},"dist26":{"p5":26,"p4":36,"p3":21,"p2":10,"p1":7}},{"no":18,"text":"나의 차상위 리더는 회사에서 일어나는 일들을 적시에 공유한다.","short":"차상위 리더 소통","benchMed":70,"benchChubb":null,"fav":{"24":null,"25":58,"26":64},"low":{"24":null,"25":19,"26":15},"dist26":{"p5":25,"p4":39,"p3":21,"p2":8,"p1":7}},{"no":19,"text":"지난 서베이의 결과에 대해 피드백을 반영하여 조치가 취해졌다고 생각한다.","short":"서베이 조치 신뢰","benchMed":73,"benchChubb":null,"fav":{"24":null,"25":36,"26":37},"low":{"24":null,"25":25,"26":26},"dist26":{"p5":17,"p4":20,"p3":37,"p2":16,"p1":10}},{"no":20,"text":"나는 우리 회사가 포용적인 업무 환경을 조성하기 위해 노력한다고 생각한다.","short":"포용적 환경 노력","benchMed":null,"benchChubb":null,"fav":{"24":null,"25":57,"26":47},"low":{"24":null,"25":15,"26":25},"dist26":{"p5":20,"p4":27,"p3":29,"p2":15,"p1":10}},{"no":21,"text":"나는 우리 회사에 소속감을 느낀다.","short":"소속감","benchMed":null,"benchChubb":null,"fav":{"24":null,"25":63,"26":56},"low":{"24":null,"25":9,"26":14},"dist26":{"p5":23,"p4":33,"p3":30,"p2":9,"p1":5}},{"no":22,"text":"우리동료들은 업무를 수행하기 위해 같이 협업한다. (2026 NEW)","short":"동료 간 협업","benchMed":null,"benchChubb":null,"fav":{"24":null,"25":null,"26":61},"low":{"24":null,"25":null,"26":14},"dist26":{"p5":24,"p4":37,"p3":24,"p2":8,"p1":6}}],"cats":[{"name":"몰입·추천","qs":[1,2,3,4],"fav":{"24":59.8,"25":68.2,"26":62},"low":{"26":11.5}},{"name":"조직명확성","qs":[5,6,7,8,9,10],"fav":{"24":68.8,"25":73,"26":70.5},"low":{"26":8.2}},{"name":"웰빙","qs":[11,12],"fav":{"24":26,"25":42,"26":59},"low":{"26":13}},{"name":"매니저","qs":[13,14,15,16],"fav":{"24":58.8,"25":63.8,"26":67.2},"low":{"26":13}},{"name":"심리안전·소속감","qs":[17,18,19,20,21,22],"fav":{"24":null,"25":46,"26":54.5},"low":{"26":18.5}}]},"divisions":[{"name":"DataControl","avgFav":84.1,"avgLow":3.7,"hi90":4,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":84,"low":0,"fav25":63},{"no":2,"fav":74,"low":5,"fav25":61},{"no":3,"fav":84,"low":5,"fav25":61},{"no":4,"fav":89,"low":5,"fav25":77},{"no":5,"fav":95,"low":5,"fav25":73},{"no":6,"fav":89,"low":0,"fav25":63},{"no":7,"fav":89,"low":0,"fav25":80},{"no":8,"fav":79,"low":0,"fav25":73},{"no":9,"fav":89,"low":5,"fav25":80},{"no":10,"fav":79,"low":0,"fav25":43},{"no":11,"fav":95,"low":5,"fav25":29},{"no":12,"fav":89,"low":0,"fav25":43},{"no":13,"fav":89,"low":0,"fav25":64},{"no":14,"fav":89,"low":10,"fav25":68},{"no":15,"fav":95,"low":0,"fav25":79},{"no":16,"fav":74,"low":5,"fav25":55},{"no":17,"fav":79,"low":11,"fav25":66},{"no":18,"fav":95,"low":0,"fav25":73},{"no":19,"fav":53,"low":10,"fav25":35},{"no":20,"fav":79,"low":5,"fav25":57},{"no":21,"fav":79,"low":10,"fav25":71},{"no":22,"fav":84,"low":0,"fav25":null}],"cats":[{"name":"몰입·추천","fav":82.8,"low":3.8,"fav25":65.5},{"name":"조직명확성","fav":86.7,"low":1.7,"fav25":68.7},{"name":"웰빙","fav":92,"low":2.5,"fav25":36},{"name":"매니저","fav":86.8,"low":3.8,"fav25":66.5},{"name":"심리안전·소속감","fav":78.2,"low":6,"fav25":60.4}],"tier":"stable"},{"name":"DigitalSales","avgFav":47,"avgLow":27.5,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":25,"low":40,"fav25":55},{"no":2,"fav":40,"low":15,"fav25":66},{"no":3,"fav":40,"low":15,"fav25":54},{"no":4,"fav":45,"low":20,"fav25":74},{"no":5,"fav":50,"low":20,"fav25":67},{"no":6,"fav":50,"low":20,"fav25":60},{"no":7,"fav":70,"low":15,"fav25":70},{"no":8,"fav":50,"low":20,"fav25":71},{"no":9,"fav":60,"low":20,"fav25":74},{"no":10,"fav":45,"low":40,"fav25":46},{"no":11,"fav":35,"low":35,"fav25":45},{"no":12,"fav":65,"low":10,"fav25":49},{"no":13,"fav":45,"low":30,"fav25":59},{"no":14,"fav":55,"low":25,"fav25":68},{"no":15,"fav":60,"low":30,"fav25":65},{"no":16,"fav":65,"low":30,"fav25":48},{"no":17,"fav":45,"low":50,"fav25":67},{"no":18,"fav":55,"low":25,"fav25":56},{"no":19,"fav":20,"low":35,"fav25":24},{"no":20,"fav":35,"low":50,"fav25":52},{"no":21,"fav":40,"low":30,"fav25":57},{"no":22,"fav":40,"low":30,"fav25":null}],"cats":[{"name":"몰입·추천","fav":37.5,"low":22.5,"fav25":62.2},{"name":"조직명확성","fav":54.2,"low":22.5,"fav25":64.7},{"name":"웰빙","fav":50,"low":22.5,"fav25":47},{"name":"매니저","fav":56.2,"low":28.8,"fav25":60},{"name":"심리안전·소속감","fav":39.2,"low":36.7,"fav25":51.2}],"tier":"risk"},{"name":"DT운영본부","avgFav":45.1,"avgLow":23,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":31,"low":33,"fav25":55},{"no":2,"fav":45,"low":14,"fav25":66},{"no":3,"fav":36,"low":31,"fav25":54},{"no":4,"fav":60,"low":10,"fav25":74},{"no":5,"fav":43,"low":24,"fav25":67},{"no":6,"fav":60,"low":15,"fav25":60},{"no":7,"fav":62,"low":9,"fav25":70},{"no":8,"fav":55,"low":9,"fav25":71},{"no":9,"fav":24,"low":33,"fav25":74},{"no":10,"fav":36,"low":26,"fav25":46},{"no":11,"fav":43,"low":27,"fav25":45},{"no":12,"fav":52,"low":17,"fav25":49},{"no":13,"fav":43,"low":24,"fav25":59},{"no":14,"fav":55,"low":21,"fav25":68},{"no":15,"fav":55,"low":24,"fav25":65},{"no":16,"fav":48,"low":26,"fav25":48},{"no":17,"fav":55,"low":12,"fav25":67},{"no":18,"fav":55,"low":29,"fav25":56},{"no":19,"fav":14,"low":48,"fav25":24},{"no":20,"fav":36,"low":33,"fav25":52},{"no":21,"fav":45,"low":21,"fav25":57},{"no":22,"fav":40,"low":19,"fav25":null}],"cats":[{"name":"몰입·추천","fav":43,"low":22,"fav25":62.2},{"name":"조직명확성","fav":46.7,"low":19.3,"fav25":64.7},{"name":"웰빙","fav":47.5,"low":22,"fav25":47},{"name":"매니저","fav":50.2,"low":23.8,"fav25":60},{"name":"심리안전·소속감","fav":40.8,"low":27,"fav25":51.2}],"tier":"risk"},{"name":"DT혁신본부/CISO","avgFav":52.5,"avgLow":18.2,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":38,"low":31,"fav25":55},{"no":2,"fav":51,"low":6,"fav25":66},{"no":3,"fav":38,"low":18,"fav25":54},{"no":4,"fav":56,"low":16,"fav25":74},{"no":5,"fav":62,"low":13,"fav25":67},{"no":6,"fav":56,"low":16,"fav25":60},{"no":7,"fav":64,"low":3,"fav25":70},{"no":8,"fav":69,"low":11,"fav25":71},{"no":9,"fav":62,"low":10,"fav25":74},{"no":10,"fav":44,"low":31,"fav25":46},{"no":11,"fav":49,"low":16,"fav25":45},{"no":12,"fav":74,"low":6,"fav25":49},{"no":13,"fav":51,"low":25,"fav25":59},{"no":14,"fav":62,"low":16,"fav25":68},{"no":15,"fav":54,"low":20,"fav25":65},{"no":16,"fav":51,"low":20,"fav25":48},{"no":17,"fav":51,"low":20,"fav25":67},{"no":18,"fav":62,"low":18,"fav25":56},{"no":19,"fav":23,"low":33,"fav25":24},{"no":20,"fav":38,"low":33,"fav25":52},{"no":21,"fav":44,"low":18,"fav25":57},{"no":22,"fav":56,"low":20,"fav25":null}],"cats":[{"name":"몰입·추천","fav":45.8,"low":17.8,"fav25":62.2},{"name":"조직명확성","fav":59.5,"low":14,"fav25":64.7},{"name":"웰빙","fav":61.5,"low":11,"fav25":47},{"name":"매니저","fav":54.5,"low":20.2,"fav25":60},{"name":"심리안전·소속감","fav":45.7,"low":23.7,"fav25":51.2}],"tier":"risk"},{"name":"GA영업본부","avgFav":49.9,"avgLow":24,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":47,"low":27,"fav25":72},{"no":2,"fav":61,"low":16,"fav25":76},{"no":3,"fav":55,"low":24,"fav25":72},{"no":4,"fav":68,"low":14,"fav25":87},{"no":5,"fav":45,"low":18,"fav25":67},{"no":6,"fav":42,"low":21,"fav25":67},{"no":7,"fav":76,"low":0,"fav25":94},{"no":8,"fav":79,"low":3,"fav25":90},{"no":9,"fav":87,"low":3,"fav25":96},{"no":10,"fav":39,"low":29,"fav25":55},{"no":11,"fav":26,"low":35,"fav25":27},{"no":12,"fav":24,"low":39,"fav25":37},{"no":13,"fav":55,"low":19,"fav25":65},{"no":14,"fav":50,"low":21,"fav25":60},{"no":15,"fav":55,"low":24,"fav25":70},{"no":16,"fav":50,"low":34,"fav25":63},{"no":17,"fav":42,"low":37,"fav25":58},{"no":18,"fav":39,"low":34,"fav25":66},{"no":19,"fav":24,"low":53,"fav25":44},{"no":20,"fav":34,"low":37,"fav25":58},{"no":21,"fav":50,"low":19,"fav25":72},{"no":22,"fav":50,"low":21,"fav25":null}],"cats":[{"name":"몰입·추천","fav":57.8,"low":20.2,"fav25":76.8},{"name":"조직명확성","fav":61.3,"low":12.3,"fav25":78.2},{"name":"웰빙","fav":25,"low":37,"fav25":32},{"name":"매니저","fav":52.5,"low":24.5,"fav25":64.5},{"name":"심리안전·소속감","fav":39.8,"low":33.5,"fav25":59.6}],"tier":"risk"},{"name":"경영관리본부","avgFav":62.1,"avgLow":12.1,"hi90":1,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":42,"low":16,"fav25":77},{"no":2,"fav":58,"low":5,"fav25":69},{"no":3,"fav":53,"low":19,"fav25":73},{"no":4,"fav":68,"low":6,"fav25":77},{"no":5,"fav":74,"low":5,"fav25":85},{"no":6,"fav":66,"low":8,"fav25":69},{"no":7,"fav":87,"low":6,"fav25":88},{"no":8,"fav":87,"low":6,"fav25":92},{"no":9,"fav":92,"low":3,"fav25":88},{"no":10,"fav":55,"low":19,"fav25":69},{"no":11,"fav":63,"low":16,"fav25":42},{"no":12,"fav":74,"low":3,"fav25":42},{"no":13,"fav":63,"low":10,"fav25":65},{"no":14,"fav":71,"low":6,"fav25":81},{"no":15,"fav":61,"low":13,"fav25":85},{"no":16,"fav":58,"low":21,"fav25":73},{"no":17,"fav":63,"low":8,"fav25":65},{"no":18,"fav":63,"low":8,"fav25":69},{"no":19,"fav":32,"low":24,"fav25":31},{"no":20,"fav":34,"low":29,"fav25":62},{"no":21,"fav":55,"low":8,"fav25":69},{"no":22,"fav":47,"low":27,"fav25":null}],"cats":[{"name":"몰입·추천","fav":55.2,"low":11.5,"fav25":74},{"name":"조직명확성","fav":76.8,"low":7.8,"fav25":81.8},{"name":"웰빙","fav":68.5,"low":9.5,"fav25":42},{"name":"매니저","fav":63.2,"low":12.5,"fav25":76},{"name":"심리안전·소속감","fav":49,"low":17.3,"fav25":59.2}],"tier":"watch"},{"name":"계리RM본부","avgFav":65,"avgLow":9.1,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":56,"low":12,"fav25":66},{"no":2,"fav":47,"low":9,"fav25":57},{"no":3,"fav":69,"low":6,"fav25":64},{"no":4,"fav":75,"low":6,"fav25":80},{"no":5,"fav":81,"low":6,"fav25":80},{"no":6,"fav":67,"low":6,"fav25":81},{"no":7,"fav":75,"low":9,"fav25":80},{"no":8,"fav":72,"low":3,"fav25":81},{"no":9,"fav":81,"low":3,"fav25":84},{"no":10,"fav":67,"low":12,"fav25":64},{"no":11,"fav":47,"low":12,"fav25":32},{"no":12,"fav":56,"low":9,"fav25":56},{"no":13,"fav":83,"low":3,"fav25":59},{"no":14,"fav":81,"low":6,"fav25":74},{"no":15,"fav":83,"low":3,"fav25":77},{"no":16,"fav":78,"low":3,"fav25":60},{"no":17,"fav":58,"low":17,"fav25":73},{"no":18,"fav":72,"low":11,"fav25":60},{"no":19,"fav":28,"low":19,"fav25":35},{"no":20,"fav":39,"low":25,"fav25":56},{"no":21,"fav":47,"low":6,"fav25":55},{"no":22,"fav":69,"low":14,"fav25":null}],"cats":[{"name":"몰입·추천","fav":61.8,"low":8.2,"fav25":66.8},{"name":"조직명확성","fav":73.8,"low":6.5,"fav25":78.3},{"name":"웰빙","fav":51.5,"low":10.5,"fav25":44},{"name":"매니저","fav":81.2,"low":3.8,"fav25":67.5},{"name":"심리안전·소속감","fav":52.2,"low":15.3,"fav25":55.8}],"tier":"stable"},{"name":"계약서비스본부","avgFav":63.8,"avgLow":12.6,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":62,"low":12,"fav25":54},{"no":2,"fav":54,"low":6,"fav25":55},{"no":3,"fav":60,"low":19,"fav25":52},{"no":4,"fav":78,"low":4,"fav25":77},{"no":5,"fav":62,"low":11,"fav25":64},{"no":6,"fav":86,"low":4,"fav25":70},{"no":7,"fav":83,"low":0,"fav25":74},{"no":8,"fav":85,"low":4,"fav25":70},{"no":9,"fav":87,"low":4,"fav25":74},{"no":10,"fav":58,"low":22,"fav25":47},{"no":11,"fav":45,"low":19,"fav25":32},{"no":12,"fav":53,"low":13,"fav25":40},{"no":13,"fav":65,"low":13,"fav25":46},{"no":14,"fav":69,"low":16,"fav25":59},{"no":15,"fav":76,"low":9,"fav25":65},{"no":16,"fav":63,"low":14,"fav25":44},{"no":17,"fav":51,"low":22,"fav25":52},{"no":18,"fav":58,"low":20,"fav25":42},{"no":19,"fav":46,"low":25,"fav25":31},{"no":20,"fav":46,"low":20,"fav25":51},{"no":21,"fav":56,"low":9,"fav25":56},{"no":22,"fav":60,"low":11,"fav25":null}],"cats":[{"name":"몰입·추천","fav":63.5,"low":10.2,"fav25":59.5},{"name":"조직명확성","fav":76.8,"low":7.5,"fav25":66.5},{"name":"웰빙","fav":49,"low":16,"fav25":36},{"name":"매니저","fav":68.2,"low":13,"fav25":53.5},{"name":"심리안전·소속감","fav":52.8,"low":17.8,"fav25":46.4}],"tier":"watch"},{"name":"고객경험혁신본부CE","avgFav":95,"avgLow":2.5,"hi90":21,"reliab":"CE","hasYoY":true,"qs":[{"no":1,"fav":92,"low":2,"fav25":54},{"no":2,"fav":95,"low":2,"fav25":55},{"no":3,"fav":95,"low":2,"fav25":52},{"no":4,"fav":95,"low":2,"fav25":77},{"no":5,"fav":95,"low":2,"fav25":64},{"no":6,"fav":95,"low":2,"fav25":70},{"no":7,"fav":88,"low":2,"fav25":74},{"no":8,"fav":97,"low":2,"fav25":70},{"no":9,"fav":97,"low":2,"fav25":74},{"no":10,"fav":94,"low":2,"fav25":47},{"no":11,"fav":94,"low":4,"fav25":32},{"no":12,"fav":95,"low":2,"fav25":40},{"no":13,"fav":97,"low":2,"fav25":46},{"no":14,"fav":95,"low":4,"fav25":59},{"no":15,"fav":97,"low":2,"fav25":65},{"no":16,"fav":97,"low":2,"fav25":44},{"no":17,"fav":94,"low":5,"fav25":52},{"no":18,"fav":97,"low":2,"fav25":42},{"no":19,"fav":92,"low":2,"fav25":31},{"no":20,"fav":95,"low":5,"fav25":51},{"no":21,"fav":97,"low":4,"fav25":56},{"no":22,"fav":98,"low":2,"fav25":null}],"cats":[{"name":"몰입·추천","fav":94.2,"low":2,"fav25":59.5},{"name":"조직명확성","fav":94.3,"low":2,"fav25":66.5},{"name":"웰빙","fav":94.5,"low":3,"fav25":36},{"name":"매니저","fav":96.5,"low":2.5,"fav25":53.5},{"name":"심리안전·소속감","fav":95.5,"low":3.3,"fav25":46.4}],"tier":"check"},{"name":"고객경험혁신본부본사","avgFav":59.5,"avgLow":13.8,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":48,"low":10,"fav25":54},{"no":2,"fav":57,"low":14,"fav25":55},{"no":3,"fav":57,"low":15,"fav25":52},{"no":4,"fav":62,"low":10,"fav25":77},{"no":5,"fav":53,"low":10,"fav25":64},{"no":6,"fav":67,"low":5,"fav25":70},{"no":7,"fav":71,"low":5,"fav25":74},{"no":8,"fav":66,"low":5,"fav25":70},{"no":9,"fav":77,"low":5,"fav25":74},{"no":10,"fav":48,"low":15,"fav25":47},{"no":11,"fav":66,"low":15,"fav25":32},{"no":12,"fav":76,"low":10,"fav25":40},{"no":13,"fav":62,"low":15,"fav25":46},{"no":14,"fav":57,"low":10,"fav25":59},{"no":15,"fav":66,"low":5,"fav25":65},{"no":16,"fav":62,"low":24,"fav25":44},{"no":17,"fav":62,"low":20,"fav25":52},{"no":18,"fav":76,"low":0,"fav25":42},{"no":19,"fav":28,"low":33,"fav25":31},{"no":20,"fav":38,"low":34,"fav25":51},{"no":21,"fav":53,"low":29,"fav25":56},{"no":22,"fav":57,"low":14,"fav25":null}],"cats":[{"name":"몰입·추천","fav":56,"low":12.2,"fav25":59.5},{"name":"조직명확성","fav":63.7,"low":7.5,"fav25":66.5},{"name":"웰빙","fav":71,"low":12.5,"fav25":36},{"name":"매니저","fav":61.8,"low":13.5,"fav25":53.5},{"name":"심리안전·소속감","fav":52.3,"low":21.7,"fav25":46.4}],"tier":"watch"},{"name":"고객솔루션본부UW","avgFav":37.4,"avgLow":21.3,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":35,"low":28,"fav25":67},{"no":2,"fav":46,"low":14,"fav25":67},{"no":3,"fav":38,"low":23,"fav25":67},{"no":4,"fav":37,"low":17,"fav25":79},{"no":5,"fav":43,"low":17,"fav25":69},{"no":6,"fav":55,"low":6,"fav25":63},{"no":7,"fav":57,"low":9,"fav25":78},{"no":8,"fav":55,"low":15,"fav25":83},{"no":9,"fav":17,"low":34,"fav25":82},{"no":10,"fav":26,"low":20,"fav25":50},{"no":11,"fav":29,"low":40,"fav25":29},{"no":12,"fav":31,"low":25,"fav25":49},{"no":13,"fav":32,"low":20,"fav25":58},{"no":14,"fav":46,"low":17,"fav25":65},{"no":15,"fav":37,"low":26,"fav25":69},{"no":16,"fav":35,"low":18,"fav25":50},{"no":17,"fav":40,"low":9,"fav25":54},{"no":18,"fav":37,"low":22,"fav25":47},{"no":19,"fav":20,"low":34,"fav25":35},{"no":20,"fav":20,"low":37,"fav25":46},{"no":21,"fav":37,"low":17,"fav25":56},{"no":22,"fav":49,"low":20,"fav25":null}],"cats":[{"name":"몰입·추천","fav":39,"low":20.5,"fav25":70},{"name":"조직명확성","fav":42.2,"low":16.8,"fav25":70.8},{"name":"웰빙","fav":30,"low":32.5,"fav25":39},{"name":"매니저","fav":37.5,"low":20.2,"fav25":60.5},{"name":"심리안전·소속감","fav":33.8,"low":23.2,"fav25":47.6}],"tier":"risk"},{"name":"고객솔루션본부상품/헬스","avgFav":64.4,"avgLow":14.4,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":61,"low":21,"fav25":67},{"no":2,"fav":63,"low":14,"fav25":67},{"no":3,"fav":65,"low":14,"fav25":67},{"no":4,"fav":72,"low":5,"fav25":79},{"no":5,"fav":70,"low":11,"fav25":69},{"no":6,"fav":72,"low":10,"fav25":63},{"no":7,"fav":77,"low":2,"fav25":78},{"no":8,"fav":77,"low":2,"fav25":83},{"no":9,"fav":72,"low":2,"fav25":82},{"no":10,"fav":59,"low":21,"fav25":50},{"no":11,"fav":51,"low":16,"fav25":29},{"no":12,"fav":63,"low":7,"fav25":49},{"no":13,"fav":77,"low":18,"fav25":58},{"no":14,"fav":77,"low":14,"fav25":65},{"no":15,"fav":77,"low":12,"fav25":69},{"no":16,"fav":70,"low":19,"fav25":50},{"no":17,"fav":63,"low":18,"fav25":54},{"no":18,"fav":67,"low":23,"fav25":47},{"no":19,"fav":32,"low":23,"fav25":35},{"no":20,"fav":45,"low":28,"fav25":46},{"no":21,"fav":45,"low":21,"fav25":56},{"no":22,"fav":61,"low":16,"fav25":null}],"cats":[{"name":"몰입·추천","fav":65.2,"low":13.5,"fav25":70},{"name":"조직명확성","fav":71.2,"low":8,"fav25":70.8},{"name":"웰빙","fav":57,"low":11.5,"fav25":39},{"name":"매니저","fav":75.2,"low":15.8,"fav25":60.5},{"name":"심리안전·소속감","fav":52.2,"low":21.5,"fav25":47.6}],"tier":"watch"},{"name":"대면영업지원본부","avgFav":68.5,"avgLow":12.2,"hi90":0,"reliab":null,"hasYoY":false,"qs":[{"no":1,"fav":66,"low":12,"fav25":null},{"no":2,"fav":71,"low":3,"fav25":null},{"no":3,"fav":74,"low":9,"fav25":null},{"no":4,"fav":83,"low":6,"fav25":null},{"no":5,"fav":66,"low":12,"fav25":null},{"no":6,"fav":69,"low":6,"fav25":null},{"no":7,"fav":86,"low":9,"fav25":null},{"no":8,"fav":83,"low":9,"fav25":null},{"no":9,"fav":89,"low":3,"fav25":null},{"no":10,"fav":57,"low":9,"fav25":null},{"no":11,"fav":49,"low":14,"fav25":null},{"no":12,"fav":63,"low":3,"fav25":null},{"no":13,"fav":69,"low":15,"fav25":null},{"no":14,"fav":74,"low":17,"fav25":null},{"no":15,"fav":74,"low":12,"fav25":null},{"no":16,"fav":69,"low":14,"fav25":null},{"no":17,"fav":69,"low":17,"fav25":null},{"no":18,"fav":63,"low":12,"fav25":null},{"no":19,"fav":43,"low":29,"fav25":null},{"no":20,"fav":49,"low":26,"fav25":null},{"no":21,"fav":69,"low":14,"fav25":null},{"no":22,"fav":71,"low":18,"fav25":null}],"cats":[{"name":"몰입·추천","fav":73.5,"low":7.5,"fav25":null},{"name":"조직명확성","fav":75,"low":8,"fav25":null},{"name":"웰빙","fav":56,"low":8.5,"fav25":null},{"name":"매니저","fav":71.5,"low":14.5,"fav25":null},{"name":"심리안전·소속감","fav":60.7,"low":19.3,"fav25":null}],"tier":"stable"},{"name":"법무/준법/감사/대외협력","avgFav":70.7,"avgLow":11.2,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":62,"low":16,"fav25":78},{"no":2,"fav":70,"low":10,"fav25":76},{"no":3,"fav":68,"low":21,"fav25":61},{"no":4,"fav":81,"low":5,"fav25":89},{"no":5,"fav":84,"low":8,"fav25":74},{"no":6,"fav":65,"low":19,"fav25":78},{"no":7,"fav":70,"low":8,"fav25":83},{"no":8,"fav":76,"low":14,"fav25":80},{"no":9,"fav":86,"low":3,"fav25":87},{"no":10,"fav":59,"low":8,"fav25":63},{"no":11,"fav":65,"low":5,"fav25":59},{"no":12,"fav":81,"low":3,"fav25":70},{"no":13,"fav":81,"low":5,"fav25":67},{"no":14,"fav":84,"low":8,"fav25":72},{"no":15,"fav":86,"low":5,"fav25":85},{"no":16,"fav":65,"low":17,"fav25":57},{"no":17,"fav":70,"low":13,"fav25":63},{"no":18,"fav":76,"low":8,"fav25":63},{"no":19,"fav":43,"low":25,"fav25":41},{"no":20,"fav":49,"low":16,"fav25":72},{"no":21,"fav":76,"low":13,"fav25":76},{"no":22,"fav":59,"low":16,"fav25":null}],"cats":[{"name":"몰입·추천","fav":70.2,"low":13,"fav25":76},{"name":"조직명확성","fav":73.3,"low":10,"fav25":77.5},{"name":"웰빙","fav":73,"low":4,"fav25":64.5},{"name":"매니저","fav":79,"low":8.8,"fav25":70.2},{"name":"심리안전·소속감","fav":62.2,"low":15.2,"fav25":63}],"tier":"stable"},{"name":"소비자보호본부","avgFav":49.3,"avgLow":9.9,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":48,"low":10,"fav25":78},{"no":2,"fav":52,"low":5,"fav25":76},{"no":3,"fav":48,"low":10,"fav25":61},{"no":4,"fav":67,"low":10,"fav25":89},{"no":5,"fav":52,"low":5,"fav25":74},{"no":6,"fav":57,"low":0,"fav25":78},{"no":7,"fav":62,"low":5,"fav25":83},{"no":8,"fav":57,"low":0,"fav25":80},{"no":9,"fav":67,"low":0,"fav25":87},{"no":10,"fav":52,"low":15,"fav25":63},{"no":11,"fav":38,"low":10,"fav25":59},{"no":12,"fav":52,"low":10,"fav25":70},{"no":13,"fav":43,"low":10,"fav25":67},{"no":14,"fav":52,"low":10,"fav25":72},{"no":15,"fav":52,"low":10,"fav25":85},{"no":16,"fav":43,"low":15,"fav25":57},{"no":17,"fav":52,"low":19,"fav25":63},{"no":18,"fav":43,"low":15,"fav25":63},{"no":19,"fav":24,"low":15,"fav25":41},{"no":20,"fav":38,"low":24,"fav25":72},{"no":21,"fav":43,"low":15,"fav25":76},{"no":22,"fav":43,"low":5,"fav25":null}],"cats":[{"name":"몰입·추천","fav":53.8,"low":8.8,"fav25":76},{"name":"조직명확성","fav":57.8,"low":4.2,"fav25":77.5},{"name":"웰빙","fav":45,"low":10,"fav25":64.5},{"name":"매니저","fav":47.5,"low":11.2,"fav25":70.2},{"name":"심리안전·소속감","fav":40.5,"low":15.5,"fav25":63}],"tier":"risk"},{"name":"인사관리부문","avgFav":70.2,"avgLow":7,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":73,"low":0,"fav25":67},{"no":2,"fav":73,"low":0,"fav25":77},{"no":3,"fav":69,"low":15,"fav25":77},{"no":4,"fav":69,"low":4,"fav25":90},{"no":5,"fav":73,"low":0,"fav25":83},{"no":6,"fav":73,"low":4,"fav25":83},{"no":7,"fav":77,"low":4,"fav25":77},{"no":8,"fav":69,"low":4,"fav25":90},{"no":9,"fav":81,"low":4,"fav25":100},{"no":10,"fav":65,"low":16,"fav25":70},{"no":11,"fav":69,"low":0,"fav25":43},{"no":12,"fav":85,"low":0,"fav25":67},{"no":13,"fav":65,"low":8,"fav25":73},{"no":14,"fav":73,"low":12,"fav25":90},{"no":15,"fav":73,"low":12,"fav25":93},{"no":16,"fav":62,"low":12,"fav25":73},{"no":17,"fav":77,"low":8,"fav25":77},{"no":18,"fav":69,"low":12,"fav25":77},{"no":19,"fav":58,"low":8,"fav25":60},{"no":20,"fav":62,"low":12,"fav25":73},{"no":21,"fav":65,"low":12,"fav25":67},{"no":22,"fav":65,"low":8,"fav25":null}],"cats":[{"name":"몰입·추천","fav":71,"low":4.8,"fav25":77.8},{"name":"조직명확성","fav":73,"low":5.3,"fav25":83.8},{"name":"웰빙","fav":77,"low":0,"fav25":55},{"name":"매니저","fav":68.2,"low":11,"fav25":82.2},{"name":"심리안전·소속감","fav":66,"low":10,"fav25":70.8}],"tier":"stable"},{"name":"재무관리회계투자본부","avgFav":60.5,"avgLow":11,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":57,"low":11,"fav25":66},{"no":2,"fav":50,"low":6,"fav25":57},{"no":3,"fav":65,"low":13,"fav25":64},{"no":4,"fav":67,"low":6,"fav25":80},{"no":5,"fav":74,"low":9,"fav25":80},{"no":6,"fav":78,"low":4,"fav25":81},{"no":7,"fav":85,"low":2,"fav25":80},{"no":8,"fav":67,"low":9,"fav25":81},{"no":9,"fav":76,"low":2,"fav25":84},{"no":10,"fav":52,"low":15,"fav25":64},{"no":11,"fav":59,"low":13,"fav25":32},{"no":12,"fav":54,"low":9,"fav25":56},{"no":13,"fav":63,"low":11,"fav25":59},{"no":14,"fav":63,"low":11,"fav25":74},{"no":15,"fav":74,"low":6,"fav25":77},{"no":16,"fav":54,"low":13,"fav25":60},{"no":17,"fav":65,"low":13,"fav25":73},{"no":18,"fav":59,"low":9,"fav25":60},{"no":19,"fav":22,"low":26,"fav25":35},{"no":20,"fav":41,"low":26,"fav25":56},{"no":21,"fav":39,"low":17,"fav25":55},{"no":22,"fav":67,"low":11,"fav25":null}],"cats":[{"name":"몰입·추천","fav":59.8,"low":9,"fav25":66.8},{"name":"조직명확성","fav":72,"low":6.8,"fav25":78.3},{"name":"웰빙","fav":56.5,"low":11,"fav25":44},{"name":"매니저","fav":63.5,"low":10.2,"fav25":67.5},{"name":"심리안전·소속감","fav":48.8,"low":17,"fav25":55.8}],"tier":"watch"},{"name":"채널전략본부","avgFav":60.2,"avgLow":10.7,"hi90":0,"reliab":null,"hasYoY":true,"qs":[{"no":1,"fav":38,"low":12,"fav25":63},{"no":2,"fav":54,"low":4,"fav25":61},{"no":3,"fav":46,"low":4,"fav25":61},{"no":4,"fav":73,"low":8,"fav25":77},{"no":5,"fav":69,"low":12,"fav25":73},{"no":6,"fav":73,"low":4,"fav25":63},{"no":7,"fav":88,"low":0,"fav25":80},{"no":8,"fav":77,"low":12,"fav25":73},{"no":9,"fav":85,"low":4,"fav25":80},{"no":10,"fav":42,"low":12,"fav25":43},{"no":11,"fav":58,"low":8,"fav25":29},{"no":12,"fav":54,"low":12,"fav25":43},{"no":13,"fav":69,"low":15,"fav25":64},{"no":14,"fav":73,"low":8,"fav25":68},{"no":15,"fav":73,"low":8,"fav25":79},{"no":16,"fav":65,"low":8,"fav25":55},{"no":17,"fav":73,"low":12,"fav25":66},{"no":18,"fav":46,"low":31,"fav25":73},{"no":19,"fav":23,"low":46,"fav25":35},{"no":20,"fav":38,"low":8,"fav25":57},{"no":21,"fav":54,"low":4,"fav25":71},{"no":22,"fav":54,"low":4,"fav25":null}],"cats":[{"name":"몰입·추천","fav":52.8,"low":7,"fav25":65.5},{"name":"조직명확성","fav":72.3,"low":7.3,"fav25":68.7},{"name":"웰빙","fav":56,"low":10,"fav25":36},{"name":"매니저","fav":70,"low":9.8,"fav25":66.5},{"name":"심리안전·소속감","fav":48,"low":17.5,"fav25":60.4}],"tier":"watch"}],"meta":{"companyFav26":63,"companyLow26":12.9,"companyFav25":60.3,"divCount":18,"qCount":22,"integrity":["Result.csv의 「고객솔루션본부UW」 열에는 실제 「상품/헬스」 데이터가, 「상품/헬스」 열에는 「DT운영본부」 데이터가 들어가 있어 두 본부가 뒤바뀌고 DT운영본부가 중복 입력된 것으로 확인됨. 본 대시보드는 각 본부의 개별 원본 파일을 정본(authoritative)으로 사용해 교정함.","고객경험혁신본부CE는 22개 문항 중 21개가 FAV 90% 이상(평균 95%, LOW 2.5%)으로, 소규모 조직의 사회적 바람직성 편향·익명성 우려가 의심됨. 단순 성공 사례가 아니라 신뢰도 검토 대상으로 분류.","DataControl Q11(웰빙 지원)은 분포상 이례적 수치(FAV 95%)로, 입력 오류 가능성이 있어 해석에 주의.","대면영업지원본부는 개별 원본 파일이 없어 Result.csv 값을 사용했으며 2025년 비교값이 없음."]}};
 const DATASET_KEY='linaCultureOS.currentDataset.v1';
 const LOCAL_MODE_KEY='linaCultureOS.localMode.v1';
-const ADMIN_EMAIL='rhokoo7@naver.com';
-const firebaseConfig={apiKey:"AIzaSyAA2BvQ7yllagmJvbUBUlBUOnfkkdHwuqI",authDomain:"creative-session-canvas.firebaseapp.com",projectId:"creative-session-canvas",storageBucket:"creative-session-canvas.firebasestorage.app",messagingSenderId:"605192328299",appId:"1:605192328299:web:9be3f62ccae301cccd4d2e",measurementId:"G-DRM186YD59"};
+/* ADMIN_EMAIL, firebaseConfig, friendlyAuthErr, download은 app.js에서 제공됩니다(전역). */
 let fbAuth=null,fbDb=null,uid=null,currentDataset=null,localMode=false,toastTimer=null;
 const catMap=[
   ['몰입·추천',[1,2,3,4]],['조직명확성',[5,6,7,8,9,10]],['웰빙',[11,12]],['매니저',[13,14,15,16]],['심리안전·소속감',[17,18,19,20,21,22]]
@@ -430,15 +589,6 @@ function showPlatform(user){
 }
 function setAccountStatus(t){
   let who=$('#authWho');if(who&&uid)who.textContent=(fbAuth?.currentUser?.email||uid)+(t?' · '+t:'');
-}
-function friendlyAuthErr(e){
-  let c=(e&&e.code)||'';
-  if(c.includes('invalid-email'))return'이메일 형식이 올바르지 않습니다.';
-  if(c.includes('missing-password')||c.includes('weak-password'))return'비밀번호는 6자 이상이어야 합니다.';
-  if(c.includes('email-already-in-use'))return'이미 가입된 이메일입니다. 로그인을 눌러주세요.';
-  if(c.includes('invalid-credential')||c.includes('wrong-password')||c.includes('user-not-found'))return'이메일 또는 비밀번호가 올바르지 않습니다.';
-  if(c.includes('too-many-requests'))return'시도가 너무 많습니다. 잠시 후 다시 시도하세요.';
-  return(e&&e.message)||'오류가 발생했습니다.';
 }
 function isMasterUser(user=fbAuth?.currentUser){return((user&&user.email)||'').toLowerCase()===ADMIN_EMAIL}
 function startLocalMode(){localMode=true;localStorage.setItem(LOCAL_MODE_KEY,'1');persistDataset('local')}
@@ -619,7 +769,6 @@ async function loadSeedData(forceSeed=false){
 }
 function enrichData(data){
   data=JSON.parse(JSON.stringify(data));
-  data.company.questions.forEach(q=>{if(q.no===22&&q.fav&&q.fav['25']===0)q.fav['25']=null});
   data.company.cats=catMap.map(([name,qs])=>({name,qs,fav:{'25':avg(qs.map(no=>data.company.questions[no-1]?.fav?.['25'])),'26':avg(qs.map(no=>data.company.questions[no-1]?.fav?.['26']))},low:{'26':avg(qs.map(no=>data.company.questions[no-1]?.low?.['26']))}}));
   data.divisions.forEach(d=>{
     d.avgFav=avg(d.qs.map(q=>q.fav));d.avgLow=avg(d.qs.map(q=>q.low));d.hi90=d.qs.filter(q=>num(q.fav)>=90).length;d.tier=d.tier||tier(d.avgFav,d.hi90);
@@ -635,43 +784,88 @@ function getDiv(name){return data().divisions.find(d=>d.name===name)}
 function scopeKey(scope){return scope==='__company__'?'company':scope}
 function getAnalysis(scope){let k=scopeKey(scope);return k==='company'?currentDataset.analysis.company:(currentDataset.analysis.divisions[k]||'')}
 function setAnalysis(scope,val){let k=scopeKey(scope);if(k==='company')currentDataset.analysis.company=val;else currentDataset.analysis.divisions[k]=val}
-function renderAll(){renderHome();fillSelects();renderPulse();renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis()}
+function renderAll(){renderHome();fillSelects();renderPulse();renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();renderComms()}
 function homeInsight(title,value,body,tone=''){
   return`<div class="insightItem ${tone}"><b>${esc(title)}</b><strong>${esc(value)}</strong><span>${esc(body)}</span></div>`;
 }
 function renderHome(){
-  let d=data(), divs=sortedDivs(), risks=d.divisions.filter(x=>x.tier==='risk'), watch=d.divisions.filter(x=>x.tier==='watch'), stable=d.divisions.filter(x=>x.tier==='stable'), checks=d.divisions.filter(x=>x.tier==='check');
-  let best=divs[0], weakest=divs[divs.length-1];
+  let d=data(), divs=sortedDivs();
+  let risks=d.divisions.filter(x=>x.tier==='risk'), watch=d.divisions.filter(x=>x.tier==='watch'), stable=d.divisions.filter(x=>x.tier==='stable'), checks=d.divisions.filter(x=>x.tier==='check');
   let cats=d.company.cats.slice().sort((a,b)=>(num(b.fav?.['26'])||0)-(num(a.fav?.['26'])||0));
   let strongestCat=cats[0], weakestCat=cats[cats.length-1];
   let highLowCat=d.company.cats.slice().sort((a,b)=>(num(b.low?.['26'])||0)-(num(a.low?.['26'])||0))[0];
-  let bottomQs=d.company.questions.slice().sort((a,b)=>(num(a.fav?.['26'])??999)-(num(b.fav?.['26'])??999)).slice(0,4);
-  let yoy=plainDelta(d.meta.companyFav26,d.meta.companyFav25);
-  let frame=d.meta.companyFav26>=65&&risks.length===0?'안정 관리 구간':d.meta.companyFav26>=55?'주의 관리 구간':'집중 개입 구간';
+  let fav=num(d.meta.companyFav26)||0, low=num(d.meta.companyLow26)||0, neutral=Math.max(0,Math.round((100-fav-low)*10)/10);
+  let fav25=num(d.meta.companyFav25), low25=avg(d.company.questions.map(q=>q.low?.['25']));
+  let yoy=plainDelta(fav,fav25);
+  let frame=fav>=65&&risks.length===0?'안정 관리 구간':fav>=55?'주의 관리 구간':'집중 개입 구간';
   $('#datasetName').textContent=currentDataset.name+' · '+currentDataset.year+' · '+(currentDataset.source||'dataset');
   $('#dashboardBadge').textContent=frame;
-  $('#homeMainScore').textContent=pct(d.meta.companyFav26);
-  $('#homeMetrics').innerHTML=[
-    ['k1','전사 긍정',pct(d.meta.companyFav26),'전년 대비 '+yoy],
-    ['k2','전사 부정',pct(d.meta.companyLow26),'부정 응답 평균'],
-    ['k3','위험 본부',risks.length+'개','주의 '+watch.length+'개 / 검토 '+checks.length+'개'],
-    ['k4','분석 범위',d.meta.divCount+'개 본부','문항 '+d.meta.qCount+'개']
-  ].map(x=>`<div class="homeKpi ${x[0]}"><b>${esc(x[2])}</b><span>${esc(x[1])}</span><small>${esc(x[3])}</small></div>`).join('');
-  let sparkSeries=[
-    {year:'2024', value:avg(d.company.questions.map(q=>q.fav?.['24']))},
-    {year:'2025', value:d.meta.companyFav25},
-    {year:'2026', value:d.meta.companyFav26}
-  ].filter(x=>num(x.value)!=null);
-  renderSparkline('homeSparkline','yearDots',sparkSeries.length?sparkSeries:[{year:'2024',value:59},{year:'2025',value:60},{year:'2026',value:63}]);
-  $('#homeCategoryChart').innerHTML=d.company.cats.map(c=>`<div class="catRowV2"><div class="catLabelV2">${esc(c.name)}</div><div class="catTrackV2"><div class="catFillV2" style="width:${num(c.fav?.['26'])||0}%"></div><div class="catLowV2" style="width:${num(c.low?.['26'])||0}%"></div></div><div class="catValueV2">${pct(c.fav?.['26'])}</div></div>`).join('');
-  let tierData=[['stable','안정',stable.length],['watch','주의',watch.length],['risk','위험',risks.length],['check','검토',checks.length]];
-  let maxTier=Math.max(1,...tierData.map(x=>x[2]));
-  $('#homeRiskStack').innerHTML=tierData.map(x=>`<div class="riskCol ${x[0]}" style="height:${28+(x[2]/maxTier)*140}px"><span>${x[2]}</span><em>${x[1]}</em></div>`).join('');
-  $('#homeRiskLegend').innerHTML=tierData.map(x=>`<span>${x[1]} ${x[2]}개</span>`).join('');
-  $('#homePriorityList').innerHTML=bottomQs.map(q=>`<div class="priorityItem"><b>Q${q.no}</b><div><strong>${esc(q.short)}</strong><span>${esc(q.text)}</span></div><em>${pct(q.fav?.['26'])}</em></div>`).join('');
+  $('#dashHeroChips').innerHTML=['전사 긍정 '+pct(fav),'전년대비 '+yoy,'위험 본부 '+risks.length+'개','최강 '+(strongestCat?.name||'-'),'취약 '+(weakestCat?.name||'-')].map(t=>`<span>${esc(t)}</span>`).join('');
+  donutChart('favGauge',[{value:fav,color:'#10b981'},{value:neutral,color:'#e2e8f0'},{value:low,color:'#ef4444'}],pct(fav),'Favorable');
+  $('#gaugeLegend').innerHTML=[['#10b981','긍정 응답',pct(fav)],['#e2e8f0','중립',pct(neutral)],['#ef4444','부정 응답',pct(low)]].map(x=>`<div class="lg"><span class="dot" style="background:${x[0]}"></span>${x[1]}<b>${x[2]}</b></div>`).join('');
+  function chip(delta,goodWhenUp){if(delta==null)return '<span class="stTrend flat">— 비교불가</span>';let r=Math.round(delta);let cls=r===0?'flat':((r>0)===goodWhenUp?'up':'down');let arrow=r>0?'▲':(r<0?'▼':'—');return `<span class="stTrend ${cls}">${arrow} ${r>0?'+':''}${r}p</span>`;}
+  $('#statStrip').innerHTML=[
+    ['c1','전사 긍정',pct(fav),chip(fav25!=null?fav-fav25:null,true)],
+    ['c2','전사 부정',pct(low),chip(low25!=null?low-low25:null,false)],
+    ['c3','위험 · 주의 본부',risks.length+' · '+watch.length+'개','<span class="stTrend flat">검토 '+checks.length+'개</span>'],
+    ['c4','분석 범위',d.meta.divCount+'개 본부','<span class="stTrend flat">문항 '+d.meta.qCount+'개</span>']
+  ].map(x=>`<div class="statCard ${x[0]}"><span class="stLabel">${esc(x[1])}</span><b>${esc(x[2])}</b>${x[3]}</div>`).join('');
+  let trendSeries=[{year:'2024',value:avg(d.company.questions.map(q=>q.fav?.['24']))},{year:'2025',value:fav25},{year:'2026',value:fav}].filter(x=>num(x.value)!=null);
+  renderTrend('trendChart',trendSeries.length?trendSeries:[{year:'2026',value:fav}]);
+  $('#catCompare').innerHTML=d.company.cats.map(c=>{
+    let f26=num(c.fav?.['26'])||0, f25=num(c.fav?.['25']), delta=plainDelta(c.fav?.['26'],c.fav?.['25']);
+    let dcolor=(num(c.fav?.['26'])!=null&&f25!=null)?(f26-f25>=0?'#047857':'#b91c1c'):'#94a3b8';
+    return `<div class="ccRow"><div class="ccLabel">${esc(c.name)}</div><div class="ccBars"><div class="ccBar ccFav"><i style="width:${f26}%"></i></div><div class="ccBar ccPrev"><i style="width:${f25!=null?f25:0}%"></i></div></div><div class="ccVal">${pct(c.fav?.['26'])}<div class="ccDelta" style="color:${dcolor}">${delta}</div></div></div>`;
+  }).join('');
+  scatterChart('divScatter',d.divisions);
+  let dk=['p5','p4','p3','p2','p1'];
+  let dist=dk.map(k=>avg(d.company.questions.map(q=>q.dist26&&q.dist26[k]))||0);
+  let dtot=dist.reduce((a,b)=>a+b,0)||1;
+  let dcolors=['#0f9f7f','#6cc4a1','#cbd5e1','#f59e0b','#dc2626'], dlabels=['매우 긍정','긍정','중립','부정','매우 부정'];
+  $('#distStack').innerHTML=dist.map((v,i)=>{let w=v/dtot*100;return `<div style="width:${w}%;background:${dcolors[i]}">${w>=8?Math.round(w)+'%':''}</div>`}).join('');
+  $('#distLegend').innerHTML=dist.map((v,i)=>`<span><i style="background:${dcolors[i]}"></i>${dlabels[i]} ${Math.round(v/dtot*100)}%</span>`).join('');
+  let tierSeg=[['stable','안정','#10b981',stable.length],['watch','주의','#f59e0b',watch.length],['risk','위험','#ef4444',risks.length],['check','검토','#a78bfa',checks.length]];
+  donutChart('tierDonut',tierSeg.map(t=>({value:t[3],color:t[2]})),String(d.meta.divCount),'개 본부');
+  $('#tierLegend').innerHTML=tierSeg.map(t=>`<div class="tl"><i style="background:${t[2]}"></i>${t[1]}<b>${t[3]}개</b></div>`).join('');
+  let bottomQs=d.company.questions.slice().sort((a,b)=>(num(a.fav?.['26'])??999)-(num(b.fav?.['26'])??999)).slice(0,5);
+  $('#priorityList').innerHTML=bottomQs.map(q=>`<div class="priorityItem"><b>Q${q.no}</b><div><strong>${esc(q.short)}</strong><span>${esc(q.text)}</span></div><em>${pct(q.fav?.['26'])}</em></div>`).join('');
   let lowDivs=divs.slice().sort((a,b)=>a.avgFav-b.avgFav).slice(0,6);
-  $('#homeDivisionBars').innerHTML=lowDivs.map(dv=>`<div class="divBarV2"><div><strong>${esc(dv.name)}</strong><div class="divMiniTrack"><div class="divMiniFill" style="width:${num(dv.avgFav)||0}%"></div></div></div><span style="color:${favColor(dv.avgFav)}">${pct(dv.avgFav)}</span></div>`).join('');
-  $('#savedAnalysisSummary').innerHTML=currentDataset.analysis.company?`<b>저장된 전사 GPT 분석</b>\n${esc(currentDataset.analysis.company)}`:`<b>해석 방향</b>\n전사 긍정은 ${pct(d.meta.companyFav26)}이고, 가장 강한 축은 ${strongestCat?.name||'-'}, 가장 취약한 축은 ${weakestCat?.name||'-'}입니다. 부정 응답이 높은 ${highLowCat?.name||'-'} 영역은 리더 메시지와 후속 실행 과제로 연결하는 것이 좋습니다.`;
+  $('#divLead').innerHTML=lowDivs.map(dv=>`<div class="divLeadRow" onclick="selectDivision('${escAttr(dv.name)}')"><div><strong>${esc(dv.name)}</strong><div class="divLeadTrack"><div class="divLeadFill" style="width:${num(dv.avgFav)||0}%;background:${favColor(dv.avgFav)}"></div></div></div><span class="lv" style="color:${favColor(dv.avgFav)}">${pct(dv.avgFav)}</span></div>`).join('');
+  $('#savedAnalysisSummary').innerHTML=currentDataset.analysis.company?`<b>저장된 전사 GPT 분석</b>\n${esc(currentDataset.analysis.company)}`:`<b>해석 방향</b>\n전사 긍정은 ${pct(fav)}이고, 가장 강한 축은 ${strongestCat?.name||'-'}, 가장 취약한 축은 ${weakestCat?.name||'-'}입니다. 부정 응답이 높은 ${highLowCat?.name||'-'} 영역은 리더 메시지와 후속 실행 과제로 연결하는 것이 좋습니다.`;
+}
+function donutChart(svgId,segs,centerText,subText){
+  let svg=$('#'+svgId); if(!svg) return;
+  let total=segs.reduce((a,s)=>a+(num(s.value)||0),0)||1;
+  let r=58,cx=85,cy=85,c=2*Math.PI*r,off=0;
+  let arcs=segs.filter(s=>(num(s.value)||0)>0).map(s=>{let len=(num(s.value)/total)*c;let el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="22" stroke-dasharray="${len.toFixed(2)} ${(c-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"></circle>`;off+=len;return el;}).join('');
+  svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#eef2f7" stroke-width="22"></circle>${arcs}<text x="${cx}" y="${cy-1}" text-anchor="middle" class="gaugeCenter">${esc(centerText)}</text><text x="${cx}" y="${cy+19}" text-anchor="middle" class="gaugeSub">${esc(subText)}</text>`;
+}
+function renderTrend(svgId,series){
+  let svg=$('#'+svgId); if(!svg) return;
+  let W=440,H=200,pl=12,pr=12,pt=26,pb=30, n=series.length;
+  let vals=series.map(s=>num(s.value)).filter(v=>v!=null); if(!vals.length){svg.innerHTML='';return;}
+  let min=Math.max(0,Math.min(...vals)-8), max=Math.min(100,Math.max(...vals)+8); if(max<=min)max=min+1;
+  let X=i=>pl+(n===1?0.5:(i/(n-1)))*(W-pl-pr);
+  let Y=v=>pt+(1-((v-min)/(max-min)))*(H-pt-pb);
+  let pts=series.map((s,i)=>({x:X(i),y:Y(num(s.value)),v:num(s.value),year:s.year}));
+  let line=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ');
+  let area=line+` L ${pts[n-1].x.toFixed(1)} ${H-pb} L ${pts[0].x.toFixed(1)} ${H-pb} Z`;
+  svg.innerHTML=`<defs><linearGradient id="trGrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#5b5ce2" stop-opacity=".30"/><stop offset="100%" stop-color="#14b8a6" stop-opacity=".03"/></linearGradient></defs><path d="${area}" fill="url(#trGrad)"></path><path d="${line}" fill="none" stroke="#5b5ce2" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></path>`+pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5.5" fill="#fff" stroke="#5b5ce2" stroke-width="3"></circle><text x="${p.x.toFixed(1)}" y="${(p.y-12).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="800" fill="#0b1020">${p.v}%</text><text x="${p.x.toFixed(1)}" y="${H-9}" text-anchor="middle" font-size="13" font-weight="800" fill="#94a3b8">${esc(p.year)}</text>`).join('');
+}
+function scatterChart(svgId,divs){
+  let svg=$('#'+svgId); if(!svg) return;
+  let W=480,H=308,pl=42,pr=16,pt=16,pb=38;
+  let ymax=Math.max(40,...divs.map(d=>num(d.avgLow)||0));
+  let X=v=>pl+((num(v)||0)/100)*(W-pl-pr);
+  let Y=v=>pt+(1-((num(v)||0)/ymax))*(H-pt-pb);
+  let tcol={stable:'#10b981',watch:'#f59e0b',risk:'#ef4444',check:'#a78bfa'};
+  let yticks=[0,Math.round(ymax/2),Math.round(ymax)].map(v=>`<line x1="${pl}" y1="${Y(v).toFixed(1)}" x2="${W-pr}" y2="${Y(v).toFixed(1)}" stroke="#f1f5f9" stroke-width="1"></line><text x="${pl-8}" y="${(Y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#94a3b8">${v}</text>`).join('');
+  let xticks=[25,50,75,100].map(v=>`<text x="${X(v).toFixed(1)}" y="${H-14}" text-anchor="middle" font-size="11" fill="#94a3b8">${v}</text>`).join('');
+  let cf=num(data().meta.companyFav26);
+  let avgLine=cf!=null?`<line x1="${X(cf).toFixed(1)}" y1="${pt}" x2="${X(cf).toFixed(1)}" y2="${H-pb}" stroke="#5b5ce2" stroke-width="1.5" stroke-dasharray="4 4"></line><text x="${X(cf).toFixed(1)}" y="${pt-3}" text-anchor="middle" font-size="11" font-weight="800" fill="#5b5ce2">전사 ${cf}%</text>`:'';
+  let dots=divs.map(dv=>`<circle cx="${X(dv.avgFav).toFixed(1)}" cy="${Y(dv.avgLow).toFixed(1)}" r="7" fill="${tcol[dv.tier]||'#94a3b8'}" fill-opacity=".82" stroke="#fff" stroke-width="1.5" style="cursor:pointer" onclick="selectDivision('${escAttr(dv.name)}')"><title>${esc(dv.name)} · 긍정 ${pct(dv.avgFav)} / 부정 ${pct(dv.avgLow)}</title></circle>`).join('');
+  let labels=`<text x="${((pl+W-pr)/2).toFixed(0)}" y="${H-1}" text-anchor="middle" font-size="11" font-weight="800" fill="#64748b">평균 긍정 →</text><text x="13" y="${pt+2}" font-size="11" font-weight="800" fill="#64748b">부정 ↑</text>`;
+  svg.innerHTML=yticks+xticks+avgLine+dots+labels;
 }
 function renderSparkline(id,labelsId,series){
   let svg=$('#'+id), labels=$('#'+labelsId); if(!svg)return;
@@ -693,7 +887,7 @@ function renderPulse(){
   let d=data(), risks=d.divisions.filter(x=>x.tier==='risk').length, watch=d.divisions.filter(x=>x.tier==='watch').length;
   $('#pulseMetrics').innerHTML=[['전사 평균 긍정',pct(d.meta.companyFav26)],['전사 평균 부정',pct(d.meta.companyLow26)],['위험/주의 본부',risks+' / '+watch],['문항 수',d.meta.qCount]].map(x=>`<div class="metric"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
   $('#categoryBars').innerHTML=d.company.cats.map(c=>barRow(c.name,c.fav['26'],c.low['26'],plainDelta(c.fav['26'],c.fav['25']))).join('');
-  $('#rankTable tbody').innerHTML=sortedDivs().map((dv,i)=>`<tr><td class="num">${i+1}</td><td><b>${esc(dv.name)}</b></td><td class="num" style="color:${favColor(dv.avgFav)};font-weight:950">${pct(dv.avgFav)}</td><td class="num">${pct(dv.avgLow)}</td><td><span class="chip ${dv.tier}">${tierLabel[dv.tier]}</span></td><td><button class="ghost" onclick="selectDivision('${escAttr(dv.name)}')">보기</button></td></tr>`).join('');
+  $('#rankTable tbody').innerHTML=sortedDivs().map((dv,i)=>`<tr onclick="selectDivision('${escAttr(dv.name)}')"><td class="num">${i+1}</td><td><b>${esc(dv.name)}</b></td><td class="num" style="color:${favColor(dv.avgFav)};font-weight:950">${pct(dv.avgFav)}</td><td class="num">${pct(dv.avgLow)}</td><td><span class="chip ${dv.tier}">${tierLabel[dv.tier]}</span></td><td><button class="ghost" onclick="event.stopPropagation();selectDivision('${escAttr(dv.name)}')">세부 분석</button></td></tr>`).join('');
 }
 function escAttr(v){return String(v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
 function barRow(label,fav,low,delta){return`<div class="barRow"><div class="barLabel">${esc(label)}</div><div class="track"><div class="fill" style="width:${num(fav)||0}%"></div>${low!=null?`<div class="lowFill" style="width:${num(low)||0}%"></div>`:''}</div><div class="barVal">${pct(fav)} <span style="color:#94a3b8">${delta||''}</span></div></div>`}
@@ -740,13 +934,69 @@ function contextPayload(scope){
 function createSessionFromSelection(){let scope=$('#sessionScope').value||$('#divisionSelect').value||'__company__';localStorage.setItem('linaPulseContext',JSON.stringify(contextPayload(scope)));openSessionDesigner()}
 function openSessionDesigner(){window.location.href='session-designer.html?pulseContext=1'}
 function renderSpeechContext(){let scope=$('#speechScope').value||'__company__';$('#speechContext').textContent=scope==='__company__'?companyPack():divisionPack(scope)}
+const COMM_LABEL={speech:'리더 스피치',company:'전사 공지문',division:'본부 공지문'};
+function onCommTypeChange(){renderSpeechContext();buildSpeechPrompt()}
 function buildSpeechPrompt(){
-  let scope=$('#speechScope').value||'__company__', risks=$all('.riskCheck:checked').map(x=>'- '+x.value).join('\n');
-  $('#speechPrompt').value=`당신은 CEO/HR 리더 커뮤니케이션 솔루션라이터이자 조직문화 컨설턴트입니다.\n아래 Pulse Survey 맥락을 바탕으로 리더가 말할 스피치를 설계하세요.\n\n[스피치 입력]\n- 청중: ${$('#speechAudience').value||'미정'}\n- 목적: ${$('#speechPurpose').value||'Pulse Survey 결과 공유와 실행 약속'}\n- 딜리버리 메시지: ${$('#deliveryMessage').value||'-'}\n- 메시지 구조: ${$('#messageStructure').value}\n- 스토리텔링 단서: ${$('#storyCue').value||'-'}\n\n[Pulse Survey 맥락]\n${scope==='__company__'?companyPack():divisionPack(scope)}\n\n[반드시 고려할 리스크]\n${risks||'- 없음'}\n\n[출력 형식]\n1. 스피치의 한 문장 전략\n2. 3분 버전 스크립트\n3. 7분 버전 스크립트\n4. 핵심 메시지 3개\n5. 피해야 할 표현\n6. 예상 질문과 답변\n7. 다음 GPT 대화를 위한 고도화 질문`;
+  let type=($('#commType')&&$('#commType').value)||'speech';
+  let scope=$('#speechScope').value||'__company__';
+  let risks=$all('.riskCheck:checked').map(x=>'- '+x.value).join('\n');
+  let ctx=scope==='__company__'?companyPack():divisionPack(scope);
+  let common=`[입력]\n- 대상 청중: ${$('#speechAudience').value||'미정'}\n- 목적: ${$('#speechPurpose').value||'Pulse Survey 결과 공유와 실행 약속'}\n- 핵심 메시지: ${$('#deliveryMessage').value||'-'}\n- 메시지 구조: ${$('#messageStructure').value}\n- 스토리텔링 단서: ${$('#storyCue').value||'-'}\n\n[Pulse Survey 맥락]\n${ctx}\n\n[반드시 고려할 리스크]\n${risks||'- 없음'}`;
+  let out;
+  if(type==='company'){
+    out=`당신은 CEO/HR 리더의 전사 커뮤니케이션을 돕는 조직문화 컨설턴트이자 카피라이터입니다.\n아래 Pulse Survey 맥락을 바탕으로 전 임직원에게 보내는 "전사 공지문"을 작성하세요. 방어적이지 않고, 솔직하면서, 실행 약속이 분명한 톤으로.\n\n${common}\n\n[출력 형식]\n1. 공지 제목 후보 3개\n2. 한 문장 핵심 메시지\n3. 본문(이메일/사내 공지용, 400~600자): 결과 요약 → 우리가 들은 것 → 우리가 할 것(30/60/90일) → 참여 요청\n4. 짧은 버전(메신저/인트라넷 배너용, 2~3문장)\n5. 피해야 할 표현\n6. 예상 질문과 답변 3개`;
+  }else if(type==='division'){
+    let dvName=scope==='__company__'?'(대상 본부를 먼저 선택하세요)':scope;
+    out=`당신은 본부장의 본부 단위 커뮤니케이션을 돕는 조직문화 컨설턴트이자 카피라이터입니다.\n아래 맥락을 바탕으로 "${dvName}" 구성원에게 보내는 "본부 공지문"을 작성하세요. 전사 메시지의 복붙이 아니라, 이 본부의 실제 데이터와 맥락에 맞춰 구체적으로.\n\n${common}\n\n[출력 형식]\n1. 공지 제목 후보 3개\n2. 한 문장 핵심 메시지\n3. 본문(본부 공지용, 350~550자): 본부 결과 요약(전사 대비 포함) → 본부가 들은 것 → 본부장이 할 것 → 구성원 참여 요청\n4. 팀 리더용 토킹포인트 3개\n5. 피해야 할 표현\n6. 예상 질문과 답변 3개`;
+  }else{
+    out=`당신은 CEO/HR 리더 커뮤니케이션 스피치라이터이자 조직문화 컨설턴트입니다.\n아래 Pulse Survey 맥락을 바탕으로 리더가 말할 스피치를 설계하세요.\n\n${common}\n\n[출력 형식]\n1. 스피치의 한 문장 전략\n2. 3분 버전 스크립트\n3. 7분 버전 스크립트\n4. 핵심 메시지 3개\n5. 피해야 할 표현\n6. 예상 질문과 답변\n7. 다음 GPT 대화를 위한 고도화 질문`;
+  }
+  $('#speechPrompt').value=out;
 }
-async function saveSpeechResult(){currentDataset.speech=currentDataset.speech||{};currentDataset.speech[$('#speechScope').value||'__company__']={input:$('#speechPrompt').value,result:$('#speechResult').value,updatedAt:new Date().toISOString()};await persistDataset('speech');toast('스피치 결과를 저장했습니다')}
+async function saveCommunication(){
+  currentDataset.communications=currentDataset.communications||[];
+  let type=($('#commType')&&$('#commType').value)||'speech';
+  let scope=$('#speechScope').value||'__company__';
+  let scopeName=scope==='__company__'?'전사 전체':scope;
+  let title=($('#commTitle').value||'').trim()||((COMM_LABEL[type]||'커뮤니케이션')+' · '+scopeName);
+  currentDataset.communications.unshift({id:'comm_'+Date.now(),type,scope,scopeName,title,audience:$('#speechAudience').value||'',purpose:$('#speechPurpose').value||'',prompt:$('#speechPrompt').value||'',result:$('#speechResult').value||'',createdAt:new Date().toISOString()});
+  await persistDataset('communication');
+  renderComms();
+  toast('커뮤니케이션 기록에 저장했습니다');
+}
+function renderComms(){
+  let board=$('#commBoard'); if(!board)return;
+  currentDataset.communications=currentDataset.communications||[];
+  let filter=($('#commFilter')&&$('#commFilter').value)||'all';
+  let list=currentDataset.communications.filter(c=>filter==='all'||c.type===filter);
+  if(!list.length){board.innerHTML='<div class="commEmpty">아직 저장된 커뮤니케이션이 없습니다. 프롬프트로 작성한 뒤 “기록에 저장”을 누르세요.</div>';return;}
+  board.innerHTML=`<div class="commGrid">${list.map(c=>{
+    let body=(c.result||c.prompt||'').slice(0,220);
+    return `<div class="commCard"><span class="commType t_${esc(c.type)}">${esc(COMM_LABEL[c.type]||c.type)}</span><h4>${esc(c.title)}</h4><div class="commMeta">${esc(c.scopeName||'')} · ${esc(formatDate(c.createdAt))}</div><div class="commBody">${body?esc(body):'<i>내용 미입력</i>'}</div><div class="commActions"><button class="primary" onclick="useCommTemplate('${c.id}')">템플릿 사용</button><button class="ghost" onclick="copyComm('${c.id}')">복사</button><button class="warn" onclick="deleteComm('${c.id}')">삭제</button></div></div>`;
+  }).join('')}</div>`;
+}
+function useCommTemplate(id){
+  let c=(currentDataset.communications||[]).find(x=>x.id===id); if(!c)return;
+  if($('#commType'))$('#commType').value=c.type;
+  if(c.scope&&$('#speechScope'))$('#speechScope').value=c.scope;
+  $('#commTitle').value=(c.title||'')+' (복사본)';
+  $('#speechAudience').value=c.audience||'';
+  $('#speechPurpose').value=c.purpose||'';
+  $('#speechResult').value=c.result||'';
+  renderSpeechContext();
+  if(c.prompt)$('#speechPrompt').value=c.prompt; else buildSpeechPrompt();
+  showView('speech');window.scrollTo({top:0,behavior:'smooth'});
+  toast('이전 작성본을 템플릿으로 불러왔습니다');
+}
+async function deleteComm(id){
+  currentDataset.communications=(currentDataset.communications||[]).filter(x=>x.id!==id);
+  await persistDataset('communication');renderComms();toast('삭제했습니다');
+}
+async function copyComm(id){
+  let c=(currentDataset.communications||[]).find(x=>x.id===id); if(!c)return;
+  await navigator.clipboard.writeText(c.result||c.prompt||'');toast('복사했습니다');
+}
 function csvCell(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
-function download(name,text,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:type||'text/plain'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),600)}
 function downloadTemplate(){
   let rows=[['recordType','year','division','category','questionNo','questionShort','questionText','fav','low','fav25','benchMed','benchChubb']];
   data().company.questions.forEach(q=>rows.push(['company_question',currentDataset.year,'',qCategory(q.no),q.no,q.short,q.text,q.fav?.['26'],q.low?.['26'],q.fav?.['25'],q.benchMed,q.benchChubb]));

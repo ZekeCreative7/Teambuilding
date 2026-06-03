@@ -334,6 +334,24 @@ body.print-onepager .app{display:block}body.print-onepager .side,body.print-onep
 @media(max-width:1150px){.flowControl,.weekHead,.blockTop{flex-direction:column}.blockFields,.blockFields2,.blockFields3,.flowItem,.opFooter{grid-template-columns:1fr}.flowTabs{justify-content:flex-start}}
 
 </style>
+<style>
+/* Login (2-column) — shared visual with Lina Culture Platform */
+.authShell{display:grid;grid-template-columns:minmax(0,1.04fr) minmax(0,1fr);width:min(980px,100%);background:#fff;border-radius:30px;overflow:hidden;box-shadow:0 44px 130px rgba(8,12,28,.6);min-height:580px}
+.authMedia{position:relative;background:linear-gradient(135deg,#e8eefc,#dbe7fb);overflow:hidden}
+.authMedia img{width:100%;height:100%;object-fit:cover;display:block}
+.authMedia .authMediaCap{position:absolute;left:0;right:0;bottom:0;padding:24px;background:linear-gradient(180deg,transparent,rgba(11,16,32,.55));color:#fff}
+.authMedia .authMediaCap b{display:block;font-size:15px;font-weight:950}
+.authMedia .authMediaCap span{display:block;font-size:12px;color:#e3ebf6;margin-top:5px;line-height:1.5}
+.authPane{padding:44px 42px;display:flex;flex-direction:column;justify-content:center}
+.authBrandRow{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.authBrandRow img{width:50px;height:auto;object-fit:contain}
+.authBrandRow .authBrandName{font-size:12px;font-weight:950;letter-spacing:.05em;color:#64748b;text-transform:uppercase}
+.authWelcome{font-size:13px;font-weight:900;color:var(--brand);letter-spacing:.06em;text-transform:uppercase}
+.authBigTitle{font-size:33px;line-height:1.08;font-weight:950;letter-spacing:-.035em;margin:4px 0 10px;color:#0b1020}
+.authPane .authHint{font-size:12.5px;color:var(--muted);line-height:1.6}
+.authPane label{margin-top:14px}
+@media(max-width:780px){.authShell{grid-template-columns:1fr;min-height:0;width:min(440px,100%)}.authMedia{height:170px}.authPane{padding:26px 22px}.authBigTitle{font-size:26px}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -470,30 +488,40 @@ body.print-onepager .app{display:block}body.print-onepager .side,body.print-onep
 
 <!-- 로그인 화면 -->
 <div id="authOverlay" style="position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:22px;background:radial-gradient(circle at 0 0,#1b2440,#0b1220 60%,#070b16)">
-  <div style="background:#fff;border-radius:26px;box-shadow:0 35px 100px rgba(0,0,0,.45);max-width:380px;width:100%;padding:26px">
-    <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
-      <div style="width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,var(--brand),#14b8a6)"></div>
-      <div>
-        <div style="font-weight:950;font-size:17px;letter-spacing:-.04em">Session Design Studio</div>
-        <div style="font-size:11px;color:var(--muted)">로그인하면 모든 기기에서 자동 동기화됩니다</div>
+  <div class="authShell">
+    <div class="authMedia">
+      <img src="intro_img.GIF" alt="Lina Culture Platform">
+      <div class="authMediaCap">
+        <b>데이터로 만드는 조직문화 실행</b>
+        <span>로그인하면 모든 기기에서 세션 설계가 자동 동기화됩니다.</span>
       </div>
     </div>
-    <label>이메일</label>
-    <input id="authEmail" type="email" autocomplete="username" placeholder="you@example.com">
-    <label>비밀번호</label>
-    <input id="authPass" type="password" autocomplete="current-password" placeholder="6자 이상" onkeydown="if(event.key==='Enter')loginUser()">
-    <div id="authMsg" style="display:none;margin-top:10px;font-size:12px;font-weight:800;color:var(--red);line-height:1.5"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">
-      <button class="primary" onclick="loginUser()">로그인</button>
-      <button class="secondary" onclick="signupUser()">회원가입</button>
+    <div class="authPane">
+      <div class="authBrandRow">
+        <img src="lina_logo.png" alt="Lina">
+        <span class="authBrandName">Session Design Studio</span>
+      </div>
+      <div class="authWelcome">Welcome to</div>
+      <h2 class="authBigTitle">Lina Culture Platform</h2>
+      <div class="authHint">로그인하면 세션 디자인 스튜디오가 열리고 모든 기기에서 자동 동기화됩니다.</div>
+      <label>이메일</label>
+      <input id="authEmail" type="email" autocomplete="username" placeholder="you@example.com">
+      <label>비밀번호</label>
+      <input id="authPass" type="password" autocomplete="current-password" placeholder="6자 이상" onkeydown="if(event.key==='Enter')loginUser()">
+      <div id="authMsg" style="display:none;margin-top:10px;font-size:12px;font-weight:800;color:var(--red);line-height:1.5"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">
+        <button class="primary" onclick="loginUser()">로그인</button>
+        <button class="secondary" onclick="signupUser()">회원가입</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.55;margin-top:14px">처음이면 이메일·비밀번호를 입력하고 <b>회원가입</b>을 누르세요. 다음부터는 같은 정보로 <b>로그인</b>하면 됩니다.</div>
     </div>
-    <div style="font-size:11px;color:var(--muted);line-height:1.55;margin-top:12px">처음이면 이메일·비밀번호를 입력하고 <b>회원가입</b>을 누르세요. 다음부터는 같은 정보로 <b>로그인</b>하면 됩니다.</div>
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="app.js"></script>
 <script>
 (function(){
 const STORE='session_design_studio_premium_v1';const BOARD='session_design_studio_board_v1';let activeSession=0;
@@ -556,10 +584,6 @@ window.addParticipant=function(){state.participants.push(emptyP(state.participan
 window.removeParticipant=function(i){state.participants.splice(i,1);renderParticipants();save()}
 window.downloadCSVTemplate=function(){download('participant_template.csv','ID,나이,성별,입사년도,직급/역할,부서,추정 감정/단서,말하기 안전감 추정,예상 저항 가설,관계/권력 리스크 단서\nP01,45,여성,2012,팀장,영업,"피로;냉소 가능성",낮음,"또 교육인가","핵심부서 영향력"','text/csv')}
 window.analyzeEmotion=function(){let ps=state.participants;let low=ps.filter(p=>p.safety==='낮음').length;let emo=ps.map(p=>p.emotion+' '+p.resistance+' '+p.risk).join(' ');let risk=0;risk+=low*18;risk+=(emo.match(/냉소|불신|방어|피로|무기력|불안/g)||[]).length*9;risk=Math.min(100,risk);document.getElementById('riskScore').textContent=risk;let level=risk>=70?'높음':risk>=40?'중간':'낮음';document.getElementById('emotionSignals').innerHTML=`<span class="pill ${risk>=70?'red':risk>=40?'amber':'green'}">Context Signal ${level}</span><ul class="miniList"><li>안전감 낮음: ${low}명</li><li>주요 감정 키워드: ${esc((emo.match(/냉소|불신|방어|피로|무기력|불안|기대|부담/g)||[]).slice(0,8).join(', ')||'미입력')}</li><li>권장: 전체 공유보다 개인 작성/선택 공유 중심</li></ul>`;document.getElementById('emotionQuestions').innerHTML=`<ul class="miniList"><li>이들의 냉소는 변화 자체에 대한 것인가, 반복된 미이행 경험 때문인가?</li><li>안전감이 올라가기 전에 공유를 요구하는 슬롯은 없는가?</li><li>감정 고백보다 상황 카드/구조 분석이 더 적합하지 않은가?</li></ul>`;save()}
-function renderFrames(){let tb=document.querySelector('#frameTable tbody'); if(!tb)return;tb.innerHTML=state.frames.map((f,i)=>`<tr><td><input value="${esc(f.round)}" oninput="state.frames[${i}].round=this.value;save()"></td><td><textarea oninput="state.frames[${i}].purpose=this.value;save()">${esc(f.purpose)}</textarea></td><td><textarea oninput="state.frames[${i}].start=this.value;save()">${esc(f.start)}</textarea></td><td><textarea oninput="state.frames[${i}].end=this.value;save()">${esc(f.end)}</textarea></td><td><textarea oninput="state.frames[${i}].experience=this.value;save()">${esc(f.experience)}</textarea></td><td><textarea oninput="state.frames[${i}].output=this.value;save()">${esc(f.output)}</textarea></td><td><button class="danger" onclick="removeFrameRow(${i})">삭제</button></td></tr>`).join('')}
-window.addFrameRow=function(){state.frames.push(emptyFrame(state.frames.length+1));renderFrames();ensureSlots();renderSlots();save()}
-window.removeFrameRow=function(i){state.frames.splice(i,1);renderFrames();ensureSlots();renderSlots();save()}
-window.createFrameReviewCards=function(){let risk=[];state.frames.forEach((f,i)=>{if(!f.purpose)risk.push([`회차 ${i+1}`,'핵심 목적이 비어 있어 이후 스토리와 슬롯이 흔들릴 수 있음.']);if((f.purpose||'').includes('실패'))risk.push([`회차 ${i+1}`,'“실패” 표현은 방어를 만들 수 있음. “막히는 순간”으로 완화 가능.']);if(!f.end)risk.push([`회차 ${i+1}`,'종료 상태가 없으면 세션의 감정선 변화가 보이지 않음.']);});document.getElementById('reviewCards').innerHTML=(risk.length?risk:[['전체','큰 구조는 시작 가능. 다만 감정선과 종료 상태를 더 날카롭게 점검할 것.']]).map(r=>`<div class="decision"><b>${esc(r[0])}</b><div>${esc(r[1])}</div><div class="actions" style="margin-top:8px"><button class="secondary" onclick="decisionFromText('${escAttr(r[0])}','${escAttr(r[1])}')">결정 로그로 이동</button><button class="ghost">보류</button></div></div>`).join('')}
 window.decisionFromText=function(t,b){state.decisions.push({title:t,body:b,source:'Review Card',date:new Date().toISOString()});renderDecisions();save();toast('Decision Log에 추가했습니다')}
 window.confirmFrameVersion=function(){state.decisions.push({title:'Big Frame 확정',body:'현재 회차별 큰 프레임을 기준안으로 확정함.',source:'Big Frame',date:new Date().toISOString()});renderDecisions();save();toast('프레임을 확정했습니다')}
 window.checkImpact=function(){document.getElementById('impactBox').innerHTML='<ul class="miniList"><li>Story Cards의 전체 흐름 재점검</li><li>변경된 회차의 Slot Clear Condition 재점검</li><li>Final PPT Script 재조립 필요</li><li>Participant DB의 감정 리스크와 충돌 여부 확인</li></ul>'}
@@ -578,72 +602,10 @@ function renderSlides(){
 window.addSlide=function(){state.slides.push(emptySlide(state.slides.length+1));renderSlides();save()}
 window.removeSlide=function(i){state.slides.splice(i,1);renderSlides();save()}
 window.moveStoryCard=function(i,dir){const j=i+dir;if(j<0||j>=state.slides.length)return;const tmp=state.slides[i];state.slides[i]=state.slides[j];state.slides[j]=tmp;renderSlides();save()}
-function ensureSlots(){let n=Math.max(1,state.frames.length||3);for(let s=0;s<n;s++){if(!state.slots.some(x=>x.session===s))state.slots.push(...emptySlots(s))}state.slots=state.slots.filter(x=>x.session<n)}
-function renderSlots(){ensureSlots();let tabs=document.getElementById('sessionTabs'), cont=document.getElementById('slotContainer');if(!tabs||!cont)return;tabs.innerHTML=state.frames.map((f,i)=>`<button class="tab ${activeSession===i?'active':''}" onclick="setActiveSession(${i})">${i+1}회차</button>`).join('');let rows=state.slots.filter(s=>s.session===activeSession);cont.innerHTML=rows.map((s,idx)=>{let global=state.slots.indexOf(s);return `<details class="slot"><summary><span>${esc(s.name)}</span><span class="status ${s.done?'done':''}">${s.done?'CLEAR':'OPEN'}</span></summary><div class="slotBody"><div class="grid g2"><div><label>Mission / 목적</label><textarea oninput="state.slots[${global}].prompt=this.value;save()">${esc(s.prompt)}</textarea><label>Clear Condition</label><textarea oninput="state.slots[${global}].clear=this.value;save()">${esc(s.clear)}</textarea></div><div><label>My Decision</label><textarea oninput="state.slots[${global}].decision=this.value;save()">${esc(s.decision)}</textarea><label>Risk / 주의점</label><textarea oninput="state.slots[${global}].risk=this.value;save()">${esc(s.risk)}</textarea><div class="actions" style="margin-top:10px"><button class="green" onclick="state.slots[${global}].done=true;renderSlots();save()">Clear</button><button class="ghost" onclick="state.slots[${global}].done=false;renderSlots();save()">Open</button></div></div></div></div></details>`}).join('')}
-window.syncSessionsFromFrame=function(){ensureSlots();renderSlots();save();toast('회차를 동기화했습니다')}
-function slotDraftPromptText(){ensureSlots();let session=activeSession;let frame=state.frames[session]||{};let sessionSlots=state.slots.filter(x=>x.session===session);return `당신은 조직문화/리더십 세션 설계를 돕는 비판적 사고 파트너이자 세션 구조화 전문가입니다.
-
-중요 원칙:
-- 아래 정보를 바탕으로 현재 선택된 ${session+1}회차의 슬롯 초안을 만드세요.
-- 답을 완성본처럼 단정하지 말고, 사용자가 수정할 수 있는 초안으로 작성하세요.
-- 지금까지 입력된 Project Brief, Question Board, Participant Context, Emotion Hypothesis, Big Frame, Story Cards, Decision Log를 모두 반영하세요.
-- 각 슬롯의 목적, 완료 조건, 사용자가 최종 판단해야 할 결정, 리스크/주의점을 분리하세요.
-- 전체 공유, 감정 고백, 회사 메시지처럼 들리는 표현은 Participant Context와 감정 가설을 고려해 조심스럽게 다루세요.
-- 반드시 아래 JSON 형식 하나로만 출력하세요. JSON 밖에 설명 문장을 쓰지 마세요.
-
-[현재 대상 회차]
-${session+1}회차
-- 목적: ${frame.purpose||'-'}
-- 시작 상태: ${frame.start||'-'}
-- 종료 상태: ${frame.end||'-'}
-- 주요 경험: ${frame.experience||'-'}
-- 산출물: ${frame.output||'-'}
-
-[현재 슬롯 목록]
-${sessionSlots.map(x=>`- ${x.name}`).join('\n')}
-
-[전체 입력 맥락]
-${slotContextPack()}
-
-[JSON 출력 형식]
-{
-  "session": ${session+1},
-  "draft_note": "이 회차 슬롯 초안의 전체 방향",
-  "slots": [
-    {
-      "name": "Opening",
-      "mission": "이 슬롯의 목적/미션",
-      "clear_condition": "이 슬롯이 완료되었다고 볼 수 있는 조건",
-      "my_decision": "사용자가 검토 후 수정할 수 있는 초안 결정사항/진행 방향",
-      "risk": "현장에서 주의할 리스크와 피해야 할 표현"
-    }
-  ],
-  "questions_for_user": ["사용자가 직접 판단해야 할 질문"]
-}` }
 window.showSlotDraftPrompt=function(){openModal('슬롯 질문 프롬프트',slotDraftPromptText())}
 function normalizeSlotName(v){return String(v||'').toLowerCase().replace(/[^a-z0-9가-힣]/g,'')}
-function findSlotIndex(session,name){let target=normalizeSlotName(name);let rows=state.slots.map((x,i)=>({x,i})).filter(o=>o.x.session===session);let exact=rows.find(o=>normalizeSlotName(o.x.name)===target);if(exact)return exact.i;let contains=rows.find(o=>target&&normalizeSlotName(o.x.name).includes(target)||target.includes(normalizeSlotName(o.x.name)));if(contains)return contains.i;return -1}
 window.applySlotDraftResult=function(){let el=document.getElementById('slotDraftJsonInput');let raw=el?el.value:'';try{let parsed=extractJson(raw);let targetSession=Math.max(0,Math.min(state.frames.length-1,(parseInt(parsed.session,10)||activeSession+1)-1));let applied=0;(parsed.slots||[]).forEach((item,idx)=>{let gi=findSlotIndex(targetSession,item.name);if(gi<0){let rows=state.slots.filter(x=>x.session===targetSession);let fallback=rows[idx];if(fallback)gi=state.slots.indexOf(fallback)}if(gi>=0){state.slots[gi].prompt=item.mission||item.purpose||item.prompt||state.slots[gi].prompt||'';state.slots[gi].clear=item.clear_condition||item.clear||state.slots[gi].clear||'';state.slots[gi].decision=item.my_decision||item.decision||item.draft||state.slots[gi].decision||'';state.slots[gi].risk=item.risk||item.watchout||state.slots[gi].risk||'';state.slots[gi].done=false;applied++;}});if(parsed.draft_note){state.decisions.push({title:`${targetSession+1}회차 Slot Draft 방향`,body:parsed.draft_note,source:'Slot Draft Import',date:new Date().toISOString()});renderDecisions();}activeSession=targetSession;renderSlots();save();toast(`${applied}개 슬롯에 GPT 초안을 반영했습니다. 이제 직접 수정하세요.`)}catch(e){alert('JSON을 읽을 수 없습니다. GPT 결과가 JSON 형식인지 확인해 주세요.\n\n오류: '+e.message)}}
 window.clearSlotDraftInput=function(){let el=document.getElementById('slotDraftJsonInput');if(el)el.value='';}
-function slotContextPack(){let hypo=state.emotionHypothesis&&state.emotionHypothesis.parsed;let hypoText=hypo?JSON.stringify(hypo,null,2):'(아직 적용된 감정 가설 없음)';return `${contextPack()}
-
-Story Cards:
-${state.slides.map((s,i)=>`Card ${i+1}. ${s.title||'-'}\nStory: ${s.story||s.message||'-'}\nNote: ${s.note||'-'}`).join('\n')}
-
-Employee Feedback:
-${state.feedback.raw||'-'}
-
-Feedback Analysis:
-${state.feedback.analysis||'-'}
-
-Format Advisor:
-${state.format.output||'-'}
-
-Emotion Hypothesis JSON:
-${hypoText}
-
-Existing Slot Inputs:
-${state.slots.map(x=>`${x.session+1}회차 / ${x.name} / mission:${x.prompt||'-'} / clear:${x.clear||'-'} / decision:${x.decision||'-'} / risk:${x.risk||'-'}`).join('\n')}` }
 window.analyzeFeedback=function(){let raw=state.feedback.raw||'';let list=[];if(/회사|해줄|바뀌/.test(raw))list.push(['회사 신뢰','회사 약속처럼 들리지 않도록, 통제 가능한 범위의 행동으로 제한해야 함.']);if(/시간|바쁘|피곤|업무/.test(raw))list.push(['에너지','초반 설명을 줄이고, 작성/정리 중심으로 설계해야 함.']);if(/말해도|안 바뀜|소용/.test(raw))list.push(['후속성','후속 조치는 큰 약속보다 낮은 압박의 리마인드로 설계해야 함.']);if(!list.length)list.push(['추가 질문','이 피드백이 불만인지, 피로인지, 기대의 표현인지 분리해서 봐야 함.']);state.feedback.analysis=list.map(x=>`${x[0]}: ${x[1]}`).join('\n');document.getElementById('feedbackOutput').innerHTML=list.map(x=>`<div class="decision"><b>${x[0]}</b><div>${x[1]}</div></div>`).join('');save()}
 window.adviseFormat=function(){let f=state.format;let rec='';if(f.safety==='낮음'||f.energy==='낮음')rec='개인 작성 → 상황 카드 → 선택 공유';else if(f.goal==='정보 이해')rec='짧은 PPT 설명 + 사례 카드';else if(f.goal==='감정 환기')rec='짧은 영상보다 개인 반응 카드';else rec='소그룹 활동 + 전체 요약';state.format.output=`추천: ${rec}\n이유: 안전감/에너지/목표를 기준으로 볼 때, 참여자에게 부담을 낮추면서도 판단할 여지를 주는 형식이 적합합니다.`;document.getElementById('formatOutput').innerHTML=`<div class="decision"><b>${esc(rec)}</b><div>안전감 ${esc(f.safety)}, 에너지 ${esc(f.energy)}, 목표 ${esc(f.goal)} 기준의 추천입니다.</div></div><ul class="miniList"><li>활동은 행동 전이가 필요할 때 적합</li><li>영상은 감정 몰입에는 좋지만 냉소가 높으면 회사 메시지처럼 보일 수 있음</li><li>PPT는 복잡한 정보를 정리할 때만 짧게 사용</li></ul>`;save()}
 window.suggestBriefFields=function(){let missing=[];if(!state.brief.context)missing.push('조직 맥락: 왜 지금 이 세션이 필요한가');if(!state.brief.reporting)missing.push('기록/보고 원칙: 개인 발언 기록 여부와 익명화 기준');if(!state.brief.failureRisk)missing.push('실패 리스크: 참여자가 냉소적으로 반응할 가능성');if(!state.brief.successVoice)missing.push('성공 후 참여자 속마음: 만족도보다 기억 문장');if(!state.brief.avoid)missing.push('피해야 할 것: 강제 공유, 회사 칭찬 유도, 감정 고백 등');document.getElementById('briefSuggestions').innerHTML=missing.length?'<ul class="miniList">'+missing.map(x=>`<li>${x}</li>`).join('')+'</ul>':'현재 기본정보는 주요 항목이 비교적 잘 채워져 있습니다.'}
@@ -724,46 +686,6 @@ function openModal(title,body){document.getElementById('modalTitle').textContent
 window.closeModal=function(){document.getElementById('modal').classList.remove('show')}
 window.copyModal=function(){navigator.clipboard.writeText(document.getElementById('modalBody').textContent).then(()=>toast('복사 완료'))}
 window.compileRunbook=function(showToast=true){let md=buildRunbook();document.getElementById('runbookBox').textContent=md;if(showToast)toast('최종 스크립트를 조립했습니다')}
-function buildRunbook(){return `# ${state.brief.name||'Final Session Script'}
-
-## 1. Decision Rationale
-${state.decisions.map(d=>`- ${d.title}: ${d.body}`).join('\n')||'- 아직 확정한 결정 없음'}
-
-## 2. Project Brief
-- 대상: ${state.brief.audience||'-'}
-- 회차/시간: ${state.brief.sessionCount||'-'}
-- 공식 목적: ${state.brief.officialGoal||'-'}
-- 숨은 목적: ${state.brief.hiddenJob||'-'}
-- 피해야 할 것: ${state.brief.avoid||'-'}
-
-## 3. Big Frame
-${state.frames.map(f=>`### ${f.round}회차
-- 목적: ${f.purpose||'-'}
-- 시작 상태: ${f.start||'-'}
-- 종료 상태: ${f.end||'-'}
-- 주요 경험: ${f.experience||'-'}
-- 산출물: ${f.output||'-'}`).join('\n\n')}
-
-## 4. Story Cards
-${state.slides.map((s,i)=>`### Card ${i+1}. ${s.title||'-'}
-${s.story||s.message||s.script||'-'}
-
-- 메모 / 보류 질문: ${s.note||s.role||s.transition||'-'}`).join('\n\n')}
-
-## 5. Slot Action Plan
-${state.slots.map(s=>`### ${s.session+1}회차 / ${s.name}
-- 상태: ${s.done?'Clear':'Open'}
-- Mission: ${s.prompt||'-'}
-- Clear Condition: ${s.clear||'-'}
-- My Decision: ${s.decision||'-'}
-- Risk: ${s.risk||'-'}`).join('\n\n')}
-
-## 6. Feedback Considerations
-${state.feedback.analysis||'-'}
-
-## 7. Format Recommendation
-${state.format.output||'-'}
-`}
 window.downloadRunbook=function(){compileRunbook(false);download((state.brief.name||'session_design')+'_ppt_script.md',document.getElementById('runbookBox').textContent,'text/markdown')}
 window.saveProject=function(){state.meta.updatedAt=new Date().toISOString();let list=JSON.parse(localStorage.getItem(BOARD)||'[]');if(!state.meta.projectId)state.meta.projectId='p_'+Date.now();let rec={id:state.meta.projectId,name:state.brief.name||'Untitled Project',updatedAt:state.meta.updatedAt,completion:completion(),state:state};list=list.filter(x=>x.id!==rec.id);list.unshift(rec);localStorage.setItem(BOARD,JSON.stringify(list));save();toast('프로젝트 저장 완료')}
 function renderBoard(){let el=document.getElementById('projectCards');if(!el)return;let list=JSON.parse(localStorage.getItem(BOARD)||'[]');el.innerHTML=list.length?list.map(p=>`<div class="boardCard"><h3>${esc(p.name)}</h3><p>진행률 ${p.completion}%<br>수정: ${new Date(p.updatedAt).toLocaleString('ko-KR')}</p><div class="progress"><div style="width:${p.completion}%"></div></div><div class="actions"><button class="primary" onclick="loadProject('${p.id}')">불러오기</button><button class="secondary" onclick="templateProject('${p.id}')">템플릿</button><button class="danger" onclick="deleteProject('${p.id}')">삭제</button></div></div>`).join(''):'<div class="note">저장된 프로젝트가 없습니다.</div>'}
@@ -772,9 +694,9 @@ window.templateProject=function(id){let p=JSON.parse(localStorage.getItem(BOARD)
 window.deleteProject=function(id){let list=JSON.parse(localStorage.getItem(BOARD)||'[]').filter(x=>x.id!==id);localStorage.setItem(BOARD,JSON.stringify(list));renderBoard()}
 window.newProject=function(){if(confirm('새 프로젝트를 시작할까요? 현재 작업은 먼저 저장해두는 것이 안전합니다.')){localStorage.removeItem(STORE);location.reload()}}
 window.exportJSON=function(){download((state.brief.name||'session_design')+'.json',JSON.stringify(state,null,2),'application/json')}
-function download(name,text,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__to);window.__to=setTimeout(()=>t.classList.remove('show'),1700)}
-function esc(s){return String(s??'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}function escAttr(s){return String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}function sel(a,b){return a===b?'selected':''}
+/* esc는 HTML 텍스트와 속성값 양쪽에 쓰이므로 따옴표까지 이스케이프(속성 주입 방지). escAttr와 동일 집합. */
+function esc(s){return String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}function escAttr(s){return String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}function sel(a,b){return a===b?'selected':''}
 
 /* ===== Multi-track Session Architecture overrides ===== */
 window.__flowView='all';
@@ -811,7 +733,7 @@ window.renderOnePager=function(force=true){ensureFrameBlocks();let el=document.g
 let rows=state.frames.map((f,fi)=>{if(view==='integrated'){let w=(f.sessionBlocks||[]).filter(b=>b.track==='wellness');let o=(f.sessionBlocks||[]).filter(b=>isOrgTrack(b.track));return `<tr><td><b>${esc(f.weekLabel||('Week '+(fi+1)))}</b></td><td>${esc(f.coreGoal||f.purpose||'')}</td><td>${w.map(opCell).join('<hr>')||'-'}</td><td>${esc(f.bridgeMessage||((w.length&&o.length)?'상태 인식에서 관계/소통 행동으로 연결':'-'))}</td><td>${o.map(opCell).join('<hr>')||'-'}</td></tr>`}let bs=(f.sessionBlocks||[]).filter(b=>blockVisible(b,view));let cells=Array.from({length:blocksMax},(_,i)=>`<td>${bs[i]?opCell(bs[i]):'-'}</td>`).join('');return `<tr><td><b>${esc(f.weekLabel||('Week '+(fi+1)))}</b></td><td>${esc(f.coreGoal||f.purpose||'')}</td>${cells}</tr>`}).join('');el.innerHTML=`<div class="onePagerSheet"><div class="opTop"><div><h1>${esc(title)}</h1><div class="opMeta">${esc(subtitle)} · ${esc(state.brief.audience||'Target TBD')} · ${esc(state.brief.sessionCount||'Schedule TBD')}</div><p class="opPurpose">${esc(state.brief.officialGoal||state.brief.hiddenJob||'프로그램 목적을 입력하세요.')}</p></div><div class="opMeta"><b>CONFIDENTIAL</b><br>${new Date().toLocaleDateString('ko-KR')}</div></div><table class="opTable"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table><div class="opFooter"><div class="opBox"><h4>운영 원칙</h4>${esc(state.brief.avoid||'강제 공유 금지 / 참여 강도 선택 / 개인 발언 기록 원칙 확인')}</div><div class="opBox"><h4>기대 효과</h4>${esc(state.brief.successVoice||'참여자가 세션 이후 실제로 기억하고 실행할 수 있는 문장을 남기는 것')}</div></div></div>`}
 function opCell(b){return `<b>${esc(b.title||'-')} ${b.time?`<span class="muted">(${esc(b.time)})</span>`:''}</b><span class="trackBadge ${esc(b.track)}">${esc(trackLabel(b.track,b.customTrack))}</span><br>${esc(b.purpose||'')}<br><span class="muted">${esc(b.activity||'')}</span>`}
 window.printOnePager=function(){renderOnePager(true);document.body.classList.add('print-onepager');setTimeout(()=>{window.print();setTimeout(()=>document.body.classList.remove('print-onepager'),500)},100)}
-function createFrameReviewCards(){ensureFrameBlocks();let risk=[];state.frames.forEach((f,i)=>{if(!f.coreGoal&&!f.purpose)risk.push([`${f.weekLabel||'Week '+(i+1)}`,'회차 핵심 목표가 비어 있어 전체 흐름이 약해질 수 있음.']);let blocks=f.sessionBlocks||[];if(!blocks.length)risk.push([`${f.weekLabel||'Week '+(i+1)}`,'세션 블록이 없습니다. 최소 1개 블록을 추가해야 합니다.']);blocks.forEach((b,bi)=>{if(!b.purpose)risk.push([`${f.weekLabel||'Week '+(i+1)} / ${b.title}`,'세션 목적이 비어 있어 원페이저와 Slot 설계가 약해질 수 있음.']);});let hasW=blocks.some(b=>b.track==='wellness'), hasO=blocks.some(b=>isOrgTrack(b.track));if(hasW&&hasO&&!f.bridgeMessage&&!blocks.some(b=>b.bridgeToNext||b.caution))risk.push([`${f.weekLabel||'Week '+(i+1)}`,'Wellness와 조직문화 블록이 함께 있으나 연결 문장이 없습니다. 두 흐름이 병렬 나열처럼 보일 수 있음.']);});document.getElementById('reviewCards').innerHTML=(risk.length?risk:[['전체','세션 블록 구조는 시작 가능. Wellness / 조직문화 / 통합 흐름을 각각 Preview에서 확인하세요.']]).map(r=>`<div class="decision"><b>${esc(r[0])}</b><div>${esc(r[1])}</div><div class="actions" style="margin-top:8px"><button class="secondary" onclick="decisionFromText('${escAttr(r[0])}','${escAttr(r[1])}')">결정 로그로 이동</button><button class="ghost">보류</button></div></div>`).join('')}
+window.createFrameReviewCards=function(){ensureFrameBlocks();let risk=[];state.frames.forEach((f,i)=>{if(!f.coreGoal&&!f.purpose)risk.push([`${f.weekLabel||'Week '+(i+1)}`,'회차 핵심 목표가 비어 있어 전체 흐름이 약해질 수 있음.']);let blocks=f.sessionBlocks||[];if(!blocks.length)risk.push([`${f.weekLabel||'Week '+(i+1)}`,'세션 블록이 없습니다. 최소 1개 블록을 추가해야 합니다.']);blocks.forEach((b,bi)=>{if(!b.purpose)risk.push([`${f.weekLabel||'Week '+(i+1)} / ${b.title}`,'세션 목적이 비어 있어 원페이저와 Slot 설계가 약해질 수 있음.']);});let hasW=blocks.some(b=>b.track==='wellness'), hasO=blocks.some(b=>isOrgTrack(b.track));if(hasW&&hasO&&!f.bridgeMessage&&!blocks.some(b=>b.bridgeToNext||b.caution))risk.push([`${f.weekLabel||'Week '+(i+1)}`,'Wellness와 조직문화 블록이 함께 있으나 연결 문장이 없습니다. 두 흐름이 병렬 나열처럼 보일 수 있음.']);});document.getElementById('reviewCards').innerHTML=(risk.length?risk:[['전체','세션 블록 구조는 시작 가능. Wellness / 조직문화 / 통합 흐름을 각각 Preview에서 확인하세요.']]).map(r=>`<div class="decision"><b>${esc(r[0])}</b><div>${esc(r[1])}</div><div class="actions" style="margin-top:8px"><button class="secondary" onclick="decisionFromText('${escAttr(r[0])}','${escAttr(r[1])}')">결정 로그로 이동</button><button class="ghost">보류</button></div></div>`).join('')}
 function ensureSlots(){ensureFrameBlocks();let blocks=getAllBlocks();blocks.forEach((o,idx)=>{let key=o.key;if(!state.slots.some(s=>s.blockKey===key)){state.slots.push(...slotNames.map(n=>({session:idx,blockKey:key,blockTitle:o.block.title,frameLabel:o.frame.weekLabel,name:n,done:false,decision:'',clear:'',prompt:'',risk:''})))}});let valid=new Set(blocks.map(o=>o.key));state.slots=state.slots.filter(s=>s.blockKey?valid.has(s.blockKey):true)}
 function renderSlots(){ensureSlots();let tabs=document.getElementById('sessionTabs'), cont=document.getElementById('slotContainer');if(!tabs||!cont)return;let blocks=getAllBlocks();if(activeSession>=blocks.length)activeSession=0;tabs.innerHTML=blocks.map((o,i)=>`<button class="tab ${activeSession===i?'active':''}" onclick="setActiveSession(${i})">${esc(o.frame.weekLabel||('Week '+(o.frameIndex+1)))} · ${esc(o.block.title||('Session '+(o.blockIndex+1)))}</button>`).join('');let key=blocks[activeSession]?.key;let rows=state.slots.filter(s=>s.blockKey===key || (!s.blockKey&&s.session===activeSession));cont.innerHTML=rows.map((s,idx)=>{let global=state.slots.indexOf(s);return `<details class="slot"><summary><span>${esc(s.name)}</span><span class="status ${s.done?'done':''}">${s.done?'CLEAR':'OPEN'}</span></summary><div class="slotBody"><div class="grid g2"><div><label>Mission / 목적</label><textarea oninput="state.slots[${global}].prompt=this.value;save()">${esc(s.prompt)}</textarea><label>Clear Condition</label><textarea oninput="state.slots[${global}].clear=this.value;save()">${esc(s.clear)}</textarea></div><div><label>My Decision</label><textarea oninput="state.slots[${global}].decision=this.value;save()">${esc(s.decision)}</textarea><label>Risk / 주의점</label><textarea oninput="state.slots[${global}].risk=this.value;save()">${esc(s.risk)}</textarea><div class="actions" style="margin-top:10px"><button class="green" onclick="state.slots[${global}].done=true;renderSlots();save()">Clear</button><button class="ghost" onclick="state.slots[${global}].done=false;renderSlots();save()">Open</button></div></div></div></div></details>`}).join('')}
 window.syncSessionsFromFrame=function(){ensureSlots();renderSlots();save();toast('세션 블록 기준으로 Slot을 동기화했습니다')}
@@ -823,7 +745,7 @@ function buildRunbook(){ensureFrameBlocks();return `# ${state.brief.name||'Final
 
 window.setActiveSession=function(i){activeSession=i;renderSlots();}
 /* ============ Firebase 인증 + Firestore 자동 동기화 ============ */
-const firebaseConfig={apiKey:"AIzaSyAA2BvQ7yllagmJvbUBUlBUOnfkkdHwuqI",authDomain:"creative-session-canvas.firebaseapp.com",projectId:"creative-session-canvas",storageBucket:"creative-session-canvas.firebasestorage.app",messagingSenderId:"605192328299",appId:"1:605192328299:web:9be3f62ccae301cccd4d2e",measurementId:"G-DRM186YD59"};
+/* firebaseConfig, friendlyAuthErr, download은 app.js에서 제공됩니다(전역). */
 const __sessionId=Math.random().toString(36).slice(2)+'_'+Date.now();
 let __uid=null,__booted=false,__saveTimer=null,__lastLocalWrite=0,fbDb=null,fbAuth=null;
 function docRef(){return fbDb.collection('userStates').doc(__uid)}
@@ -831,7 +753,6 @@ function cleanState(){return JSON.parse(JSON.stringify(state))}
 function cloudSaveNow(){if(!__uid||!fbDb)return Promise.resolve();const stamp=Date.now();__lastLocalWrite=stamp;return docRef().set({state:cleanState(),updatedAt:stamp,writer:__sessionId})}
 function cloudSave(){if(!__uid||!fbDb)return;clearTimeout(__saveTimer);__saveTimer=setTimeout(function(){cloudSaveNow().catch(function(e){console.warn('동기화 저장 실패',e)})},700)}
 function authMsg(t){var e=document.getElementById('authMsg');if(!e)return;e.textContent=t||'';e.style.display=t?'block':'none'}
-function friendlyAuthErr(e){var c=(e&&e.code)||'';if(c.indexOf('invalid-email')>=0)return '이메일 형식이 올바르지 않습니다.';if(c.indexOf('missing-password')>=0||c.indexOf('weak-password')>=0)return '비밀번호는 6자 이상이어야 합니다.';if(c.indexOf('email-already-in-use')>=0)return '이미 가입된 이메일입니다. 로그인을 눌러주세요.';if(c.indexOf('invalid-credential')>=0||c.indexOf('wrong-password')>=0||c.indexOf('user-not-found')>=0)return '이메일 또는 비밀번호가 올바르지 않습니다.';if(c.indexOf('too-many-requests')>=0)return '시도가 너무 많습니다. 잠시 후 다시 시도하세요.';return (e&&e.message)||'오류가 발생했습니다.'}
 window.loginUser=function(){var em=(document.getElementById('authEmail').value||'').trim(),pw=document.getElementById('authPass').value||'';authMsg('');fbAuth.signInWithEmailAndPassword(em,pw).catch(function(e){authMsg(friendlyAuthErr(e))})};
 window.signupUser=function(){var em=(document.getElementById('authEmail').value||'').trim(),pw=document.getElementById('authPass').value||'';authMsg('');fbAuth.createUserWithEmailAndPassword(em,pw).catch(function(e){authMsg(friendlyAuthErr(e))})};
 window.logoutUser=function(){if(fbAuth)fbAuth.signOut();setTimeout(function(){location.reload()},250)};
@@ -846,10 +767,28 @@ if(typeof firebase==='undefined'){
 }else{
   firebase.initializeApp(firebaseConfig);
   fbAuth=firebase.auth();fbDb=firebase.firestore();
+  /* 승인 게이트: index.html과 동일하게 approvedUsers/{uid}를 확인한다.
+     주의 — 이 클라이언트 검사는 UI 가드일 뿐이며, 실제 접근 제어는 Firestore 보안 규칙에서 강제해야 한다. */
+  function sdIsApprovedUser(user){
+    if(!fbDb||!user)return Promise.resolve(false);
+    if((user.email||'').toLowerCase()===ADMIN_EMAIL)return Promise.resolve(true);
+    return fbDb.collection('approvedUsers').doc(user.uid).get().then(function(s){return s.exists}).catch(function(){return false});
+  }
+  function sdRegisterPendingUser(user){
+    if(!fbDb||!user||(user.email||'').toLowerCase()===ADMIN_EMAIL)return Promise.resolve();
+    return fbDb.collection('pendingUsers').doc(user.uid).set({uid:user.uid,email:user.email||'',status:'pending',updatedAt:new Date().toISOString()},{merge:true}).catch(function(){});
+  }
   fbAuth.onAuthStateChanged(async function(user){
     var ov=document.getElementById('authOverlay');
     if(user){
       __uid=user.uid;
+      var approved=await sdIsApprovedUser(user);
+      if(!approved){
+        await sdRegisterPendingUser(user);
+        if(ov)ov.style.display='flex';
+        authMsg('관리자 승인 대기 중입니다. 마스터 계정에서 승인하면 세션 디자이너가 열립니다. UID: '+user.uid);
+        return;
+      }
       if(ov)ov.style.display='none';
       var bar=document.getElementById('authBar');if(bar){bar.style.display='flex';var who=document.getElementById('authWho');if(who)who.textContent=user.email||''}
       if(!__booted){

@@ -197,7 +197,7 @@
         "no": 9,
         "text": "나는 우리 회사에서 나의 역할을 수행하는데 적절한 행동이 무엇인지 이해하고 있다.",
         "short": "적절한 행동 이해",
-        "benchMed": 0,
+        "benchMed": null,
         "benchChubb": 79,
         "fav": {
           "24": 79,
@@ -245,7 +245,7 @@
         "no": 11,
         "text": "나는 회사에서 개인적인 웰빙과 관련하여 필요할 때 편하게 지원을 요청할 수 있다. (2026 NEW)",
         "short": "웰빙 지원 요청 가능",
-        "benchMed": 0,
+        "benchMed": null,
         "benchChubb": 52,
         "fav": {
           "24": 15,
@@ -269,7 +269,7 @@
         "no": 12,
         "text": "우리 회사는 개인적인 웰빙에 도움이 되는 가이드와 실질적인 프로그램을 제공한다. (2026 NEW)",
         "short": "웰빙 프로그램 제공",
-        "benchMed": 0,
+        "benchMed": null,
         "benchChubb": 15,
         "fav": {
           "24": 37,
@@ -293,7 +293,7 @@
         "no": 13,
         "text": "나의 매니저는 내 성과를 향상시키는 데 도움이 되는 피드백을 적시에 제공한다.",
         "short": "매니저 적시 피드백",
-        "benchMed": 0,
+        "benchMed": null,
         "benchChubb": 37,
         "fav": {
           "24": 54,
@@ -365,7 +365,7 @@
         "no": 16,
         "text": "나는 나의 매니저와 나의 역량개발과 성장에 대해서 정기적으로 대화한다.",
         "short": "매니저와 성장 대화",
-        "benchMed": 0,
+        "benchMed": null,
         "benchChubb": 64,
         "fav": {
           "24": 53,
@@ -414,7 +414,7 @@
         "text": "나의 차상위 리더는 회사에서 일어나는 일들을 적시에 공유한다.",
         "short": "차상위 리더 소통",
         "benchMed": 70,
-        "benchChubb": 0,
+        "benchChubb": null,
         "fav": {
           "24": null,
           "25": 58,
@@ -438,7 +438,7 @@
         "text": "지난 서베이의 결과에 대해 피드백을 반영하여 조치가 취해졌다고 생각한다.",
         "short": "서베이 조치 신뢰",
         "benchMed": 73,
-        "benchChubb": 0,
+        "benchChubb": null,
         "fav": {
           "24": null,
           "25": 36,
@@ -461,8 +461,8 @@
         "no": 20,
         "text": "나는 우리 회사가 포용적인 업무 환경을 조성하기 위해 노력한다고 생각한다.",
         "short": "포용적 환경 노력",
-        "benchMed": 0,
-        "benchChubb": 0,
+        "benchMed": null,
+        "benchChubb": null,
         "fav": {
           "24": null,
           "25": 57,
@@ -485,8 +485,8 @@
         "no": 21,
         "text": "나는 우리 회사에 소속감을 느낀다.",
         "short": "소속감",
-        "benchMed": 0,
-        "benchChubb": 0,
+        "benchMed": null,
+        "benchChubb": null,
         "fav": {
           "24": null,
           "25": 63,
@@ -513,7 +513,7 @@
         "benchChubb": null,
         "fav": {
           "24": null,
-          "25": 0,
+          "25": null,
           "26": 61
         },
         "low": {
