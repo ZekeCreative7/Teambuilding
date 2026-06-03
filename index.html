@@ -231,29 +231,47 @@ function tier(avgFav,hi90){if(hi90>=20)return'check';if(avgFav>=65)return'stable
 function showView(id){$all('.view').forEach(v=>v.classList.toggle('active',v.id===id));$all('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='speech')buildSpeechPrompt()}
 function setAuthMsg(t){$('#authMsg').textContent=t}
 function startLocalMode(){localMode=true;localStorage.setItem(LOCAL_MODE_KEY,'1');setAuthMsg('로컬 모드입니다. 이 브라우저에 저장됩니다.');persistDataset('local')}
+function enterCloudMode(){
+  localMode=false;
+  localStorage.removeItem(LOCAL_MODE_KEY);
+}
 function initFirebase(){
   localMode=localStorage.getItem(LOCAL_MODE_KEY)==='1';
-  if(localMode){setAuthMsg('로컬 모드입니다. Firebase 없이 작동합니다.');return}
   if(!window.firebase){setAuthMsg('Firebase SDK를 불러오지 못했습니다. 로컬 모드로 작동합니다.');localMode=true;return}
   try{
-    firebase.initializeApp(firebaseConfig);fbAuth=firebase.auth();fbDb=firebase.firestore();
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    fbAuth=firebase.auth();fbDb=firebase.firestore();
     fbAuth.onAuthStateChanged(async user=>{
       uid=user?user.uid:null;
-      if(user){setAuthMsg('로그인: '+(user.email||user.uid));await loadLatestCloudDataset();if(currentDataset)renderAll();}
-      else setAuthMsg('로그인하면 Firebase에 Pulse 데이터를 저장합니다.');
+      if(user){enterCloudMode();await registerPendingUser(user);setAuthMsg('로그인: '+(user.email||user.uid));await loadLatestCloudDataset();if(currentDataset)renderAll();}
+      else setAuthMsg(localMode?'로컬 모드입니다. 로그인하면 Firebase 저장으로 전환됩니다.':'로그인하면 Firebase에 Pulse 데이터를 저장합니다.');
     });
   }catch(e){setAuthMsg('Firebase 초기화 실패. 로컬 모드로 작동합니다.');localMode=true}
 }
-window.loginUser=function(){if(!fbAuth)return startLocalMode();fbAuth.signInWithEmailAndPassword($('#authEmail').value.trim(),$('#authPass').value).catch(e=>setAuthMsg(e.message))}
-window.signupUser=function(){if(!fbAuth)return startLocalMode();fbAuth.createUserWithEmailAndPassword($('#authEmail').value.trim(),$('#authPass').value).catch(e=>setAuthMsg(e.message))}
+window.loginUser=function(){enterCloudMode();if(!fbAuth){initFirebase();setAuthMsg('Firebase 연결을 준비 중입니다. 잠시 후 다시 로그인해 주세요.');return}fbAuth.signInWithEmailAndPassword($('#authEmail').value.trim(),$('#authPass').value).catch(e=>setAuthMsg(e.message))}
+window.signupUser=function(){enterCloudMode();if(!fbAuth){initFirebase();setAuthMsg('Firebase 연결을 준비 중입니다. 잠시 후 다시 가입해 주세요.');return}fbAuth.createUserWithEmailAndPassword($('#authEmail').value.trim(),$('#authPass').value).catch(e=>setAuthMsg(e.message))}
 window.logoutUser=function(){if(fbAuth)fbAuth.signOut();uid=null;setAuthMsg('로그아웃했습니다.')}
 function datasetRef(){return fbDb&&uid?fbDb.collection('users').doc(uid).collection('pulseDatasets').doc(currentDataset.id):null}
+async function registerPendingUser(user){
+  if(!fbDb||!user)return;
+  try{
+    await fbDb.collection('pendingUsers').doc(user.uid).set({
+      uid:user.uid,
+      email:user.email||'',
+      status:'pending',
+      updatedAt:new Date().toISOString()
+    },{merge:true});
+  }catch(e){}
+}
 async function loadLatestCloudDataset(){
   if(!fbDb||!uid)return;
   try{
     let snap=await fbDb.collection('users').doc(uid).collection('pulseDatasets').orderBy('updatedAt','desc').limit(1).get();
     if(!snap.empty){currentDataset=snap.docs[0].data();localStorage.setItem(DATASET_KEY,JSON.stringify(currentDataset));setAuthMsg('Firebase 데이터셋을 불러왔습니다.');}
-  }catch(e){setAuthMsg('Firebase 불러오기 실패: '+e.message)}
+  }catch(e){
+    if((e.code||'').includes('permission-denied')) setAuthMsg('로그인은 됐지만 아직 승인되지 않았습니다. 관리자 승인 후 Firebase 저장이 가능합니다. UID: '+uid);
+    else setAuthMsg('Firebase 불러오기 실패: '+e.message);
+  }
 }
 async function persistDataset(reason){
   if(!currentDataset)return;
@@ -261,7 +279,10 @@ async function persistDataset(reason){
   localStorage.setItem(DATASET_KEY,JSON.stringify(currentDataset));
   if(datasetRef()){
     try{await datasetRef().set(currentDataset);$('#dataStatus').textContent='Firebase 저장 완료: '+new Date().toLocaleString('ko-KR');setAuthMsg('Firebase 저장 완료');}
-    catch(e){$('#dataStatus').textContent='Firebase 저장 실패. 로컬에는 저장됨: '+e.message}
+    catch(e){
+      let msg=(e.code||'').includes('permission-denied')?'Firebase 저장 실패: 아직 승인되지 않은 계정입니다. Firebase Console에서 approvedUsers/'+uid+' 문서를 추가해 주세요.':'Firebase 저장 실패. 로컬에는 저장됨: '+e.message;
+      $('#dataStatus').textContent=msg;setAuthMsg(msg);
+    }
   }else{$('#dataStatus').textContent='로컬 저장 완료: '+new Date().toLocaleString('ko-KR')}
 }
 async function loadSeedData(){
@@ -376,7 +397,7 @@ function buildDataFromRows(rows){
   let divisions=Object.keys(groups).map(name=>({name,qs:groups[name],hasYoY:groups[name].some(q=>q.fav25!=null)}));
   let next={company:{questions,cats:[]},divisions,meta:{}};return enrichData(next);
 }
-document.addEventListener('DOMContentLoaded',async()=>{initFirebase();await loadSeedData();renderAll();setAuthMsg(localMode?'로컬 모드입니다.':'준비되었습니다. 로그인하면 Firebase 저장이 켜집니다.');});
+document.addEventListener('DOMContentLoaded',async()=>{initFirebase();await loadSeedData();renderAll();setAuthMsg(localMode?'로컬 모드입니다. 로그인하면 Firebase 저장으로 전환됩니다.':'준비되었습니다. 로그인하면 Firebase 저장이 켜집니다.');});
 </script>
 </body>
 </html>
