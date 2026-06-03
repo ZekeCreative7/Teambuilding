@@ -249,6 +249,34 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 .commCard .commActions{display:flex;gap:6px;margin-top:auto;padding-top:8px;flex-wrap:wrap}
 .commCard .commActions button{padding:7px 9px;font-size:11px}
 .commEmpty{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:16px;padding:20px;color:#64748b;font-size:13px;font-weight:800;text-align:center}
+
+/* ----- Pulse division deep dive ----- */
+.deepDive{margin-top:16px}
+.deepHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+.deepHeader h3{font-size:20px;margin:0 0 5px}
+.deepSummary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.deepMetric{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 5px 18px rgba(15,23,42,.045)}
+.deepMetric b{display:block;font-size:24px;line-height:1.05}
+.deepMetric span{display:block;color:#64748b;font-size:11px;font-weight:950;text-transform:uppercase;margin-top:7px}
+.deepGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.deepCard{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--soft)}
+.deepCard h4{margin:0 0 8px;font-size:15px}
+.miniTable{width:100%;border-collapse:collapse;font-size:12px}
+.miniTable th{font-size:10px;text-transform:uppercase;color:#64748b;text-align:left;background:#f8fafc;border-bottom:1px solid #e5e7eb;padding:8px}
+.miniTable td{border-bottom:1px solid #eef2f7;padding:8px;vertical-align:top}
+.miniTable tr:last-child td{border-bottom:0}
+.heatList{display:grid;gap:8px}
+.heatRow{display:grid;grid-template-columns:128px 1fr 58px;gap:10px;align-items:center}
+.heatRow b{font-size:12px;color:#334155}
+.heatTrack{height:18px;background:#edf2f7;border-radius:999px;overflow:hidden;position:relative}
+.heatTrack i{display:block;height:100%;border-radius:999px}
+.lensBox{display:grid;gap:10px}
+.lensItem{border-left:4px solid var(--brand);background:#f8fafc;border-radius:16px;padding:12px;color:#334155;line-height:1.55;font-size:13px}
+.lensItem.warn{border-left-color:var(--amber)}
+.lensItem.risk{border-left-color:var(--red)}
+.lensItem.green{border-left-color:var(--green)}
+.deepPrompt{font-family:"SFMono-Regular","Cascadia Mono","Menlo",monospace;font-size:12.5px;white-space:pre-wrap;min-height:260px}
+@media(max-width:900px){.deepSummary,.deepGrid{grid-template-columns:1fr}.deepHeader{display:block}.deepHeader .toolbar{margin-top:12px}.heatRow{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -375,9 +403,34 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
       <div class="grid4" id="pulseMetrics" style="margin:16px 0"></div>
       <div class="grid2">
         <div class="card"><h3>카테고리 현황</h3><div id="categoryBars"></div></div>
-        <div class="card"><h3>본부 선택 분석</h3><label>대상 본부</label><select id="divisionSelect" onchange="renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext()"></select><div id="divisionDetail" style="margin-top:12px"></div><div class="toolbar" style="margin-top:12px"><button class="primary" onclick="createSessionFromSelection()">이 조직 데이터로 세션 만들기</button><button class="ghost" onclick="showView('speech')">솔루션에 반영</button></div></div>
+        <div class="card"><h3>본부 선택 분석</h3><label>대상 본부</label><select id="divisionSelect" onchange="onDivisionScopeChange()"></select><div id="divisionDetail" style="margin-top:12px"></div><div class="toolbar" style="margin-top:12px"><button class="primary" onclick="createSessionFromSelection()">이 조직 데이터로 세션 만들기</button><button class="ghost" onclick="showView('speech')">솔루션에 반영</button></div></div>
       </div>
       <div class="card" style="margin-top:14px"><h3>본부 순위</h3><div class="tableWrap"><table class="table" id="rankTable"><thead><tr><th class="num">#</th><th>본부</th><th class="num">평균 긍정</th><th class="num">평균 부정</th><th>등급</th><th>액션</th></tr></thead><tbody></tbody></table></div></div>
+      <div class="card deepDive" id="divisionDeepDive">
+        <div class="deepHeader">
+          <div>
+            <h3 id="deepTitle">본부별 상세 분석</h3>
+            <p class="sub" id="deepSubtitle">본부를 선택하면 카테고리, 문항, 교차분석, 심리/조직전문가 관점이 표시됩니다.</p>
+          </div>
+          <div class="toolbar">
+            <button class="primary" onclick="copyText('divisionDeepPrompt')">상세 GPT 프롬프트 복사</button>
+            <button class="ghost" onclick="createSessionFromSelection()">세션 만들기에 적용</button>
+          </div>
+        </div>
+        <div id="deepSummary" class="deepSummary"></div>
+        <div class="deepGrid">
+          <div class="deepCard"><h4>카테고리별 분석</h4><div id="deepCategoryAnalysis"></div></div>
+          <div class="deepCard"><h4>문항 카테고리 교차분석</h4><div id="deepCrossAnalysis"></div></div>
+        </div>
+        <div class="deepGrid">
+          <div class="deepCard"><h4>문항별 분석</h4><div id="deepQuestionAnalysis"></div></div>
+          <div class="deepCard"><h4>심리학적 분석</h4><div id="deepPsychAnalysis"></div></div>
+        </div>
+        <div class="deepGrid">
+          <div class="deepCard"><h4>조직전문가 관점 분석</h4><div id="deepOrgAnalysis"></div></div>
+          <div class="deepCard"><h4>GPT 추가 인사이트 프롬프트</h4><textarea id="divisionDeepPrompt" class="deepPrompt" readonly></textarea></div>
+        </div>
+      </div>
       <div class="grid2" style="margin-top:14px">
         <div class="card">
           <h3>GPT 분석 프롬프트</h3>
@@ -891,14 +944,106 @@ function renderPulse(){
 }
 function escAttr(v){return String(v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
 function barRow(label,fav,low,delta){return`<div class="barRow"><div class="barLabel">${esc(label)}</div><div class="track"><div class="fill" style="width:${num(fav)||0}%"></div>${low!=null?`<div class="lowFill" style="width:${num(low)||0}%"></div>`:''}</div><div class="barVal">${pct(fav)} <span style="color:#94a3b8">${delta||''}</span></div></div>`}
-function selectDivision(name){$('#divisionSelect').value=name;renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();showView('pulse')}
+function syncScopeSelects(name){
+  ['promptScope','sessionScope','speechScope'].forEach(id=>{let el=$('#'+id);if(el&&Array.from(el.options).some(o=>o.value===name))el.value=name});
+}
+function onDivisionScopeChange(){
+  let name=$('#divisionSelect').value;
+  syncScopeSelects(name);
+  renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();
+}
+function selectDivision(name,focus=true){
+  $('#divisionSelect').value=name;syncScopeSelects(name);
+  renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();showView('pulse');
+  if(focus)setTimeout(()=>$('#divisionDeepDive')?.scrollIntoView({behavior:'smooth',block:'start'}),80);
+}
 function renderDivisionDetail(){
   let name=$('#divisionSelect').value, dv=getDiv(name);if(!dv)return;
   let bottom=dv.qs.slice().sort((a,b)=>a.fav-b.fav).slice(0,4).map(q=>qLine(q,dv)).join('<br>');
   let highLow=dv.qs.slice().sort((a,b)=>b.low-a.low).slice(0,4).map(q=>qLine(q,dv,true)).join('<br>');
   $('#divisionDetail').innerHTML=`<div class="grid2"><div class="metric"><b style="color:${favColor(dv.avgFav)}">${pct(dv.avgFav)}</b><span>평균 긍정 · 전사 대비 ${plainDelta(dv.avgFav,data().meta.companyFav26)}</span></div><div class="metric"><b>${pct(dv.avgLow)}</b><span>평균 부정 · 전사 대비 ${plainDelta(dv.avgLow,data().meta.companyLow26)}</span></div></div><div class="note" style="margin-top:12px"><b>긍정 하위</b><br>${bottom}<br><br><b>부정 집중</b><br>${highLow}</div>${getAnalysis(name)?`<div class="analysisBox" style="margin-top:12px">${esc(getAnalysis(name))}</div>`:''}`;
+  renderDivisionDeepDive(dv);
 }
 function qLine(q,dv,lowMode=false){let meta=data().company.questions[q.no-1]||{};return`Q${q.no}. ${esc(meta.short||meta.text||'')} · ${lowMode?'부정 '+pct(q.low):'긍정 '+pct(q.fav)} · 전년대비 ${plainDelta(q.fav,q.fav25)}`}
+function questionMeta(no){return data().company.questions.find(q=>Number(q.no)===Number(no))||{}}
+function companyCat(name){return data().company.cats.find(c=>c.name===name)||{}}
+function riskTone(fav,low){
+  fav=num(fav);low=num(low);
+  if(fav!=null&&fav<45)return'risk';
+  if(low!=null&&low>=22)return'risk';
+  if(fav!=null&&fav<58)return'warn';
+  return'green';
+}
+function renderDivisionDeepDive(dv){
+  if(!dv)return;
+  let compFav=data().meta.companyFav26, compLow=data().meta.companyLow26;
+  let cats=dv.cats.slice().map(c=>({...c,companyFav:companyCat(c.name).fav?.['26'],delta:num(c.fav)!=null&&num(companyCat(c.name).fav?.['26'])!=null?Math.round((num(c.fav)-num(companyCat(c.name).fav?.['26']))*10)/10:null}));
+  let weakCats=cats.slice().sort((a,b)=>(num(a.fav)||0)-(num(b.fav)||0));
+  let bottomQs=dv.qs.slice().sort((a,b)=>(num(a.fav)||999)-(num(b.fav)||999));
+  let highLowQs=dv.qs.slice().sort((a,b)=>(num(b.low)||0)-(num(a.low)||0));
+  let strongest=cats.slice().sort((a,b)=>(num(b.fav)||0)-(num(a.fav)||0))[0];
+  let weakest=weakCats[0];
+  $('#deepTitle').textContent='본부별 상세 분석 · '+dv.name;
+  $('#deepSubtitle').textContent=`${tierLabel[dv.tier]} 구간 · 전사 긍정 대비 ${plainDelta(dv.avgFav,compFav)} · 전사 부정 대비 ${plainDelta(dv.avgLow,compLow)}`;
+  $('#deepSummary').innerHTML=[
+    ['평균 긍정',pct(dv.avgFav),'전사 대비 '+plainDelta(dv.avgFav,compFav)],
+    ['평균 부정',pct(dv.avgLow),'전사 대비 '+plainDelta(dv.avgLow,compLow)],
+    ['최강 카테고리',strongest?.name||'-',pct(strongest?.fav)+' 긍정'],
+    ['취약 카테고리',weakest?.name||'-',pct(weakest?.fav)+' 긍정']
+  ].map(x=>`<div class="deepMetric"><b>${esc(x[1])}</b><span>${esc(x[0])} · ${esc(x[2])}</span></div>`).join('');
+  $('#deepCategoryAnalysis').innerHTML=`<div class="heatList">${cats.map(c=>{
+    let tone=riskTone(c.fav,c.low), color=tone==='risk'?'#dc2626':(tone==='warn'?'#b7791f':'#0f9f7f');
+    return `<div class="heatRow"><b>${esc(c.name)}</b><div class="heatTrack"><i style="width:${num(c.fav)||0}%;background:${color}"></i></div><span class="num">${pct(c.fav)}</span></div><div class="sub" style="margin:-4px 0 4px 138px">부정 ${pct(c.low)} · 전사 대비 ${plainDelta(c.fav,c.companyFav)} · 전년 대비 ${plainDelta(c.fav,c.fav25)}</div>`;
+  }).join('')}</div>`;
+  $('#deepQuestionAnalysis').innerHTML=`<div class="tableWrap"><table class="miniTable"><thead><tr><th>문항</th><th>카테고리</th><th class="num">긍정</th><th class="num">부정</th><th>해석</th></tr></thead><tbody>${dv.qs.map(q=>{
+    let m=questionMeta(q.no), tone=riskTone(q.fav,q.low);
+    let label=tone==='risk'?'우선 개입':(tone==='warn'?'주의 관찰':'유지/확산');
+    return `<tr><td><b>Q${q.no}</b> ${esc(m.short||m.text||'')}</td><td>${esc(qCategory(q.no))}</td><td class="num" style="color:${favColor(q.fav)};font-weight:950">${pct(q.fav)}</td><td class="num">${pct(q.low)}</td><td><span class="chip ${tone==='risk'?'risk':(tone==='warn'?'watch':'stable')}">${label}</span><br><span class="sub">전년 대비 ${plainDelta(q.fav,q.fav25)}</span></td></tr>`;
+  }).join('')}</tbody></table></div>`;
+  $('#deepCrossAnalysis').innerHTML=`<div class="tableWrap"><table class="miniTable"><thead><tr><th>카테고리</th><th>대표 리스크 문항</th><th class="num">카테고리 긍정</th><th class="num">문항 긍정</th><th>교차 해석</th></tr></thead><tbody>${catMap.map(([cat,qs])=>{
+    let catData=cats.find(c=>c.name===cat)||{};
+    let q=dv.qs.filter(x=>qs.includes(x.no)).sort((a,b)=>(num(a.fav)||999)-(num(b.fav)||999))[0];
+    let m=questionMeta(q?.no);
+    let gap=num(catData.fav)!=null&&num(q?.fav)!=null?Math.round((num(q.fav)-num(catData.fav))*10)/10:null;
+    let msg=gap!=null&&gap<-8?'카테고리 평균보다 특정 문항 리스크가 강합니다.':(num(catData.fav)<55?'카테고리 전체가 낮아 구조적 원인 탐색이 필요합니다.':'카테고리 평균은 안정적이나 하위 문항을 추적하세요.');
+    return `<tr><td><b>${esc(cat)}</b></td><td>Q${q?.no||'-'} ${esc(m.short||'')}</td><td class="num">${pct(catData.fav)}</td><td class="num" style="color:${favColor(q?.fav)};font-weight:950">${pct(q?.fav)}</td><td>${esc(msg)}</td></tr>`;
+  }).join('')}</tbody></table></div>`;
+  let psych=psychologyInsights(dv,cats,bottomQs,highLowQs);
+  $('#deepPsychAnalysis').innerHTML=`<div class="lensBox">${psych.map(x=>`<div class="lensItem ${x.tone}"><b>${esc(x.title)}</b><br>${esc(x.body)}</div>`).join('')}</div>`;
+  let org=orgExpertInsights(dv,cats,bottomQs,highLowQs);
+  $('#deepOrgAnalysis').innerHTML=`<div class="lensBox">${org.map(x=>`<div class="lensItem ${x.tone}"><b>${esc(x.title)}</b><br>${esc(x.body)}</div>`).join('')}</div>`;
+  $('#divisionDeepPrompt').value=divisionDeepPrompt(dv,cats,bottomQs,highLowQs,psych,org);
+}
+function psychologyInsights(dv,cats,bottomQs,highLowQs){
+  let psy=cats.find(c=>c.name.includes('심리안전'))||{}, well=cats.find(c=>c.name.includes('웰빙'))||{}, manager=cats.find(c=>c.name.includes('매니저'))||{}, clarity=cats.find(c=>c.name.includes('조직명확성'))||{};
+  let bottom=bottomQs[0], highLow=highLowQs[0], bm=questionMeta(bottom?.no), hm=questionMeta(highLow?.no);
+  return [
+    {title:'심리적 안전감',tone:riskTone(psy.fav,psy.low),body:`심리안전·소속감 긍정은 ${pct(psy.fav)}, 부정은 ${pct(psy.low)}입니다. 낮을수록 구성원이 문제 제기보다 침묵을 택할 가능성이 커집니다.`},
+    {title:'정서적 에너지와 회복감',tone:riskTone(well.fav,well.low),body:`웰빙 긍정은 ${pct(well.fav)}입니다. 업무 지속가능성, 피로 회복, 지원 체감의 신호로 보고 리더의 업무 조정 대화가 필요합니다.`},
+    {title:'리더 신뢰와 관계 품질',tone:riskTone(manager.fav,manager.low),body:`매니저 축 긍정은 ${pct(manager.fav)}입니다. 낮은 경우 제도보다 일상 피드백, 의사결정 설명, 1:1 대화의 질이 먼저 점검되어야 합니다.`},
+    {title:'인지적 명확성',tone:riskTone(clarity.fav,clarity.low),body:`조직명확성 긍정은 ${pct(clarity.fav)}입니다. 역할·우선순위가 흐릴수록 몰입 저하와 방어적 행동이 동시에 나타날 수 있습니다.`},
+    {title:'감정 신호가 큰 문항',tone:riskTone(highLow?.fav,highLow?.low),body:`부정이 가장 높은 문항은 Q${highLow?.no} ${hm.short||''}이며 부정 ${pct(highLow?.low)}입니다. 이 문항은 데이터 설명보다 감정 인정이 먼저 필요합니다.`},
+    {title:'핵심 취약 문항',tone:riskTone(bottom?.fav,bottom?.low),body:`긍정이 가장 낮은 문항은 Q${bottom?.no} ${bm.short||''}이며 긍정 ${pct(bottom?.fav)}입니다. 세션에서는 이 문항을 직접 질문으로 전환하는 것이 좋습니다.`}
+  ];
+}
+function orgExpertInsights(dv,cats,bottomQs,highLowQs){
+  let weak=cats.slice().sort((a,b)=>(num(a.fav)||999)-(num(b.fav)||999))[0], strong=cats.slice().sort((a,b)=>(num(b.fav)||0)-(num(a.fav)||0))[0];
+  let bottom=bottomQs[0], bottom2=bottomQs[1], highLow=highLowQs[0];
+  let reliab=dv.tier==='check'?'신뢰도 검토 대상입니다. 우수 사례로 단정하기보다 응답 맥락과 익명성/표본 효과를 먼저 확인하세요.':'일반 해석 가능하되, 표본 수와 최근 조직 이벤트를 함께 확인해야 합니다.';
+  return [
+    {title:'개입 우선순위',tone:riskTone(weak?.fav,weak?.low),body:`가장 먼저 볼 영역은 ${weak?.name||'-'}입니다. 카테고리 긍정 ${pct(weak?.fav)}, 부정 ${pct(weak?.low)}이므로 원인 탐색 세션의 1순위로 배치하세요.`},
+    {title:'유지/확산 자산',tone:'green',body:`상대적으로 강한 영역은 ${strong?.name||'-'}입니다. 긍정 ${pct(strong?.fav)}인 이 축은 변화 메시지의 신뢰 기반으로 사용할 수 있습니다.`},
+    {title:'조직 운영 리스크',tone:riskTone(bottom?.fav,bottom?.low),body:`Q${bottom?.no}와 Q${bottom2?.no}의 낮은 긍정은 조직 운영의 병목을 시사합니다. 과제는 제도 개선과 리더 행동 변화로 나누어 설계하세요.`},
+    {title:'커뮤니케이션 포인트',tone:riskTone(highLow?.fav,highLow?.low),body:`부정이 큰 Q${highLow?.no}는 리더 메시지에서 회피하면 신뢰를 잃기 쉽습니다. "들은 것 → 인정하는 것 → 바로 할 것" 순서로 말하는 편이 안전합니다.`},
+    {title:'데이터 신뢰도',tone:dv.tier==='check'?'warn':'green',body:reliab},
+    {title:'추천 액션',tone:'warn',body:`30일 내 본부장 리스닝 세션, 60일 내 문항별 원인 가설 검증, 90일 내 재측정 지표를 설계하세요.`}
+  ];
+}
+function divisionDeepPrompt(dv,cats,bottomQs,highLowQs,psych,org){
+  let catLines=cats.map(c=>`- ${c.name}: 긍정 ${pct(c.fav)}, 부정 ${pct(c.low)}, 전사 대비 ${plainDelta(c.fav,c.companyFav)}, 전년 대비 ${plainDelta(c.fav,c.fav25)}`).join('\n');
+  let qLines=bottomQs.slice(0,8).map(q=>{let m=questionMeta(q.no);return `- Q${q.no} ${m.short||m.text||''}: 긍정 ${pct(q.fav)}, 부정 ${pct(q.low)}, 전년 대비 ${plainDelta(q.fav,q.fav25)}, 카테고리 ${qCategory(q.no)}`}).join('\n');
+  return `당신은 직원경험(EX), 조직심리, 조직개발(OD)에 강한 컨설턴트입니다.\n아래 Lina Pulse Survey 본부 데이터를 바탕으로 추가 인사이트를 도출하세요. 수치 근거와 해석 가설을 분리하고, 단정하지 말고 우선순위와 검증 질문을 제시하세요.\n\n[대상 본부]\n${dv.name}\n- 평균 긍정 ${pct(dv.avgFav)} (전사 대비 ${plainDelta(dv.avgFav,data().meta.companyFav26)})\n- 평균 부정 ${pct(dv.avgLow)} (전사 대비 ${plainDelta(dv.avgLow,data().meta.companyLow26)})\n- 등급 ${tierLabel[dv.tier]}\n\n[카테고리별 데이터]\n${catLines}\n\n[긍정 하위 문항]\n${qLines}\n\n[부정 집중 문항]\n${highLowQs.slice(0,6).map(q=>{let m=questionMeta(q.no);return `- Q${q.no} ${m.short||m.text||''}: 부정 ${pct(q.low)}, 긍정 ${pct(q.fav)}`}).join('\n')}\n\n[현재 자동 해석 가설]\n심리학적 관점:\n${psych.map(x=>`- ${x.title}: ${x.body}`).join('\n')}\n\n조직전문가 관점:\n${org.map(x=>`- ${x.title}: ${x.body}`).join('\n')}\n\n[요청]\n1. 이 본부의 한 문장 진단\n2. 가장 중요한 카테고리/문항 리스크 3개\n3. 심리학적 원인 가설\n4. 조직 운영/리더십 원인 가설\n5. 본부장에게 전달할 메시지 톤과 문장\n6. 조직문화 세션에서 물어볼 질문 7개\n7. 30/60/90일 액션 플랜\n8. 다음 Pulse Survey에서 확인할 후속 지표`;
+}
 function companyPack(){
   let d=data();let bottom=d.company.questions.slice().sort((a,b)=>a.fav['26']-b.fav['26']).slice(0,6).map(q=>`- Q${q.no} ${q.short}: 긍정 ${pct(q.fav['26'])}, 부정 ${pct(q.low['26'])}, 전년대비 ${plainDelta(q.fav['26'],q.fav['25'])}`);
   let risks=sortedDivs().filter(x=>x.tier==='risk').map(x=>`${x.name} ${pct(x.avgFav)} / 부정 ${pct(x.avgLow)}`).join(', ');
