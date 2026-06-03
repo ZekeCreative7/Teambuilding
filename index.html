@@ -127,15 +127,15 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
    v4 — Login redesign · Sidebar account · Dashboard rebuild · Comms board
    ============================================================ */
 
-/* ----- Login immersive scene ----- */
+/* ----- Login split scene ----- */
 .authOverlay{padding:24px;background:#f1f4fb}
-.authShell{position:relative;width:min(1040px,100%);min-height:640px;background:#f1f4fb;border-radius:30px;overflow:hidden;box-shadow:0 44px 130px rgba(64,92,150,.28)}
-.authMedia{position:absolute;left:0;top:0;bottom:0;width:min(74%,770px);background:#f1f4fb;overflow:visible}
+.authShell{display:grid;grid-template-columns:1fr 1fr;width:min(1040px,100%);min-height:640px;background:#fff;border-radius:30px;overflow:hidden;box-shadow:0 44px 130px rgba(64,92,150,.28)}
+.authMedia{position:relative;background:#f1f4fb;overflow:hidden}
 .authMedia img{position:absolute;left:-4%;top:-8%;width:112%;height:116%;max-width:none;object-fit:cover;object-position:center 42%;display:block}
 .authMedia .authMediaCap{display:none;position:absolute;left:0;right:0;bottom:0;padding:24px;background:linear-gradient(180deg,transparent,rgba(11,16,32,.55));color:#fff}
 .authMedia .authMediaCap b{display:block;font-size:15px;font-weight:950}
 .authMedia .authMediaCap span{display:block;font-size:12px;color:#e3ebf6;margin-top:5px;line-height:1.5}
-.authPane{position:relative;z-index:2;margin-left:auto;width:min(410px,42%);min-height:640px;padding:48px 42px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(90deg,rgba(241,244,251,.74),#f1f4fb 30%,#f1f4fb 100%)}
+.authPane{padding:48px 42px;display:flex;flex-direction:column;justify-content:center;background:#fff}
 .authBrandRow{display:flex;align-items:center;gap:12px;margin-bottom:26px}
 .authBrandRow img{width:50px;height:auto;object-fit:contain}
 .authBrandRow .authBrandName{font-size:12px;font-weight:950;letter-spacing:.05em;color:#64748b;text-transform:uppercase}
@@ -143,7 +143,7 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 .authBigTitle{font-size:33px;line-height:1.08;font-weight:950;letter-spacing:-.035em;margin:4px 0 10px;color:#0b1020}
 .authPane .authHint{font-size:12.5px;color:var(--muted);line-height:1.6}
 .authPane label{margin-top:14px}
-@media(max-width:780px){.authOverlay{padding:18px}.authShell{display:flex;flex-direction:column;min-height:0;width:min(440px,100%)}.authMedia{position:relative;width:100%;height:300px;overflow:hidden}.authMedia img{left:-8%;top:-13%;width:118%;height:126%;object-fit:cover;object-position:center 42%}.authPane{width:100%;min-height:0;margin:0;padding:26px 22px;background:#f1f4fb}.authBigTitle{font-size:26px}}
+@media(max-width:780px){.authOverlay{padding:18px}.authShell{grid-template-columns:1fr;min-height:0;width:min(440px,100%)}.authMedia{height:300px}.authMedia img{left:-8%;top:-13%;width:118%;height:126%;object-fit:cover;object-position:center 42%}.authPane{padding:26px 22px}.authBigTitle{font-size:26px}}
 
 /* ----- Sidebar account block (moved from top-right) ----- */
 .side{display:flex;flex-direction:column}
@@ -485,7 +485,7 @@ p{line-height:1.62}.heroPanel p{color:#dbe4f0;max-width:760px}
 <div id="authOverlay" class="authOverlay">
   <div class="authShell">
     <div class="authMedia">
-      <img src="intro_img.GIF" alt="Lina Culture Platform">
+      <img src="intro_img.png" alt="Lina Culture Platform">
       <div class="authMediaCap">
         <b>데이터로 만드는 조직문화 실행</b>
         <span>Pulse Survey 진단부터 세션 설계, 리더 커뮤니케이션까지 한 곳에서.</span>
