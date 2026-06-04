@@ -437,6 +437,10 @@ let activeDragPayload = null;
 let pointerDrag = null;
 let suppressNextClick = false;
 
+function defaultFilters() {
+  return { healthy: false, watch: false, support: false, review: false };
+}
+
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -447,14 +451,15 @@ function loadState() {
         people: parsed.people || clone(seedPeople),
         groups: parsed.groups || clone(seedGroups),
         selectedUnitId: parsed.selectedUnitId || getDefaultSelectedUnitId(),
-        view: parsed.view || "official",
+        view: "official",
         orgLayout: parsed.orgLayout || "horizontal",
         orgZoom: parsed.orgZoom || 0.72,
         networkLevel: parsed.networkLevel || "team",
         expandedUnitIds: parsed.expandedUnitIds || getDefaultExpandedIds(),
         detailOpen: false,
+        detailModal: null,
         search: parsed.search || "",
-        filters: parsed.filters || { healthy: false, watch: false, support: false, review: false },
+        filters: { ...defaultFilters(), ...(parsed.filters || {}) },
       };
     }
   } catch (error) {
@@ -472,8 +477,9 @@ function loadState() {
     networkLevel: "team",
     expandedUnitIds: getDefaultExpandedIds(),
     detailOpen: false,
+    detailModal: null,
     search: "",
-    filters: { risk: false, ambassador: false, fatigue: false, isolated: false },
+    filters: defaultFilters(),
   };
 }
 
@@ -582,10 +588,21 @@ function toggleExpanded(unitId) {
 function openDetail(unitId) {
   state.selectedUnitId = unitId;
   state.detailOpen = true;
+  state.detailModal = null;
 }
 
 function closeDetail() {
   state.detailOpen = false;
+  state.detailModal = null;
+}
+
+function openDetailModal(mode = "overview") {
+  state.detailOpen = true;
+  state.detailModal = mode;
+}
+
+function closeDetailModal() {
+  state.detailModal = null;
 }
 
 function canCreateUnder(level, parent) {
@@ -840,7 +857,7 @@ function syncControls() {
   });
 }
 
-function renderMetrics() {
+function getOrgMetrics() {
   const teamUnits = state.units.filter((unit) => unit.level === "team");
   const averageReadiness = teamUnits.length ? Math.round(teamUnits.reduce((sum, unit) => sum + unit.readiness, 0) / teamUnits.length) : 0;
   const riskCount = state.units.filter((unit) => unit.risk === "high").length;
@@ -856,13 +873,23 @@ function renderMetrics() {
     { label: "지원 필요 조직", value: riskCount, note: "피로도·신뢰 신호" },
     { label: "평균 Change Readiness", value: `${averageReadiness}%`, note: `${groupCount}개 목적 그룹 운영` },
   ];
+  return metrics;
+}
 
-  document.getElementById("metricRow").innerHTML = metrics
+function renderMetrics() {
+  const metricRoot = document.getElementById("metricRow");
+  if (!metricRoot) return;
+  metricRoot.hidden = true;
+  metricRoot.innerHTML = "";
+}
+
+function renderCompactMetrics() {
+  return getOrgMetrics()
     .map((metric) => `
-      <article class="metric-card">
+      <article class="org-mini-metric">
         <span>${escapeHtml(metric.label)}</span>
         <strong>${escapeHtml(metric.value)}</strong>
-        <p>${escapeHtml(metric.note)}</p>
+        <em>${escapeHtml(metric.note)}</em>
       </article>
     `)
     .join("");
@@ -881,6 +908,7 @@ function renderView() {
 function renderOfficialView() {
   const visibleUnits = getVisibleUnits();
   const roots = state.units.filter((unit) => !unit.parentId);
+  const selectedUnit = state.detailOpen ? getUnit(state.selectedUnitId) : null;
 
   document.getElementById("viewRoot").innerHTML = `
     <div class="panel-header">
@@ -903,31 +931,39 @@ function renderOfficialView() {
         <span class="status-pill">${visibleUnits.length}개 표시</span>
       </div>
     </div>
-    <div class="org-toolbelt" aria-label="조직도 드래그 도구">
-      <div class="drag-source" draggable="true" data-drag-create="division">
-        <span>+</span>
-        <strong>새 부문</strong>
-        <small>CEO 카드에 드롭</small>
-      </div>
-      <div class="drag-source" draggable="true" data-drag-create="hq">
-        <span>+</span>
-        <strong>새 본부</strong>
-        <small>CEO/부문 카드에 드롭</small>
-      </div>
-      <div class="drag-source" draggable="true" data-drag-create="team">
-        <span>+</span>
-        <strong>새 팀</strong>
-        <small>부문/본부 카드에 드롭</small>
-      </div>
-      <p>조직 카드를 드래그해 부문, 본부, 팀의 소속을 바꾸고, 새 조직도 원하는 상위 카드에 바로 만들 수 있습니다.</p>
+    <div class="org-frame-summary" aria-label="조직 주요 지표">
+      ${renderCompactMetrics()}
     </div>
-    <div class="org-canvas" id="orgCanvas">
-      <div class="org-zoom-surface" id="orgZoomSurface" style="--org-zoom:${state.orgZoom}">
-        <svg class="connector-layer" id="connectorLayer" aria-hidden="true"></svg>
-        <div class="org-tree ${escapeHtml(state.orgLayout)}">
-          ${roots.map((unit) => renderTreeNode(unit)).join("")}
+    <div class="org-workbench ${selectedUnit ? "inspector-open" : ""}">
+      <div class="org-board">
+        <div class="org-toolbelt" aria-label="조직도 드래그 도구">
+          <div class="drag-source" draggable="true" data-drag-create="division">
+            <span>+</span>
+            <strong>새 부문</strong>
+            <small>CEO 카드에 드롭</small>
+          </div>
+          <div class="drag-source" draggable="true" data-drag-create="hq">
+            <span>+</span>
+            <strong>새 본부</strong>
+            <small>CEO/부문 카드에 드롭</small>
+          </div>
+          <div class="drag-source" draggable="true" data-drag-create="team">
+            <span>+</span>
+            <strong>새 팀</strong>
+            <small>부문/본부 카드에 드롭</small>
+          </div>
+          <p>드래그로 조직을 만들거나 소속을 이동합니다.</p>
+        </div>
+        <div class="org-canvas" id="orgCanvas">
+          <div class="org-zoom-surface" id="orgZoomSurface" style="--org-zoom:${state.orgZoom}">
+            <svg class="connector-layer" id="connectorLayer" aria-hidden="true"></svg>
+            <div class="org-tree ${escapeHtml(state.orgLayout)}">
+              ${roots.map((unit) => renderTreeNode(unit)).join("")}
+            </div>
+          </div>
         </div>
       </div>
+      ${selectedUnit ? renderOrgInspector(selectedUnit) : ""}
     </div>
   `;
 
@@ -1037,6 +1073,69 @@ function renderUnitCard(unit, childCount = 0) {
           : ""
       }
     </article>
+  `;
+}
+
+function renderOrgInspector(unit) {
+  const pulse = pulseForUnit(unit.id);
+  const status = pulseStatusDef(unit);
+  const people = getPeopleForUnit(unit.id, unit.level !== "team");
+  const directPeople = getPeopleForUnit(unit.id, false);
+  const childUnits = getChildren(unit.id);
+  const statusLabel = status?.label || formatRisk(unit.risk);
+  const statusNote = status?.note || `변화 수용도 ${unit.readiness} · 신뢰 ${unit.trust}`;
+  const tone = status?.tone || unit.risk;
+  const primaryScore = pulse ? `${pulse.fav}%` : `${unit.readiness}%`;
+  const primaryLabel = pulse ? "Pulse 긍정" : "변화 수용도";
+  const riskText = pulse ? `${pulse.low}%` : `${unit.fatigue}`;
+  const riskLabel = pulse ? "부정 응답" : "피로도";
+
+  return `
+    <aside class="org-inspector tone-${escapeHtml(tone)}" aria-label="선택 조직 요약">
+      <header class="inspector-head">
+        <div>
+          <p class="eyebrow">Selected Organization</p>
+          <h3>${escapeHtml(unit.name)}</h3>
+          <span>${escapeHtml(displayOrgType(unit))} · ${escapeHtml(getParentName(unit))}</span>
+        </div>
+        <button class="icon-button" type="button" data-close-inspector aria-label="선택 조직 요약 닫기">×</button>
+      </header>
+
+      <section class="inspector-state">
+        <span>현재 상태</span>
+        <strong>${escapeHtml(statusLabel)}</strong>
+        <p>${escapeHtml(statusNote)}</p>
+      </section>
+
+      <div class="inspector-metrics">
+        <article><span>${escapeHtml(primaryLabel)}</span><strong>${escapeHtml(primaryScore)}</strong></article>
+        <article><span>${escapeHtml(riskLabel)}</span><strong>${escapeHtml(riskText)}</strong></article>
+        <article><span>범위</span><strong>${people.length || unit.members}명</strong></article>
+      </div>
+
+      <section class="inspector-section">
+        <h4>리더</h4>
+        <p>${escapeHtml(unit.leader)} · 직급 ${escapeHtml(leaderTitleLabel(unit.leaderTitle))}</p>
+      </section>
+
+      <section class="inspector-section">
+        <h4>구성</h4>
+        <div class="inspector-chip-row">
+          <span>${childUnits.length}개 하위 조직</span>
+          <span>${directPeople.length}명 직접 등록</span>
+          ${unit.tags.slice(0, 2).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+        </div>
+      </section>
+
+      <section class="inspector-section">
+        <h4>다음 액션</h4>
+        <div class="inspector-action-list">
+          <button type="button" data-open-detail-modal="overview">자세히 보기</button>
+          <button type="button" data-open-detail-modal="settings">설정하기</button>
+          <button type="button" onclick="if(typeof showView==='function')showView('pulse')">Pulse 분석</button>
+        </div>
+      </section>
+    </aside>
   `;
 }
 
@@ -1273,23 +1372,41 @@ function renderGroupCard(group) {
 }
 
 function renderDetail() {
-  const drawer = document.getElementById("detailDrawer");
-  if (drawer) {
-    drawer.classList.toggle("open", Boolean(state.detailOpen));
-    drawer.setAttribute("aria-hidden", state.detailOpen ? "false" : "true");
+  const modal = document.getElementById("detailDrawer");
+  const panel = document.getElementById("detailPanel");
+  const backdrop = document.getElementById("drawerBackdrop");
+  const groupDrawer = document.getElementById("groupDrawer");
+  const isOpen = Boolean(state.detailModal);
+
+  if (modal) {
+    modal.classList.toggle("open", isOpen);
+    modal.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  }
+  if (backdrop && !groupDrawer?.classList.contains("open")) {
+    backdrop.hidden = !isOpen;
+  }
+  if (!panel) return;
+  if (!isOpen) {
+    panel.innerHTML = "";
+    return;
   }
 
   const unit = getUnit(state.selectedUnitId) || state.units[0];
   if (!unit) {
-    document.getElementById("detailPanel").innerHTML = `<div class="empty-state"><strong>선택된 조직 없음</strong></div>`;
+    panel.innerHTML = `<div class="empty-state"><strong>선택된 조직 없음</strong></div>`;
     return;
   }
 
+  panel.innerHTML = state.detailModal === "settings" ? renderSettingsModal(unit) : renderOverviewModal(unit);
+}
+
+function renderOverviewModal(unit) {
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
   const directPeople = getPeopleForUnit(unit.id, false);
   const childUnits = getChildren(unit.id);
+  const pulse = pulseForUnit(unit.id);
 
-  document.getElementById("detailPanel").innerHTML = `
+  return `
     <div class="detail-title">
       <div class="detail-title-row">
         <div class="tag-list">
@@ -1304,7 +1421,7 @@ function renderDetail() {
     </div>
 
     <section class="detail-section">
-      <h4>문화 신호</h4>
+      <h4>1. 현재 신호</h4>
       <div class="unit-bars">
         ${renderBar("Readiness", unit.readiness, "")}
         ${renderBar("Trust", unit.trust, "trust")}
@@ -1314,31 +1431,51 @@ function renderDetail() {
     </section>
 
     ${
-      pulseForUnit(unit.id)
-        ? (() => {
-            const p = pulseForUnit(unit.id);
-            return `
+      pulse
+        ? `
     <section class="detail-section">
       <div class="detail-section-head">
-        <h4>Pulse Survey 신호</h4>
+        <h4>2. Pulse Survey 근거</h4>
         <button class="text-link" type="button" onclick="if(typeof showView==='function')showView('pulse')">Culture Intelligence 열기 →</button>
       </div>
-      <div class="pulse-readout pulse-${p.tier}">
-        <div class="pulse-readout-item"><span>긍정 응답</span><strong>${p.fav}%</strong></div>
-        <div class="pulse-readout-item"><span>부정 응답</span><strong>${p.low}%</strong></div>
-        <div class="pulse-readout-item"><span>등급</span><strong>${escapeHtml(pulseTierLabel(p.tier))}</strong></div>
+      <div class="pulse-readout pulse-${pulse.tier}">
+        <div class="pulse-readout-item"><span>긍정 응답</span><strong>${pulse.fav}%</strong></div>
+        <div class="pulse-readout-item"><span>부정 응답</span><strong>${pulse.low}%</strong></div>
+        <div class="pulse-readout-item"><span>등급</span><strong>${escapeHtml(pulseTierLabel(pulse.tier))}</strong></div>
       </div>
-      <p class="detail-foot">출처: ${p.sources.map(escapeHtml).join(", ")}${p.reliab ? " · 신뢰도 검토 포함" : ""}</p>
-    </section>`;
-          })()
+      <p class="detail-foot">출처: ${pulse.sources.map(escapeHtml).join(", ")}${pulse.reliab ? " · 신뢰도 검토 포함" : ""}</p>
+    </section>`
         : ""
     }
 
     <section class="detail-section">
-      <h4>추천 운영</h4>
+      <h4>3. 다음 액션</h4>
       <div class="recommend-card">${escapeHtml(unit.recommendation)}</div>
+      <div class="modal-action-row">
+        <button class="primary-button" type="button" data-open-detail-modal="settings">설정하기</button>
+        <button class="ghost-button" type="button" onclick="if(typeof showView==='function')showView('pulse')">Pulse 분석으로 이동</button>
+      </div>
     </section>
+  `;
+}
 
+function renderSettingsModal(unit) {
+  const people = getPeopleForUnit(unit.id, unit.level !== "team");
+  const directPeople = getPeopleForUnit(unit.id, false);
+  const childUnits = getChildren(unit.id);
+
+  return `
+    <div class="detail-title">
+      <div class="detail-title-row">
+        <div class="tag-list">
+          <span class="tag">${escapeHtml(displayOrgType(unit))}</span>
+          <span class="tag">설정</span>
+        </div>
+        <button class="icon-button" id="closeDetailButton" type="button" aria-label="닫기">×</button>
+      </div>
+      <h3>${escapeHtml(unit.name)} 설정</h3>
+      <p class="detail-sub">조직명, 리더, 직급, 키워드와 구성원 소속을 수정합니다.</p>
+    </div>
     <section class="detail-section">
       <h4>조직 값 편집</h4>
       <form class="edit-form" id="editUnitForm">
@@ -1532,6 +1669,7 @@ function createCustomGroup() {
 }
 
 function openDrawer() {
+  state.detailModal = null;
   const drawer = document.getElementById("groupDrawer");
   const backdrop = document.getElementById("drawerBackdrop");
   backdrop.hidden = false;
@@ -1569,9 +1707,27 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const closeInspectorButton = event.target.closest("[data-close-inspector]");
+  if (closeInspectorButton) {
+    closeDetail();
+    render();
+    return;
+  }
+
+  const detailModalButton = event.target.closest("[data-open-detail-modal]");
+  if (detailModalButton) {
+    openDetailModal(detailModalButton.dataset.openDetailModal || "overview");
+    render();
+    return;
+  }
+
   const viewButton = event.target.closest("[data-view]");
   if (viewButton) {
     state.view = viewButton.dataset.view;
+    if (state.view !== "official") {
+      state.detailOpen = false;
+      state.detailModal = null;
+    }
     render();
     return;
   }
@@ -1643,13 +1799,23 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  if (event.target.id === "closeGroupPanelButton" || event.target.id === "drawerBackdrop") {
+  if (event.target.id === "drawerBackdrop") {
+    if (state.detailModal) {
+      closeDetailModal();
+      render();
+    } else {
+      closeDrawer();
+    }
+    return;
+  }
+
+  if (event.target.id === "closeGroupPanelButton") {
     closeDrawer();
     return;
   }
 
   if (event.target.id === "closeDetailButton") {
-    closeDetail();
+    closeDetailModal();
     render();
     return;
   }
@@ -1671,8 +1837,9 @@ document.addEventListener("click", (event) => {
       networkLevel: "team",
       expandedUnitIds: getDefaultExpandedIds(),
       detailOpen: false,
+      detailModal: null,
       search: "",
-      filters: { risk: false, ambassador: false, fatigue: false, isolated: false },
+      filters: defaultFilters(),
     };
     render();
   }
