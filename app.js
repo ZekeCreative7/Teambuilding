@@ -781,6 +781,18 @@ function renderLeaderTitleDatalist() {
   `;
 }
 
+function renderPersonTargetOptions(person) {
+  return state.units
+    .filter((unit) => unit.level !== "company")
+    .sort((a, b) => (a.sourcePath || a.name).localeCompare(b.sourcePath || b.name, "ko"))
+    .map((unit) => {
+      const depth = Math.min(unit.orgDepth || getAncestorIds(unit.id).length, 4);
+      const prefix = "　".repeat(depth);
+      return `<option value="${escapeHtml(unit.id)}" ${person.unitId === unit.id ? "selected" : ""}>${prefix}${escapeHtml(unit.name)} · ${escapeHtml(displayOrgType(unit))}</option>`;
+    })
+    .join("");
+}
+
 function syncLeaderPersonTitle(unit) {
   const leaderPerson = state.people.find((person) => person.unitId === unit.id && person.name === unit.leader);
   if (leaderPerson) leaderPerson.title = unit.leaderTitle || "";
@@ -794,6 +806,23 @@ function updatePersonTitle(personId, title) {
   const unit = getUnit(person.unitId);
   if (unit && unit.leader === person.name) {
     unit.leaderTitle = person.title;
+  }
+  return true;
+}
+
+function deletePerson(personId) {
+  const person = state.people.find((item) => item.id === personId);
+  if (!person) return false;
+
+  const unit = getUnit(person.unitId);
+  state.people = state.people.filter((item) => item.id !== personId);
+  state.groups = state.groups
+    .map((group) => ({ ...group, memberIds: group.memberIds.filter((id) => id !== personId) }))
+    .filter((group) => group.memberIds.length || group.unitIds.length);
+
+  if (unit && unit.leader === person.name) {
+    unit.leader = "리더 미정";
+    unit.leaderTitle = "";
   }
   return true;
 }
@@ -896,6 +925,10 @@ function renderCompactMetrics() {
 }
 
 function renderView() {
+  if (!["official", "network", "groups"].includes(state.view)) {
+    state.view = "official";
+  }
+
   if (state.view === "official") {
     renderOfficialView();
   } else if (state.view === "network") {
@@ -1082,6 +1115,8 @@ function renderOrgInspector(unit) {
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
   const directPeople = getPeopleForUnit(unit.id, false);
   const childUnits = getChildren(unit.id);
+  const visibleMembers = (directPeople.length ? directPeople : people).slice(0, 8);
+  const memberScopeLabel = directPeople.length ? "직접 등록 팀원" : "하위 포함 팀원";
   const statusLabel = status?.label || formatRisk(unit.risk);
   const statusNote = status?.note || `변화 수용도 ${unit.readiness} · 신뢰 ${unit.trust}`;
   const tone = status?.tone || unit.risk;
@@ -1100,6 +1135,11 @@ function renderOrgInspector(unit) {
         </div>
         <button class="icon-button" type="button" data-close-inspector aria-label="선택 조직 요약 닫기">×</button>
       </header>
+
+      <div class="inspector-action-list top-actions-list">
+        <button type="button" data-open-detail-modal="settings">설정하기</button>
+        <button type="button" onclick="if(typeof showView==='function')showView('pulse')">Pulse 분석</button>
+      </div>
 
       <section class="inspector-state">
         <span>현재 상태</span>
@@ -1128,14 +1168,44 @@ function renderOrgInspector(unit) {
       </section>
 
       <section class="inspector-section">
-        <h4>다음 액션</h4>
-        <div class="inspector-action-list">
-          <button type="button" data-open-detail-modal="overview">자세히 보기</button>
-          <button type="button" data-open-detail-modal="settings">설정하기</button>
-          <button type="button" onclick="if(typeof showView==='function')showView('pulse')">Pulse 분석</button>
+        <div class="inspector-section-title-row">
+          <h4>팀원</h4>
+          <span>${escapeHtml(memberScopeLabel)} · ${visibleMembers.length}명 표시</span>
         </div>
+        ${
+          visibleMembers.length
+            ? `<div class="inspector-member-list">
+                ${visibleMembers.map(renderInspectorMemberRow).join("")}
+              </div>`
+            : `<div class="inspector-empty">등록된 팀원이 없습니다. 설정하기에서 구성원을 추가할 수 있습니다.</div>`
+        }
+      </section>
+
+      <section class="inspector-section">
+        <h4>추천 운영</h4>
+        <p>${escapeHtml(unit.recommendation)}</p>
       </section>
     </aside>
+  `;
+}
+
+function renderInspectorMemberRow(person) {
+  return `
+    <article class="inspector-member-row">
+      <div class="member-line-main">
+        <div>
+          <strong>${escapeHtml(person.name)}</strong>
+          <span>${escapeHtml(person.position)} · 직급 ${escapeHtml(leaderTitleLabel(person.title))}</span>
+        </div>
+        <button type="button" class="member-delete-button" data-delete-person="${escapeHtml(person.id)}" aria-label="${escapeHtml(person.name)} 삭제">삭제</button>
+      </div>
+      <label>
+        소속 이동
+        <select data-move-person="${escapeHtml(person.id)}">
+          ${renderPersonTargetOptions(person)}
+        </select>
+      </label>
+    </article>
   `;
 }
 
@@ -1397,7 +1467,7 @@ function renderDetail() {
     return;
   }
 
-  panel.innerHTML = state.detailModal === "settings" ? renderSettingsModal(unit) : renderOverviewModal(unit);
+  panel.innerHTML = renderSettingsModal(unit);
 }
 
 function renderOverviewModal(unit) {
@@ -1551,16 +1621,6 @@ function renderSettingsModal(unit) {
 }
 
 function renderPersonRow(person) {
-  const targetOptions = state.units
-    .filter((unit) => unit.level !== "company")
-    .sort((a, b) => (a.sourcePath || a.name).localeCompare(b.sourcePath || b.name, "ko"))
-    .map((unit) => {
-      const depth = Math.min(unit.orgDepth || getAncestorIds(unit.id).length, 4);
-      const prefix = "　".repeat(depth);
-      return `<option value="${escapeHtml(unit.id)}" ${person.unitId === unit.id ? "selected" : ""}>${prefix}${escapeHtml(unit.name)} · ${escapeHtml(displayOrgType(unit))}</option>`;
-    })
-    .join("");
-
   return `
     <article class="people-row">
       <div class="people-row-header">
@@ -1579,7 +1639,7 @@ function renderPersonRow(person) {
         <label class="person-move-control">
           소속 이동
           <select data-move-person="${escapeHtml(person.id)}">
-            ${targetOptions}
+            ${renderPersonTargetOptions(person)}
           </select>
         </label>
       </div>
@@ -1722,7 +1782,7 @@ document.addEventListener("click", (event) => {
   }
 
   const viewButton = event.target.closest("[data-view]");
-  if (viewButton) {
+  if (viewButton && viewButton.closest("#people .control-surface")) {
     state.view = viewButton.dataset.view;
     if (state.view !== "official") {
       state.detailOpen = false;
@@ -1777,6 +1837,16 @@ document.addEventListener("click", (event) => {
     const unit = getUnit(deleteUnitButton.dataset.deleteUnit);
     if (unit && window.confirm(`${unit.name} 조직을 삭제할까요? 하위 조직과 직접 등록 구성원도 함께 삭제됩니다.`)) {
       deleteUnit(unit.id);
+      render();
+    }
+    return;
+  }
+
+  const deletePersonButton = event.target.closest("[data-delete-person]");
+  if (deletePersonButton) {
+    const person = state.people.find((item) => item.id === deletePersonButton.dataset.deletePerson);
+    if (person && window.confirm(`${person.name} 구성원을 삭제할까요?`)) {
+      deletePerson(person.id);
       render();
     }
     return;

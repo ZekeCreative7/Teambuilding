@@ -1956,6 +1956,10 @@ input[type="checkbox"] {
   gap: 8px;
 }
 
+.top-actions-list {
+  grid-template-columns: 1fr 1fr;
+}
+
 .inspector-action-list button,
 .modal-action-row button {
   min-height: 38px;
@@ -1976,6 +1980,94 @@ input[type="checkbox"] {
   border-color: transparent;
 }
 
+.inspector-section-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.inspector-section-title-row h4 {
+  margin: 0;
+}
+
+.inspector-section-title-row span {
+  color: var(--muted-2);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.inspector-member-list {
+  display: grid;
+  gap: 8px;
+}
+
+.inspector-member-row {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.member-line-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.member-line-main div {
+  display: grid;
+  gap: 3px;
+}
+
+.member-line-main strong {
+  color: var(--ink-strong);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.member-line-main span,
+.inspector-member-row label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.inspector-member-row label {
+  display: grid;
+  gap: 5px;
+  text-transform: uppercase;
+}
+
+.inspector-member-row select {
+  min-height: 34px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.member-delete-button {
+  min-height: 26px;
+  border: 1px solid rgba(254, 202, 202, 0.9);
+  border-radius: 999px;
+  padding: 0 8px;
+  background: rgba(255, 241, 242, 0.88);
+  color: #be123c;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.inspector-empty {
+  padding: 12px;
+  border: 1px dashed rgba(148, 163, 184, 0.55);
+  border-radius: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .modal-action-row {
   display: flex;
   flex-wrap: wrap;
@@ -1983,26 +2075,25 @@ input[type="checkbox"] {
 }
 
 .detail-drawer {
-  inset: 50% auto auto 50%;
-  width: min(760px, calc(100vw - 36px));
-  max-height: min(86vh, 760px);
-  border-radius: 24px;
+  inset: 0 0 0 auto;
+  width: min(520px, 100vw);
+  max-height: none;
+  border-radius: 0;
   border: 1px solid rgba(203, 213, 225, 0.76);
   box-shadow: 0 34px 110px rgba(15, 23, 42, 0.28);
-  transform: translate(-50%, -45%) scale(0.96);
-  opacity: 0;
+  transform: translateX(103%);
+  opacity: 1;
   pointer-events: none;
 }
 
 .detail-drawer.open {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
+  transform: translateX(0);
   pointer-events: auto;
 }
 
 .org-tree.horizontal .expand-button {
-  top: 12px;
-  right: -12px;
+  top: -15px;
+  right: -13px;
   width: 34px;
   min-height: 34px;
   transform: none;
