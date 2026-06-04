@@ -1,0 +1,18 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      "**/.*",
+      "**/node_modules/**",
+      "sync-embedded.py",
+      "README.md",
+      "assets/*.xlsx",
+      "assets/*.csv"
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

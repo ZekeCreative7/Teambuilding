@@ -12,7 +12,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 JSON_PATH = HERE / "pulse-seed-data.json"
-HTML_PATH = HERE / "index.html"
+# EMBEDDED_PULSE_SEED 폴백 사본은 platform.js의 인라인 스크립트에 들어 있다.
+HTML_PATH = HERE / "platform.js"
 PREFIX = "const EMBEDDED_PULSE_SEED="
 
 

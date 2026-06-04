@@ -1,0 +1,41 @@
+rules_version = '2';
+
+// Lina Culture Platform — Firestore 보안 규칙
+// 클라이언트(UI) 가드와 별개로, 실제 접근 제어는 이 규칙에서 강제한다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // 마스터(관리자) 계정. firebase-config.js의 ADMIN_EMAIL과 동일해야 한다.
+    function isMaster() {
+      return isSignedIn() && request.auth.token.email == 'rhokoo7@naver.com';
+    }
+
+    function isApproved() {
+      return isSignedIn() &&
+        (isMaster() ||
+         exists(/databases/$(database)/documents/approvedUsers/$(request.auth.uid)));
+    }
+
+    // 개인 Pulse 데이터셋: 승인된 본인만 읽기/쓰기
+    match /users/{uid}/pulseDatasets/{datasetId} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid && isApproved();
+    }
+
+    // 가입 신청: 본인이 자기 신청서 생성·조회, 마스터가 검토·삭제
+    match /pendingUsers/{uid} {
+      allow create: if isSignedIn() && request.auth.uid == uid;
+      allow read:   if isSignedIn() && (request.auth.uid == uid || isMaster());
+      allow update, delete: if isMaster();
+    }
+
+    // 승인 명단: 본인 조회, 마스터만 쓰기
+    match /approvedUsers/{uid} {
+      allow read:  if isSignedIn() && (request.auth.uid == uid || isMaster());
+      allow write: if isMaster();
+    }
+  }
+}

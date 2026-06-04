@@ -794,7 +794,8 @@
           "fav25": 60.4
         }
       ],
-      "tier": "stable"
+      "tier": "stable",
+      "orgId": "DATA_CONTROL"
     },
     {
       "name": "DigitalSales",
@@ -969,7 +970,8 @@
           "fav25": 51.2
         }
       ],
-      "tier": "risk"
+      "tier": "risk",
+      "orgId": "DIGITAL_SALES"
     },
     {
       "name": "DT운영본부",
@@ -1144,7 +1146,8 @@
           "fav25": 51.2
         }
       ],
-      "tier": "risk"
+      "tier": "risk",
+      "orgId": "INFRA_SERVICE"
     },
     {
       "name": "DT혁신본부/CISO",
@@ -1319,7 +1322,8 @@
           "fav25": 51.2
         }
       ],
-      "tier": "risk"
+      "tier": "risk",
+      "orgId": "CISO"
     },
     {
       "name": "GA영업본부",
@@ -1494,7 +1498,8 @@
           "fav25": 59.6
         }
       ],
-      "tier": "risk"
+      "tier": "risk",
+      "orgId": "GA_SALES"
     },
     {
       "name": "경영관리본부",
@@ -1669,7 +1674,8 @@
           "fav25": 59.2
         }
       ],
-      "tier": "watch"
+      "tier": "watch",
+      "orgId": "STRATEGY_MGMT"
     },
     {
       "name": "계리RM본부",
@@ -1844,7 +1850,8 @@
           "fav25": 55.8
         }
       ],
-      "tier": "stable"
+      "tier": "stable",
+      "orgId": "RM"
     },
     {
       "name": "계약서비스본부",
@@ -2019,7 +2026,8 @@
           "fav25": 46.4
         }
       ],
-      "tier": "watch"
+      "tier": "watch",
+      "orgId": "INSURANCE_DEV"
     },
     {
       "name": "고객경험혁신본부CE",
@@ -2194,7 +2202,8 @@
           "fav25": 46.4
         }
       ],
-      "tier": "check"
+      "tier": "check",
+      "orgId": "OPERATION"
     },
     {
       "name": "고객경험혁신본부본사",
@@ -2369,7 +2378,8 @@
           "fav25": 46.4
         }
       ],
-      "tier": "watch"
+      "tier": "watch",
+      "orgId": "OPERATION"
     },
     {
       "name": "고객솔루션본부UW",
@@ -2544,7 +2554,8 @@
           "fav25": 47.6
         }
       ],
-      "tier": "risk"
+      "tier": "risk",
+      "orgId": "CUSTOMER_SOLUTION"
     },
     {
       "name": "고객솔루션본부상품/헬스",
@@ -2719,7 +2730,8 @@
           "fav25": 47.6
         }
       ],
-      "tier": "watch"
+      "tier": "watch",
+      "orgId": "CUSTOMER_SOLUTION"
     },
     {
       "name": "대면영업지원본부",
@@ -2894,7 +2906,8 @@
           "fav25": null
         }
       ],
-      "tier": "stable"
+      "tier": "stable",
+      "orgId": "FACE_SALES_SUPPORT"
     },
     {
       "name": "법무/준법/감사/대외협력",
@@ -3069,7 +3082,8 @@
           "fav25": 63
         }
       ],
-      "tier": "stable"
+      "tier": "stable",
+      "orgId": "LEGAL_COMPLIANCE"
     },
     {
       "name": "소비자보호본부",
@@ -3244,7 +3258,8 @@
           "fav25": 63
         }
       ],
-      "tier": "risk"
+      "tier": "risk",
+      "orgId": "CONSUMER_PROTECTION"
     },
     {
       "name": "인사관리부문",
@@ -3419,7 +3434,8 @@
           "fav25": 70.8
         }
       ],
-      "tier": "stable"
+      "tier": "stable",
+      "orgId": "HR"
     },
     {
       "name": "재무관리회계투자본부",
@@ -3594,7 +3610,8 @@
           "fav25": 55.8
         }
       ],
-      "tier": "watch"
+      "tier": "watch",
+      "orgId": "FINANCE"
     },
     {
       "name": "채널전략본부",
@@ -3769,7 +3786,8 @@
           "fav25": 60.4
         }
       ],
-      "tier": "watch"
+      "tier": "watch",
+      "orgId": "CHANNEL_STRATEGY"
     }
   ],
   "meta": {
