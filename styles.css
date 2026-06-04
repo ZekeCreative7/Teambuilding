@@ -1666,3 +1666,104 @@ input[type="checkbox"] {
 .pulse-readout.pulse-check { --tone: var(--violet); }
 .pulse-readout[class*="pulse-"] .pulse-readout-item:first-child strong { color: var(--tone, var(--ink-strong)); }
 .detail-foot { color: var(--muted); font-size: 11.5px; line-height: 1.45; margin: 0; }
+
+/* ====================================================================
+   Pulse 상태 정의 · 키워드 · 더 화려한 조직 카드
+   ==================================================================== */
+
+/* 상태별 카드 배경 틴트 + 상단 액센트 (Pulse가 있으면 risk보다 우선) */
+.unit-card.tone-stable { background: linear-gradient(180deg, rgba(16,185,129,0.12), rgba(255,255,255,0.94) 58%); }
+.unit-card.tone-watch  { background: linear-gradient(180deg, rgba(248,178,26,0.14), rgba(255,255,255,0.94) 58%); }
+.unit-card.tone-risk   { background: linear-gradient(180deg, rgba(244,63,94,0.12), rgba(255,255,255,0.94) 58%); }
+.unit-card.tone-check  { background: linear-gradient(180deg, rgba(109,93,252,0.12), rgba(255,255,255,0.94) 58%); }
+.unit-card.tone-stable::before { background: linear-gradient(90deg, var(--mint), var(--cyan)); }
+.unit-card.tone-watch::before  { background: linear-gradient(90deg, var(--gold), #f97316); }
+.unit-card.tone-risk::before   { background: linear-gradient(90deg, var(--rose), #fb7185); }
+.unit-card.tone-check::before  { background: linear-gradient(90deg, #a78bfa, var(--violet)); }
+
+/* 상태별 컬러 글로우 (hover/선택 시) */
+.unit-card.tone-stable:hover, .unit-card.tone-stable.selected { border-color: rgba(16,185,129,0.5);  box-shadow: 0 24px 56px rgba(16,185,129,0.22), var(--inner-glow); }
+.unit-card.tone-watch:hover,  .unit-card.tone-watch.selected  { border-color: rgba(248,178,26,0.55); box-shadow: 0 24px 56px rgba(248,178,26,0.24), var(--inner-glow); }
+.unit-card.tone-risk:hover,   .unit-card.tone-risk.selected   { border-color: rgba(244,63,94,0.55);  box-shadow: 0 24px 56px rgba(244,63,94,0.24), var(--inner-glow); }
+.unit-card.tone-check:hover,  .unit-card.tone-check.selected  { border-color: rgba(167,139,250,0.6); box-shadow: 0 24px 56px rgba(109,93,252,0.24), var(--inner-glow); }
+
+/* 카드 헤더의 상태 점 */
+.unit-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 3px rgba(255,255,255,0.7), 0 1px 4px rgba(15,23,42,0.18); }
+.unit-dot.tone-stable { background: var(--mint); }
+.unit-dot.tone-watch  { background: var(--gold); }
+.unit-dot.tone-risk   { background: var(--rose); }
+.unit-dot.tone-check  { background: var(--violet); }
+
+/* Pulse 분석으로 정의한 조직 상태 배너 */
+.unit-state {
+  display: flex; align-items: baseline; gap: 7px;
+  padding: 7px 10px; border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 11px; line-height: 1.2;
+}
+.unit-state b { font-size: 12.5px; font-weight: 950; letter-spacing: -0.01em; }
+.unit-state span { color: var(--muted); font-weight: 750; }
+.unit-state.pulse-stable { background: rgba(16,185,129,0.13);  border-color: rgba(16,185,129,0.28); }
+.unit-state.pulse-stable b { color: #047857; }
+.unit-state.pulse-watch  { background: rgba(248,178,26,0.15);  border-color: rgba(248,178,26,0.32); }
+.unit-state.pulse-watch b { color: #b45309; }
+.unit-state.pulse-risk   { background: rgba(244,63,94,0.12);   border-color: rgba(244,63,94,0.3); }
+.unit-state.pulse-risk b { color: #be123c; }
+.unit-state.pulse-check  { background: rgba(109,93,252,0.12);  border-color: rgba(167,139,250,0.34); }
+.unit-state.pulse-check b { color: #5b21b6; }
+.unit-state.read-low    { background: rgba(148,163,184,0.14); border-color: rgba(148,163,184,0.3); }
+.unit-state.read-low b  { color: #475569; }
+.unit-state.read-medium { background: rgba(248,178,26,0.13);  border-color: rgba(248,178,26,0.3); }
+.unit-state.read-medium b { color: #b45309; }
+.unit-state.read-high   { background: rgba(244,63,94,0.12);   border-color: rgba(244,63,94,0.3); }
+.unit-state.read-high b { color: #be123c; }
+
+/* 직접 입력한 키워드 칩 */
+.unit-keywords { display: flex; flex-wrap: wrap; gap: 5px; }
+.unit-keywords .kw {
+  padding: 2px 9px; border-radius: 999px;
+  font-size: 10.5px; font-weight: 850;
+  color: #5b21b6;
+  background: linear-gradient(135deg, rgba(109,93,252,0.14), rgba(20,184,166,0.12));
+  border: 1px solid rgba(167,139,250,0.3);
+}
+.field-hint { color: var(--muted-2); font-weight: 750; font-size: 10.5px; }
+
+/* 살짝 두꺼운 점수 막대 + 광택 */
+.score-bar { height: 8px; box-shadow: inset 0 1px 2px rgba(15,23,42,0.08); }
+.score-bar i { box-shadow: 0 0 10px rgba(109,93,252,0.45); }
+
+/* 상태별 색상 필터 칩 */
+.filter-strip .flt {
+  position: relative; display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 12px 6px 11px; border-radius: 999px;
+  border: 1px solid rgba(203,213,225,0.8);
+  background: rgba(255,255,255,0.7);
+  font-size: 12px; font-weight: 850; color: #475569;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.filter-strip .flt::before { content: ""; width: 9px; height: 9px; border-radius: 50%; }
+.filter-strip .flt input { margin: 0; }
+.flt-stable::before { background: var(--mint); }
+.flt-watch::before  { background: var(--gold); }
+.flt-risk::before   { background: var(--rose); }
+.flt-check::before  { background: var(--violet); }
+.filter-strip .flt:has(input:checked) { color: var(--ink-strong); }
+.flt-stable:has(input:checked) { background: rgba(16,185,129,0.16); border-color: rgba(16,185,129,0.5); box-shadow: 0 6px 16px rgba(16,185,129,0.18); }
+.flt-watch:has(input:checked)  { background: rgba(248,178,26,0.18); border-color: rgba(248,178,26,0.55); box-shadow: 0 6px 16px rgba(248,178,26,0.2); }
+.flt-risk:has(input:checked)   { background: rgba(244,63,94,0.15);  border-color: rgba(244,63,94,0.5);  box-shadow: 0 6px 16px rgba(244,63,94,0.18); }
+.flt-check:has(input:checked)  { background: rgba(109,93,252,0.15); border-color: rgba(167,139,250,0.55); box-shadow: 0 6px 16px rgba(109,93,252,0.18); }
+
+/* 조직도 캔버스에 은은한 컬러 배경으로 입체감 */
+.org-canvas {
+  background:
+    radial-gradient(60% 60% at 12% 0%, rgba(109,93,252,0.07), transparent 70%),
+    radial-gradient(50% 50% at 100% 100%, rgba(20,184,166,0.07), transparent 70%);
+}
+
+/* 지표 카드 숫자에 그라데이션으로 생동감 */
+.metric-card strong {
+  background: linear-gradient(135deg, var(--violet), var(--blue) 60%, var(--cyan));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

@@ -454,7 +454,7 @@ function loadState() {
         expandedUnitIds: parsed.expandedUnitIds || getDefaultExpandedIds(),
         detailOpen: false,
         search: parsed.search || "",
-        filters: parsed.filters || { risk: false, ambassador: false, fatigue: false, isolated: false },
+        filters: parsed.filters || { healthy: false, watch: false, support: false, review: false },
       };
     }
   } catch (error) {
@@ -536,10 +536,10 @@ function getParentName(unit) {
 function hasActiveRefinement() {
   return Boolean(
     state.search.trim() ||
-      state.filters.risk ||
-      state.filters.ambassador ||
-      state.filters.fatigue ||
-      state.filters.isolated,
+      state.filters.healthy ||
+      state.filters.watch ||
+      state.filters.support ||
+      state.filters.review,
   );
 }
 
@@ -795,10 +795,12 @@ function unitMatches(unit) {
   ].join(" ").toLowerCase();
 
   if (query && !text.includes(query)) return false;
-  if (state.filters.risk && unit.risk !== "high") return false;
-  if (state.filters.ambassador && unit.ambassadors < 1 && !people.some((person) => person.tags.includes("앰버서더 후보"))) return false;
-  if (state.filters.fatigue && unit.fatigue < 62 && !unit.tags.includes("피로도 높음")) return false;
-  if (state.filters.isolated && !unit.tags.includes("고립 신호")) return false;
+  // Pulse 분석으로 정의한 조직 상태 기준 필터 (선택된 상태 중 하나라도 일치하면 표시)
+  const activeStatus = ORG_STATUS_FILTERS.filter((f) => state.filters[f.key]).map((f) => f.key);
+  if (activeStatus.length) {
+    const def = pulseStatusDef(unit);
+    if (!def || !activeStatus.includes(def.key)) return false;
+  }
   return true;
 }
 
@@ -965,6 +967,26 @@ function pulseTierLabel(tier) {
   return { stable: "안정", watch: "주의", risk: "위험", check: "신뢰도 검토" }[tier] || tier || "";
 }
 
+// Pulse Survey 분석 결과로 조직의 상태(state)를 정의한다. 필터/카드에서 공통 사용.
+const ORG_STATUS_FILTERS = [
+  { key: "healthy", label: "긍정 안정" },
+  { key: "watch", label: "주의 관찰" },
+  { key: "support", label: "지원 시급" },
+  { key: "review", label: "신뢰도 검토" },
+];
+
+function pulseStatusDef(unit) {
+  const p = pulseForUnit(unit.id);
+  if (!p) return null;
+  if (p.reliab || p.tier === "check")
+    return { key: "review", label: "신뢰도 검토", note: "점수가 고점, 데이터 확인 필요", tone: "check" };
+  if (p.tier === "risk")
+    return { key: "support", label: "지원 시급", note: `긍정 ${p.fav}% · 부정 ${p.low}%`, tone: "risk" };
+  if (p.tier === "watch")
+    return { key: "watch", label: "주의 관찰", note: `긍정 ${p.fav}% · 추세 관찰`, tone: "watch" };
+  return { key: "healthy", label: "긍정 안정", note: `긍정 ${p.fav}% · 부정 낮음`, tone: "stable" };
+}
+
 function renderUnitCard(unit, childCount = 0) {
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
   const selected = unit.id === state.selectedUnitId ? "selected" : "";
@@ -977,23 +999,34 @@ function renderUnitCard(unit, childCount = 0) {
   const score = pulse ? pulse.fav : unit.readiness;
   const scoreLabel = pulse ? "Pulse 긍정" : "변화 수용도";
   const scoreSuffix = pulse ? "%" : "";
-  const toneClass = pulse ? `pulse-${pulse.tier}` : `read-${unit.risk}`;
-  const badge = pulse
-    ? `<span class="pulse-chip pulse-${pulse.tier}">${escapeHtml(pulseTierLabel(pulse.tier))}</span>`
-    : `<span class="risk-pill risk-${unit.risk}">${escapeHtml(formatRisk(unit.risk))}</span>`;
+  const status = pulseStatusDef(unit);
+  const tone = status ? status.tone : null;
+  const cardTone = tone ? `tone-${tone}` : "";
+  const scoreTone = tone ? `pulse-${tone}` : `read-${unit.risk}`;
+  // Pulse 기반 상태 정의 배너 (없으면 변화 수용도 기준으로 대체)
+  const stateBanner = status
+    ? `<div class="unit-state pulse-${status.tone}"><b>${escapeHtml(status.label)}</b><span>${escapeHtml(status.note)}</span></div>`
+    : `<div class="unit-state read-${unit.risk}"><b>${escapeHtml(formatRisk(unit.risk))}</b><span>변화 수용도 ${unit.readiness} 기준</span></div>`;
+  // 직접 입력한 키워드(태그)
+  const keywords = (unit.tags || []).filter(Boolean);
+  const keywordRow = keywords.length
+    ? `<div class="unit-keywords">${keywords.slice(0, 3).map((tag) => `<span class="kw">${escapeHtml(tag)}</span>`).join("")}</div>`
+    : "";
   return `
-    <article class="unit-card risk-${unit.risk} ${selected} ${inPath}" draggable="${unit.level !== "company"}" data-unit-card="${escapeHtml(unit.id)}" data-drag-unit-id="${escapeHtml(unit.id)}" data-drop-unit-id="${escapeHtml(unit.id)}">
+    <article class="unit-card ${cardTone} risk-${unit.risk} ${selected} ${inPath}" draggable="${unit.level !== "company"}" data-unit-card="${escapeHtml(unit.id)}" data-drag-unit-id="${escapeHtml(unit.id)}" data-drop-unit-id="${escapeHtml(unit.id)}">
       <button class="unit-card-main" type="button" data-open-detail="${escapeHtml(unit.id)}" aria-label="${escapeHtml(unit.name)} 상세 정보 열기">
         <div class="unit-kicker">
           <span>${escapeHtml(displayOrgType(unit))}</span>
-          ${badge}
+          ${tone ? `<span class="unit-dot tone-${tone}"></span>` : ""}
         </div>
         <strong class="unit-name">${escapeHtml(unit.name)}</strong>
         <div class="unit-sub">${escapeHtml(unit.leader)}${unit.leaderTitle ? " " + escapeHtml(leaderTitleLabel(unit.leaderTitle)) : ""} · ${headcount}명</div>
-        <div class="unit-score ${toneClass}">
+        <div class="unit-score ${scoreTone}">
           <div class="score-head"><span>${scoreLabel}</span><b>${score}${scoreSuffix}</b></div>
           <div class="score-bar"><i style="width:${clamp(score, 0, 100)}%"></i></div>
         </div>
+        ${stateBanner}
+        ${keywordRow}
       </button>
       ${
         childCount
@@ -1343,6 +1376,10 @@ function renderDetail() {
             <option value="medium" ${unit.risk === "medium" ? "selected" : ""}>관찰</option>
             <option value="high" ${unit.risk === "high" ? "selected" : ""}>지원 필요</option>
           </select>
+        </label>
+        <label>
+          키워드 <small class="field-hint">쉼표로 구분해 직접 입력 · 카드에 표시</small>
+          <input id="editUnitTags" type="text" value="${escapeHtml((unit.tags || []).join(", "))}" placeholder="예: 신뢰 안정, 변화 주도, 협업 강점" />
         </label>
         <button class="primary-button wide" type="submit">저장</button>
       </form>
@@ -1702,6 +1739,14 @@ document.addEventListener("submit", (event) => {
     unit.trust = Number(document.getElementById("editTrust").value);
     unit.fatigue = Number(document.getElementById("editFatigue").value);
     unit.risk = document.getElementById("editRisk").value;
+    const tagsInput = document.getElementById("editUnitTags");
+    if (tagsInput) {
+      unit.tags = tagsInput.value
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .slice(0, 6);
+    }
     syncLeaderPersonTitle(unit);
     refreshSourcePaths(unit.id);
     render();

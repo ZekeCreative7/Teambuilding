@@ -786,8 +786,8 @@ function buildDataFromRows(rows){
   let next={company:{questions,cats:[]},divisions,meta:{}};return enrichData(next);
 }
 function showInitialView(){
-  let initial=(location.hash||'#home').slice(1);
-  if(!document.getElementById(initial))initial='home';
+  let initial=(location.hash||'#people').slice(1);
+  if(!document.getElementById(initial))initial='people';
   showView(initial,true);
   setTimeout(()=>{let again=(location.hash||'#'+initial).slice(1);if(document.getElementById(again))showView(again,true);},0);
 }

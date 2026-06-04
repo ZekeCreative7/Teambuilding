@@ -14,16 +14,16 @@
     <div class="app-shell" id="appRoot" style="display:none">
       <aside class="sidebar" aria-label="주요 메뉴">
         <div class="brand-block" role="button" tabindex="0" title="Culture Dashboard로 이동" onclick="showView('home')" onkeydown="if(event.key==='Enter'||event.key===' ')showView('home')">
-          <img class="brand-mark" src="assets/lina_logo.png" alt="Lina" />
+          <img class="brand-mark" src="lina_logo.png" alt="Lina" />
           <div>
             <p class="eyebrow">Culture OS</p>
             <h1>Lina Culture Platform</h1>
           </div>
         </div>
         <nav class="nav-list">
-          <button class="nav-item active" data-view="home" type="button" onclick="showView('home')"><span class="mark"></span>Culture Dashboard</button>
+          <button class="nav-item" data-view="home" type="button" onclick="showView('home')"><span class="mark"></span>Culture Dashboard</button>
           <button class="nav-item" data-view="pulse" type="button" onclick="showView('pulse')"><span class="mark"></span>Culture Intelligence</button>
-          <button class="nav-item" data-view="people" type="button" onclick="showView('people')"><span class="mark"></span>People &amp; Organization</button>
+          <button class="nav-item active" data-view="people" type="button" onclick="showView('people')"><span class="mark"></span>People &amp; Organization</button>
           <button class="nav-item" data-view="session" type="button" onclick="showView('session')"><span class="mark"></span>Campaign Studio</button>
           <button class="nav-item" data-view="speech" type="button" onclick="showView('speech')"><span class="mark"></span>Message Center</button>
           <button class="nav-item" data-view="data" type="button" onclick="showView('data')"><span class="mark"></span>데이터 / Firebase 관리</button>
@@ -41,7 +41,7 @@
       </aside>
 
       <main class="workspace">
-    <section id="home" class="view active">
+    <section id="home" class="view">
       <div class="dashTop">
         <div class="dashIntro">
           <div>
@@ -218,7 +218,7 @@
       </div>
     </section>
 
-    <section id="people" class="view">
+    <section id="people" class="view active">
       <header class="topbar">
         <div>
           <p class="eyebrow">People &amp; Organization</p>
@@ -243,11 +243,11 @@
           <button class="segment" data-view="network" type="button">문화 확산 맵</button>
           <button class="segment" data-view="groups" type="button">타겟 그룹</button>
         </div>
-        <div class="filter-strip" aria-label="필터">
-          <label><input type="checkbox" data-filter="risk" /> 리스크 우선</label>
-          <label><input type="checkbox" data-filter="ambassador" /> 앰버서더 후보</label>
-          <label><input type="checkbox" data-filter="fatigue" /> 피로도 높음</label>
-          <label><input type="checkbox" data-filter="isolated" /> 고립 신호</label>
+        <div class="filter-strip" aria-label="Pulse 상태 필터">
+          <label class="flt flt-stable"><input type="checkbox" data-filter="healthy" /> 긍정 안정</label>
+          <label class="flt flt-watch"><input type="checkbox" data-filter="watch" /> 주의 관찰</label>
+          <label class="flt flt-risk"><input type="checkbox" data-filter="support" /> 지원 시급</label>
+          <label class="flt flt-check"><input type="checkbox" data-filter="review" /> 신뢰도 검토</label>
         </div>
       </section>
 
