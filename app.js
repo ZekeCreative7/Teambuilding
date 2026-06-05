@@ -1120,13 +1120,14 @@ function renderUnitCard(unit, childCount = 0) {
   const score = pulse ? pulse.fav : unit.readiness;
   const scoreLabel = pulse ? "Pulse 긍정" : "변화 수용도";
   const scoreSuffix = pulse ? "%" : "";
-  // 리더: 부문장/본부장/팀장 등 직책 + 직급 + 이름 (리더라는 표기 대신)
+  // 리더: 이름(크게/굵게) + 직급(전무·상무·이사) · 직무(부문장·본부장·팀장)
   const hasLeader = unit.leader && unit.leader !== "미정" && unit.leader !== "리더 미정";
-  const role = unit.leaderRole || "리더";
-  const titleTxt = unit.leaderTitle ? leaderTitleLabel(unit.leaderTitle) : "";
-  const roleLine = hasLeader
-    ? `${escapeHtml(role)}${titleTxt ? " · " + escapeHtml(titleTxt) : ""} · ${escapeHtml(unit.leader)}`
-    : `${escapeHtml(role)} 미정`;
+  const role = unit.leaderRole || "리더"; // 직무
+  const titleTxt = unit.leaderTitle ? leaderTitleLabel(unit.leaderTitle) : ""; // 직급
+  const leaderMeta = [titleTxt, role].filter(Boolean).join(" · ");
+  const leaderBlock = hasLeader
+    ? `<span class="unit-leader"><b class="leader-name">${escapeHtml(unit.leader)}</b><span class="leader-meta">${escapeHtml(leaderMeta)}</span></span>`
+    : `<span class="unit-leader"><span class="leader-meta">${escapeHtml(role)} 미정</span></span>`;
   const avSeed = hasLeader ? unit.leader : unit.name;
   const initial = unitInitial(hasLeader ? unit.leader : unit.name) || (unit.name || "·").charAt(0);
   const avatar = unit.photo
@@ -1145,7 +1146,7 @@ function renderUnitCard(unit, childCount = 0) {
         <span class="unit-head-main">
           <span class="unit-kicker"><span>${escapeHtml(displayOrgType(unit))}</span>${tone ? `<span class="unit-dot tone-${tone}"></span>` : ""}</span>
           <strong class="unit-name">${escapeHtml(unit.name)}</strong>
-          <span class="unit-sub">${roleLine}</span>
+          ${leaderBlock}
         </span>
         <span class="card-caret">${open ? "▴" : "▾"}</span>
       </button>
@@ -1229,7 +1230,13 @@ function renderOrgInspector(unit) {
 
       <section class="inspector-section">
         <h4>리더</h4>
-        <p>${escapeHtml(unit.leader)} · 직급 ${escapeHtml(leaderTitleLabel(unit.leaderTitle))}</p>
+        <div class="inspector-leader">
+          ${personAvatar({ name: unit.leader, photo: unit.photo })}
+          <div>
+            <strong>${escapeHtml(unit.leader)}</strong>
+            <span>${[leaderTitleLabel(unit.leaderTitle), unit.leaderRole].filter(Boolean).map(escapeHtml).join(" · ")}</span>
+          </div>
+        </div>
       </section>
 
       <section class="inspector-section">
@@ -1263,22 +1270,29 @@ function renderOrgInspector(unit) {
   `;
 }
 
+function personAvatar(person, cls = "member-avatar") {
+  const initial = unitInitial(person.name) || (person.name || "·").charAt(0);
+  return person.photo
+    ? `<span class="${cls} has-photo"><img src="${escapeHtml(person.photo)}" alt="${escapeHtml(person.name)}" /></span>`
+    : `<span class="${cls}" style="--av:${avatarColor(person.name)}">${escapeHtml(initial)}</span>`;
+}
+
 function renderInspectorMemberRow(person) {
   return `
-    <article class="inspector-member-row">
+    <article class="inspector-member-row" draggable="true" data-drag-person-id="${escapeHtml(person.id)}" title="드래그해서 다른 팀으로 이동">
       <div class="member-line-main">
+        <span class="drag-grip" aria-hidden="true">⠿</span>
+        ${personAvatar(person)}
         <div>
           <strong>${escapeHtml(person.name)}</strong>
           <span>${escapeHtml(person.position)} · 직급 ${escapeHtml(leaderTitleLabel(person.title))}</span>
         </div>
-        <button type="button" class="member-delete-button" data-delete-person="${escapeHtml(person.id)}" aria-label="${escapeHtml(person.name)} 삭제">삭제</button>
+        <div class="member-actions">
+          <label class="photo-up sm" title="${escapeHtml(person.name)} 사진 업로드"><input type="file" accept="image/*" data-photo-person="${escapeHtml(person.id)}" hidden />${person.photo ? "변경" : "사진"}</label>
+          ${person.photo ? `<button type="button" class="photo-rm sm" data-remove-person-photo="${escapeHtml(person.id)}">제거</button>` : ""}
+          <button type="button" class="member-delete-button" data-delete-person="${escapeHtml(person.id)}" aria-label="${escapeHtml(person.name)} 삭제">삭제</button>
+        </div>
       </div>
-      <label>
-        소속 이동
-        <select data-move-person="${escapeHtml(person.id)}">
-          ${renderPersonTargetOptions(person)}
-        </select>
-      </label>
     </article>
   `;
 }
@@ -1859,6 +1873,16 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const removePersonPhotoButton = event.target.closest("[data-remove-person-photo]");
+  if (removePersonPhotoButton) {
+    const person = state.people.find((p) => p.id === removePersonPhotoButton.dataset.removePersonPhoto);
+    if (person) {
+      person.photo = "";
+      render();
+    }
+    return;
+  }
+
   const detailButton = event.target.closest("[data-open-detail]");
   if (detailButton) {
     openDetail(detailButton.dataset.openDetail);
@@ -2070,6 +2094,21 @@ document.addEventListener("change", (event) => {
     return;
   }
 
+  const personPhotoInput = event.target.closest("[data-photo-person]");
+  if (personPhotoInput && personPhotoInput.files && personPhotoInput.files[0]) {
+    const personId = personPhotoInput.dataset.photoPerson;
+    readImageDownscaled(personPhotoInput.files[0], 128)
+      .then((dataUrl) => {
+        const person = state.people.find((p) => p.id === personId);
+        if (person) {
+          person.photo = dataUrl;
+          render();
+        }
+      })
+      .catch(() => {});
+    return;
+  }
+
   const personTitleInput = event.target.closest("[data-edit-person-title]");
   if (personTitleInput) {
     if (updatePersonTitle(personTitleInput.dataset.editPersonTitle, personTitleInput.value)) {
@@ -2227,6 +2266,15 @@ document.addEventListener("dragstart", (event) => {
     return;
   }
 
+  const personSource = event.target.closest("[data-drag-person-id]");
+  if (personSource) {
+    activeDragPayload = { action: "move-person", personId: personSource.dataset.dragPersonId };
+    event.dataTransfer.setData("application/json", JSON.stringify(activeDragPayload));
+    event.dataTransfer.effectAllowed = "move";
+    personSource.classList.add("dragging");
+    return;
+  }
+
   const unitSource = event.target.closest("[data-drag-unit-id]");
   if (unitSource) {
     activeDragPayload = { action: "move", unitId: unitSource.dataset.dragUnitId };
@@ -2254,7 +2302,9 @@ document.addEventListener("dragover", (event) => {
   const allowed =
     payload.action === "create"
       ? canCreateUnder(payload.level, parent)
-      : canMoveUnit(getUnit(payload.unitId), parent);
+      : payload.action === "move-person"
+        ? Boolean(parent && parent.level !== "company")
+        : canMoveUnit(getUnit(payload.unitId), parent);
 
   if (!allowed) return;
   event.preventDefault();
@@ -2282,6 +2332,8 @@ document.addEventListener("drop", (event) => {
     changed = Boolean(createUnit(payload.level, parentId));
   } else if (payload.action === "move") {
     changed = moveUnit(payload.unitId, parentId);
+  } else if (payload.action === "move-person") {
+    changed = movePerson(payload.personId, parentId);
   }
 
   if (changed) render();
