@@ -12,21 +12,26 @@
   </head>
   <body>
     <div class="app-shell" id="appRoot" style="display:none">
+      <button class="nav-fab" type="button" aria-label="메뉴 열기" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+      <div class="nav-backdrop" onclick="closeMobileNav()"></div>
       <aside class="sidebar" aria-label="주요 메뉴">
-        <div class="brand-block" role="button" tabindex="0" title="Culture Dashboard로 이동" onclick="showView('home')" onkeydown="if(event.key==='Enter'||event.key===' ')showView('home')">
-          <img class="brand-mark" src="lina_logo.png" alt="Lina" />
-          <div>
-            <p class="eyebrow">Culture OS</p>
-            <h1>Lina Culture Platform</h1>
+        <div class="brand-row">
+          <div class="brand-block" role="button" tabindex="0" title="Culture Dashboard로 이동" onclick="showView('home')" onkeydown="if(event.key==='Enter'||event.key===' ')showView('home')">
+            <img class="brand-mark" src="lina_logo.png" alt="Lina" />
+            <div class="brand-text">
+              <p class="eyebrow">Culture OS</p>
+              <h1>Lina Culture Platform</h1>
+            </div>
           </div>
+          <button class="nav-toggle" type="button" aria-label="메뉴 접기/펼치기" title="메뉴 접기/펼치기" onclick="toggleSidebar()"><span class="nav-toggle-ico">‹</span></button>
         </div>
         <nav class="nav-list">
-          <button class="nav-item" data-view="home" type="button" onclick="showView('home')"><span class="mark"></span>Culture Dashboard</button>
-          <button class="nav-item" data-view="pulse" type="button" onclick="showView('pulse')"><span class="mark"></span>Culture Intelligence</button>
-          <button class="nav-item active" data-view="people" type="button" onclick="showView('people')"><span class="mark"></span>People &amp; Organization</button>
-          <button class="nav-item" data-view="session" type="button" onclick="showView('session')"><span class="mark"></span>Campaign Studio</button>
-          <button class="nav-item" data-view="speech" type="button" onclick="showView('speech')"><span class="mark"></span>Message Center</button>
-          <button class="nav-item" data-view="data" type="button" onclick="showView('data')"><span class="mark"></span>데이터 / Firebase 관리</button>
+          <button class="nav-item" data-view="home" type="button" title="Culture Dashboard" onclick="showView('home')"><span class="nav-ico">DB</span><span class="nav-label">Culture Dashboard</span></button>
+          <button class="nav-item" data-view="pulse" type="button" title="Culture Intelligence" onclick="showView('pulse')"><span class="nav-ico">CI</span><span class="nav-label">Culture Intelligence</span></button>
+          <button class="nav-item active" data-view="people" type="button" title="People &amp; Organization" onclick="showView('people')"><span class="nav-ico">PO</span><span class="nav-label">People &amp; Organization</span></button>
+          <button class="nav-item" data-view="session" type="button" title="Campaign Studio" onclick="showView('session')"><span class="nav-ico">CS</span><span class="nav-label">Campaign Studio</span></button>
+          <button class="nav-item" data-view="speech" type="button" title="Message Center" onclick="showView('speech')"><span class="nav-ico">MC</span><span class="nav-label">Message Center</span></button>
+          <button class="nav-item" data-view="data" type="button" title="데이터 / Firebase 관리" onclick="showView('data')"><span class="nav-ico">DF</span><span class="nav-label">데이터 / Firebase 관리</span></button>
         </nav>
         <div id="accountBar" class="sideAccount" style="display:none">
           <span id="authWho" class="acctWho"></span>

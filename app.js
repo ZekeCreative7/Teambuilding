@@ -1,4 +1,4 @@
-const STORAGE_KEY = "culture-platform-organization-v3";
+const STORAGE_KEY = "culture-platform-organization-v4";
 
 const seedUnits = window.LINA_ORG_UNITS || [
   {
@@ -456,6 +456,7 @@ function loadState() {
         orgZoom: parsed.orgZoom || 0.72,
         networkLevel: parsed.networkLevel || "team",
         expandedUnitIds: parsed.expandedUnitIds || getDefaultExpandedIds(),
+        openCardIds: parsed.openCardIds || [],
         detailOpen: false,
         detailModal: null,
         search: parsed.search || "",
@@ -476,6 +477,7 @@ function loadState() {
     orgZoom: 0.72,
     networkLevel: "team",
     expandedUnitIds: getDefaultExpandedIds(),
+    openCardIds: [],
     detailOpen: false,
     detailModal: null,
     search: "",
@@ -948,7 +950,7 @@ function renderOfficialView() {
       <div>
         <p class="eyebrow">Organization Structure</p>
         <h3>조직도</h3>
-        <p>카드의 <b>+</b> 버튼으로 하위 조직을 펼치고, 카드를 누르면 Pulse 신호와 상세 정보가 열립니다.</p>
+        <p>카드를 누르면 아래로 펼쳐져 진행 현황(타운홀·Pulse·WOW×BALANCE·팀 설문)과 상태 바가 보입니다. <b>+</b> 버튼으로 하위 조직을 펼칩니다.</p>
       </div>
       <div class="panel-actions">
         <div class="zoom-controls" aria-label="조직도 줌">
@@ -1056,47 +1058,119 @@ function pulseStatusDef(unit) {
   return { key: "healthy", label: "긍정 안정", note: `긍정 ${p.fav}% · 부정 낮음`, tone: "stable" };
 }
 
+// 아바타: 리더 성(姓) 이니셜 + 이름 해시 기반 배경색 (사진은 unit.photo로 추후 교체)
+function unitInitial(name) {
+  const n = (name || "").trim();
+  if (!n || n === "미정" || n === "리더 미정") return "";
+  return n.charAt(0);
+}
+function avatarColor(seed) {
+  let h = 0;
+  const s = seed || "";
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360} 58% 50%)`;
+}
+function isCardOpen(id) {
+  return Array.isArray(state.openCardIds) && state.openCardIds.includes(id);
+}
+// 업로드 이미지를 정사각형 썸네일(데이터 URL)로 축소 — localStorage 용량 절약
+function readImageDownscaled(file, max = 160) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = max;
+        canvas.height = max;
+        canvas.getContext("2d").drawImage(img, sx, sy, side, side, 0, 0, max, max);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+// 카드 열기 시 표시하는 진행 현황 칩 (pulseSurvey는 Pulse 데이터로 자동 판정)
+const ORG_STATUS_CHIPS = [
+  { key: "townhall", label: "타운홀", toggle: true },
+  { key: "pulseSurvey", label: "Pulse", toggle: false },
+  { key: "wowTeam", label: "WOW·팀", toggle: true },
+  { key: "wowLead", label: "WOW·팀장", toggle: true },
+  { key: "teamSurvey", label: "팀 설문", toggle: true },
+];
+
 function renderUnitCard(unit, childCount = 0) {
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
   const selected = unit.id === state.selectedUnitId ? "selected" : "";
   const selectedPath = new Set([state.selectedUnitId, ...getAncestorIds(state.selectedUnitId)]);
   const inPath = selectedPath.has(unit.id) ? "in-path" : "";
   const expanded = isExpanded(unit.id);
-  const headcount = people.length || unit.members;
+  const open = isCardOpen(unit.id);
   const pulse = pulseForUnit(unit.id);
-  // 카드 핵심 지표: Pulse Survey 긍정 응답이 있으면 우선 표시, 없으면 변화 수용도
-  const score = pulse ? pulse.fav : unit.readiness;
-  const scoreLabel = pulse ? "Pulse 긍정" : "변화 수용도";
-  const scoreSuffix = pulse ? "%" : "";
   const status = pulseStatusDef(unit);
   const tone = status ? status.tone : null;
   const cardTone = tone ? `tone-${tone}` : "";
   const scoreTone = tone ? `pulse-${tone}` : `read-${unit.risk}`;
-  // Pulse 기반 상태 정의 배너 (없으면 변화 수용도 기준으로 대체)
-  const stateBanner = status
-    ? `<div class="unit-state pulse-${status.tone}"><b>${escapeHtml(status.label)}</b><span>${escapeHtml(status.note)}</span></div>`
-    : `<div class="unit-state read-${unit.risk}"><b>${escapeHtml(formatRisk(unit.risk))}</b><span>변화 수용도 ${unit.readiness} 기준</span></div>`;
-  // 직접 입력한 키워드(태그)
+  const score = pulse ? pulse.fav : unit.readiness;
+  const scoreLabel = pulse ? "Pulse 긍정" : "변화 수용도";
+  const scoreSuffix = pulse ? "%" : "";
+  // 리더: 부문장/본부장/팀장 등 직책 + 직급 + 이름 (리더라는 표기 대신)
+  const hasLeader = unit.leader && unit.leader !== "미정" && unit.leader !== "리더 미정";
+  const role = unit.leaderRole || "리더";
+  const titleTxt = unit.leaderTitle ? leaderTitleLabel(unit.leaderTitle) : "";
+  const roleLine = hasLeader
+    ? `${escapeHtml(role)}${titleTxt ? " · " + escapeHtml(titleTxt) : ""} · ${escapeHtml(unit.leader)}`
+    : `${escapeHtml(role)} 미정`;
+  const avSeed = hasLeader ? unit.leader : unit.name;
+  const initial = unitInitial(hasLeader ? unit.leader : unit.name) || (unit.name || "·").charAt(0);
+  const avatar = unit.photo
+    ? `<span class="unit-avatar has-photo"><img src="${escapeHtml(unit.photo)}" alt="${escapeHtml(unit.leader)}" /></span>`
+    : `<span class="unit-avatar" style="--av:${avatarColor(avSeed)}">${escapeHtml(initial)}</span>`;
+  const chips = ORG_STATUS_CHIPS.map((c) => {
+    const on = c.key === "pulseSurvey" ? Boolean(pulse) || Boolean(unit.pulseSurvey) : Boolean(unit[c.key]);
+    const attrs = c.toggle ? `data-toggle-status="${c.key}" data-unit="${escapeHtml(unit.id)}"` : "disabled";
+    return `<button type="button" class="schip ${on ? "on" : ""}" ${attrs} title="${escapeHtml(c.label)} ${on ? "완료" : "미완료"}">${escapeHtml(c.label)}</button>`;
+  }).join("");
   const keywords = (unit.tags || []).filter(Boolean);
-  const keywordRow = keywords.length
-    ? `<div class="unit-keywords">${keywords.slice(0, 3).map((tag) => `<span class="kw">${escapeHtml(tag)}</span>`).join("")}</div>`
-    : "";
   return `
-    <article class="unit-card ${cardTone} risk-${unit.risk} ${selected} ${inPath}" draggable="${unit.level !== "company"}" data-unit-card="${escapeHtml(unit.id)}" data-drag-unit-id="${escapeHtml(unit.id)}" data-drop-unit-id="${escapeHtml(unit.id)}">
-      <button class="unit-card-main" type="button" data-open-detail="${escapeHtml(unit.id)}" aria-label="${escapeHtml(unit.name)} 상세 정보 열기">
-        <div class="unit-kicker">
-          <span>${escapeHtml(displayOrgType(unit))}</span>
-          ${tone ? `<span class="unit-dot tone-${tone}"></span>` : ""}
-        </div>
-        <strong class="unit-name">${escapeHtml(unit.name)}</strong>
-        <div class="unit-sub">${escapeHtml(unit.leader)}${unit.leaderTitle ? " " + escapeHtml(leaderTitleLabel(unit.leaderTitle)) : ""} · ${headcount}명</div>
-        <div class="unit-score ${scoreTone}">
-          <div class="score-head"><span>${scoreLabel}</span><b>${score}${scoreSuffix}</b></div>
-          <div class="score-bar"><i style="width:${clamp(score, 0, 100)}%"></i></div>
-        </div>
-        ${stateBanner}
-        ${keywordRow}
+    <article class="unit-card ${cardTone} risk-${unit.risk} ${selected} ${inPath} ${open ? "card-open" : ""}" draggable="${unit.level !== "company"}" data-unit-card="${escapeHtml(unit.id)}" data-drag-unit-id="${escapeHtml(unit.id)}" data-drop-unit-id="${escapeHtml(unit.id)}">
+      <button class="unit-head" type="button" data-card-open="${escapeHtml(unit.id)}" aria-expanded="${open}" aria-label="${escapeHtml(unit.name)} 카드 ${open ? "닫기" : "열기"}">
+        ${avatar}
+        <span class="unit-head-main">
+          <span class="unit-kicker"><span>${escapeHtml(displayOrgType(unit))}</span>${tone ? `<span class="unit-dot tone-${tone}"></span>` : ""}</span>
+          <strong class="unit-name">${escapeHtml(unit.name)}</strong>
+          <span class="unit-sub">${roleLine}</span>
+        </span>
+        <span class="card-caret">${open ? "▴" : "▾"}</span>
       </button>
+      ${
+        open
+          ? `<div class="unit-detail">
+              <div class="status-chips">${chips}</div>
+              <div class="unit-score ${scoreTone}">
+                <div class="score-head"><span>${scoreLabel}</span><b>${score}${scoreSuffix}</b></div>
+                <div class="score-bar"><i style="width:${clamp(score, 0, 100)}%"></i></div>
+              </div>
+              ${
+                status
+                  ? `<div class="unit-state pulse-${status.tone}"><b>${escapeHtml(status.label)}</b><span>${escapeHtml(status.note)}</span></div>`
+                  : `<div class="unit-state read-${unit.risk}"><b>${escapeHtml(formatRisk(unit.risk))}</b><span>변화 수용도 ${unit.readiness} 기준</span></div>`
+              }
+              ${keywords.length ? `<div class="unit-keywords">${keywords.slice(0, 4).map((t) => `<span class="kw">${escapeHtml(t)}</span>`).join("")}</div>` : ""}
+              <div class="card-foot">
+                <label class="photo-up" title="리더 사진 업로드"><input type="file" accept="image/*" data-photo-unit="${escapeHtml(unit.id)}" hidden />${unit.photo ? "사진 변경" : "사진 업로드"}</label>
+                ${unit.photo ? `<button class="photo-rm" type="button" data-remove-photo="${escapeHtml(unit.id)}">제거</button>` : ""}
+                <button class="card-detail-link" type="button" data-open-detail="${escapeHtml(unit.id)}">상세 · 편집 →</button>
+              </div>
+            </div>`
+          : ""
+      }
       ${
         childCount
           ? `<button class="expand-button ${expanded ? "expanded" : ""}" type="button" data-toggle-unit="${escapeHtml(unit.id)}" aria-label="${escapeHtml(unit.name)} 하위 조직 ${expanded ? "접기" : "펼치기"}" title="${expanded ? "하위 조직 접기" : "하위 조직 펼치기"}">
@@ -1287,7 +1361,7 @@ function drawOrgConnections() {
         <stop offset="100%" stop-color="#14b8a6" stop-opacity="0.48" />
       </linearGradient>
     </defs>
-    <g fill="none" stroke="url(#connectorGradient)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <g fill="none" stroke="url(#connectorGradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 7">
       ${paths}
     </g>
   `;
@@ -1753,6 +1827,38 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const cardOpenButton = event.target.closest("[data-card-open]");
+  if (cardOpenButton) {
+    const id = cardOpenButton.dataset.cardOpen;
+    if (!Array.isArray(state.openCardIds)) state.openCardIds = [];
+    state.openCardIds = state.openCardIds.includes(id)
+      ? state.openCardIds.filter((x) => x !== id)
+      : [...state.openCardIds, id];
+    render();
+    return;
+  }
+
+  const statusButton = event.target.closest("[data-toggle-status]");
+  if (statusButton) {
+    const targetUnit = getUnit(statusButton.dataset.unit);
+    const statusKey = statusButton.dataset.toggleStatus;
+    if (targetUnit && statusKey) {
+      targetUnit[statusKey] = !targetUnit[statusKey];
+      render();
+    }
+    return;
+  }
+
+  const removePhotoButton = event.target.closest("[data-remove-photo]");
+  if (removePhotoButton) {
+    const photoUnit = getUnit(removePhotoButton.dataset.removePhoto);
+    if (photoUnit) {
+      photoUnit.photo = "";
+      render();
+    }
+    return;
+  }
+
   const detailButton = event.target.closest("[data-open-detail]");
   if (detailButton) {
     openDetail(detailButton.dataset.openDetail);
@@ -1948,6 +2054,22 @@ document.addEventListener("input", (event) => {
 });
 
 document.addEventListener("change", (event) => {
+  const photoInput = event.target.closest("[data-photo-unit]");
+  if (photoInput && photoInput.files && photoInput.files[0]) {
+    const unitId = photoInput.dataset.photoUnit;
+    readImageDownscaled(photoInput.files[0], 160)
+      .then((dataUrl) => {
+        const unit = getUnit(unitId);
+        if (unit) {
+          if (!state.openCardIds.includes(unitId)) state.openCardIds = [...state.openCardIds, unitId];
+          unit.photo = dataUrl;
+          render();
+        }
+      })
+      .catch(() => {});
+    return;
+  }
+
   const personTitleInput = event.target.closest("[data-edit-person-title]");
   if (personTitleInput) {
     if (updatePersonTitle(personTitleInput.dataset.editPersonTitle, personTitleInput.value)) {

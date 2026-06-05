@@ -127,9 +127,11 @@ p {
 .brand-block h1 {
   margin: 0;
   color: #fff;
-  font-size: 16px;
+  font-size: 13px;
   line-height: 1.2;
   font-weight: 950;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 
 .eyebrow {
@@ -1562,27 +1564,6 @@ input[type="checkbox"] {
 }
 
 @media (max-width: 1180px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    position: static;
-    height: auto;
-    flex-direction: row;
-    align-items: center;
-    overflow-x: auto;
-  }
-
-  .nav-list {
-    display: flex;
-    min-width: max-content;
-  }
-
-  .ethics-note {
-    display: none;
-  }
-
   .control-surface {
     grid-template-columns: 1fr;
     align-items: stretch;
@@ -2132,3 +2113,175 @@ input[type="checkbox"] {
     grid-template-columns: 1fr;
   }
 }
+
+/* ====================================================================
+   사이드바: 접기/펼치기 · 한 줄 타이틀 · 모바일 드로어
+   ==================================================================== */
+.brand-row { display: flex; align-items: center; gap: 8px; }
+.brand-block { flex: 1; min-width: 0; padding-bottom: 0; border-bottom: 0; }
+.brand-text { min-width: 0; }
+.brand-block .eyebrow { margin-bottom: 2px; }
+
+.nav-toggle {
+  flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center;
+  border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
+  background: rgba(255,255,255,0.06); color: #cbd5e1; box-shadow: none;
+}
+.nav-toggle:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.nav-toggle-ico { font-size: 18px; font-weight: 900; line-height: 1; transition: transform 0.2s ease; }
+
+/* nav 아이템: 약어 배지 + 라벨 */
+.nav-item { gap: 10px; }
+.nav-ico {
+  flex: 0 0 auto; width: 26px; height: 26px; display: grid; place-items: center;
+  border-radius: 8px; font-size: 10.5px; font-weight: 950; letter-spacing: 0.02em;
+  background: rgba(255,255,255,0.08); color: #cbd5e1;
+}
+.nav-item.active .nav-ico { background: rgba(167,139,250,0.34); color: #fff; }
+.nav-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 모바일 햄버거 + 백드롭 (데스크톱 숨김) */
+.nav-fab {
+  display: none; position: fixed; top: 14px; left: 14px; z-index: 62;
+  width: 44px; height: 44px; flex-direction: column; gap: 4px;
+  align-items: center; justify-content: center; padding: 0;
+  border: 1px solid rgba(15,23,42,0.1); border-radius: 13px;
+  background: rgba(255,255,255,0.92); box-shadow: var(--shadow); backdrop-filter: blur(12px);
+}
+.nav-fab span { width: 18px; height: 2px; border-radius: 2px; background: #0b1020; }
+.nav-backdrop {
+  display: none; position: fixed; inset: 0; z-index: 58;
+  background: rgba(8,13,27,0.42); opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+/* ── 데스크톱 접힌 레일 ── */
+.app-shell.nav-collapsed { grid-template-columns: 78px minmax(0, 1fr); }
+.app-shell.nav-collapsed .brand-text,
+.app-shell.nav-collapsed .nav-label,
+.app-shell.nav-collapsed .ethics-note,
+.app-shell.nav-collapsed .sideAccount .acctWho,
+.app-shell.nav-collapsed .sideAccount .acctGuide,
+.app-shell.nav-collapsed .sideAccount .acctAdmin { display: none; }
+.app-shell.nav-collapsed .sidebar { padding: 18px 12px; align-items: center; }
+.app-shell.nav-collapsed .brand-row { flex-direction: column; gap: 12px; }
+.app-shell.nav-collapsed .nav-item { justify-content: center; padding: 0; }
+.app-shell.nav-collapsed .nav-ico { width: 38px; height: 38px; font-size: 12px; border-radius: 12px; }
+.app-shell.nav-collapsed .nav-toggle-ico { transform: rotate(180deg); }
+.app-shell.nav-collapsed .sideAccount { justify-content: center; }
+.app-shell.nav-collapsed .acctLogout { padding: 0; width: 38px; height: 38px; overflow: hidden; }
+
+/* ── 모바일: 오프캔버스 드로어 (가장 마지막에 선언 → 우선 적용) ── */
+@media (max-width: 1180px) {
+  .app-shell,
+  .app-shell.nav-collapsed { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed; top: 0; left: 0; z-index: 60;
+    width: 270px; max-width: 84vw; height: 100vh;
+    flex-direction: column; align-items: stretch; overflow: auto;
+    transform: translateX(-104%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .app-shell.nav-open .sidebar { transform: translateX(0); }
+  .app-shell.nav-collapsed .brand-text,
+  .app-shell.nav-collapsed .nav-label,
+  .app-shell.nav-collapsed .ethics-note { display: revert; }
+  .nav-list { display: grid; }
+  .nav-item { justify-content: flex-start; padding: 0 13px; }
+  .nav-ico { width: 26px; height: 26px; font-size: 10.5px; }
+  .nav-fab { display: flex; }
+  .nav-backdrop { display: block; }
+  .app-shell.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
+  .workspace { padding: 70px 16px 40px; }
+  .nav-toggle-ico { transform: none; }
+}
+
+/* ====================================================================
+   조직 카드 v2 — 아바타 + 직책/직급 + '카드 열기' 진행현황 (레퍼런스 이미지 스타일)
+   ==================================================================== */
+.unit-card { overflow: hidden; }
+.unit-card-main { display: none; } /* 구버전 래퍼 제거 */
+
+.unit-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  border: 0; border-radius: 18px;
+  background: transparent; color: inherit; text-align: left; box-shadow: none;
+}
+.unit-head:hover { background: rgba(109, 93, 252, 0.05); }
+
+.unit-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--av, #6d5dfc);
+  color: #fff; font-size: 17px; font-weight: 950; letter-spacing: -0.01em;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18), inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+  overflow: hidden; flex: 0 0 auto;
+}
+.unit-avatar.has-photo { background: #e2e8f0; }
+.unit-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.unit-head-main { min-width: 0; display: grid; gap: 2px; }
+.unit-head-main .unit-kicker { margin-bottom: 1px; }
+.unit-head-main .unit-name { font-size: 15px; }
+.unit-head-main .unit-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.card-caret { color: var(--muted-2); font-size: 12px; font-weight: 900; }
+.unit-card.card-open .card-caret { color: var(--violet); }
+.unit-card.card-open { box-shadow: 0 22px 50px rgba(15, 23, 42, 0.14), var(--inner-glow); }
+
+/* 펼쳐지는 진행현황 영역 */
+.unit-detail {
+  display: grid; gap: 10px;
+  padding: 4px 14px 14px;
+  border-top: 1px dashed var(--hair);
+  margin-top: 2px;
+  animation: cardReveal 0.18s ease;
+}
+@keyframes cardReveal { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+/* 진행 현황 칩: 회색(미완료) → 색상(완료) */
+.status-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.schip {
+  padding: 4px 10px; border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8; font-size: 11px; font-weight: 850; box-shadow: none;
+  transition: all 0.15s ease;
+}
+.schip:hover:not([disabled]) { transform: translateY(-1px); border-color: rgba(109, 93, 252, 0.4); }
+.schip[disabled] { cursor: default; }
+.schip.on {
+  color: #fff;
+  background: linear-gradient(135deg, var(--violet), var(--cyan));
+  border-color: transparent;
+  box-shadow: 0 6px 14px rgba(109, 93, 252, 0.28);
+}
+
+.card-detail-link {
+  justify-self: start;
+  padding: 0; border: 0; background: none; box-shadow: none;
+  color: var(--violet); font-size: 12px; font-weight: 850;
+}
+.card-detail-link:hover { text-decoration: underline; }
+
+/* 카드 하단: 사진 업로드 / 제거 / 상세 */
+.card-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.photo-up {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(109, 93, 252, 0.35);
+  background: rgba(109, 93, 252, 0.08);
+  color: var(--violet); font-size: 11px; font-weight: 850;
+}
+.photo-up:hover { background: rgba(109, 93, 252, 0.16); }
+.photo-rm {
+  padding: 4px 9px; border-radius: 999px; box-shadow: none;
+  border: 1px solid rgba(148, 163, 184, 0.4); background: rgba(148, 163, 184, 0.1);
+  color: #64748b; font-size: 11px; font-weight: 800;
+}
+.card-foot .card-detail-link { margin-left: auto; }

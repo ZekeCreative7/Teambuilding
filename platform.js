@@ -65,8 +65,21 @@ function crossSignalHTML(items,limit=4){
   return `<div class="crossSignalBoard">${list.map(x=>`<article class="crossSignalCard ${x.tone}"><div class="crossSignalHead"><span class="crossBadge">차이 ${Math.round(x.gap||0)}p</span></div><h5>${esc(x.title)}</h5><p>${esc(x.body)}</p><div class="crossEvidence">${esc(x.evidence)}</div><div class="crossPair"><div class="crossPairItem question"><b>확인 질문</b><span>${esc(x.ask)}</span></div><div class="crossPairItem action"><b>권장 액션</b><span>${esc(x.action)}</span></div></div></article>`).join('')}</div>`;
 }
 function tier(avgFav,hi90){if(hi90>=20)return'check';if(avgFav>=65)return'stable';if(avgFav>=55)return'watch';return'risk'}
-function showView(id,skipHash){$all('.view').forEach(v=>v.classList.toggle('active',v.id===id));$all('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(!skipHash&&location.hash!=='#'+id)history.replaceState(null,'','#'+id);window.scrollTo({top:0,behavior:'smooth'});if(id==='speech')buildSpeechPrompt();if(id==='people'&&typeof render==='function'){if(typeof state!=='undefined'){state.view='official';state.detailOpen=false;state.detailModal=null}render()}}
+function showView(id,skipHash){$all('.view').forEach(v=>v.classList.toggle('active',v.id===id));$all('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(!skipHash&&location.hash!=='#'+id)history.replaceState(null,'','#'+id);window.scrollTo({top:0,behavior:'smooth'});if(id==='speech')buildSpeechPrompt();if(id==='people'&&typeof render==='function'){if(typeof state!=='undefined'){state.view='official';state.detailOpen=false;state.detailModal=null}render()}if(typeof closeMobileNav==='function')closeMobileNav()}
 function goHome(){showView('home')}
+/* 사이드바 접기/펼치기 — 데스크톱은 아이콘 레일로 축소, 모바일은 오프캔버스 드로어 */
+function isMobileNav(){return window.matchMedia('(max-width:1180px)').matches}
+function toggleSidebar(){
+  let shell=document.getElementById('appRoot');if(!shell)return;
+  if(isMobileNav()){shell.classList.toggle('nav-open')}
+  else{shell.classList.toggle('nav-collapsed');try{localStorage.setItem('cp-nav-collapsed',shell.classList.contains('nav-collapsed')?'1':'0')}catch(e){}}
+}
+function closeMobileNav(){let s=document.getElementById('appRoot');if(s)s.classList.remove('nav-open')}
+function restoreSidebar(){
+  let shell=document.getElementById('appRoot');if(!shell)return;
+  try{if(!isMobileNav()&&localStorage.getItem('cp-nav-collapsed')==='1')shell.classList.add('nav-collapsed')}catch(e){}
+}
+window.addEventListener('resize',()=>{if(!isMobileNav())closeMobileNav()});
 function setAuthMsg(t,tone=''){
   let el=$('#authMsg');if(!el)return;
   el.textContent=t||'';el.className='authMsg '+tone;el.style.display=t?'block':'none';
@@ -107,6 +120,7 @@ function showPlatform(user){
   $('#adminReviewBtn').style.display=isMasterUser(user)?'inline-flex':'none';
   setGateMode('login');
   setAuthMsg('');
+  restoreSidebar();
   maybeShowOnboarding();
 }
 function setAccountStatus(t){
