@@ -829,11 +829,11 @@ function persist() {
 
 window.connectOrganizationCloud = connectOrganizationCloud;
 window.disconnectOrganizationCloud = disconnectOrganizationCloud;
-window.saveOrganizationCloudNow = () =>
-  saveOrganizationCloudNow().then((saved) => {
-    notifyOrganization(saved ? "조직도 Firebase 저장 완료" : "Firebase 연결 없음 · PC에만 저장됨");
-    return saved;
-  });
+// 주의: 클래식 <script>에서 window.saveOrganizationCloudNow는 위 함수 선언과 "같은 전역 슬롯"이다.
+// 예전처럼 () => saveOrganizationCloudNow().then(...) 형태로 다시 감싸면, 화살표 안의 호출이
+// 원본 함수가 아니라 화살표 자신을 가리켜 무한 재귀(RangeError: Maximum call stack size exceeded)에 빠진다.
+// 그래서 핵심 함수를 그대로 노출만 하고, 토스트/피드백은 호출부에서 처리한다(예: saveOrgCloudButton 핸들러).
+window.saveOrganizationCloudNow = saveOrganizationCloudNow;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
