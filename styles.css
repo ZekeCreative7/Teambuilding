@@ -2137,22 +2137,6 @@ input[type="checkbox"] {
   box-shadow: 0 20px 54px rgba(15, 23, 42, 0.12), var(--inner-glow);
 }
 
-@media (min-width: 1281px) {
-  #people .main-panel {
-    overflow: visible;
-  }
-
-  .org-workbench.inspector-open .org-inspector {
-    position: fixed;
-    top: 112px;
-    right: 32px;
-    width: var(--org-inspector-width);
-    max-height: calc(100vh - 136px);
-    margin-top: 0;
-    z-index: 35;
-  }
-}
-
 .inspector-head {
   display: flex;
   align-items: flex-start;
@@ -3600,40 +3584,6 @@ select:focus {
 .inspector-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ====================================================================
-   조직도 상세 패널 위치 고정
-   데스크톱/태블릿에서는 조직도 높이에 끌려가지 않는 독립 패널로 둔다.
-   ==================================================================== */
-@media (min-width: 961px) {
-  #people .main-panel {
-    overflow: visible !important;
-  }
-
-  #people .org-workbench {
-    --org-inspector-width: clamp(340px, 28vw, 410px);
-  }
-
-  #people .org-workbench.inspector-open {
-    grid-template-columns: minmax(0, 1fr) var(--org-inspector-width) !important;
-    align-items: start !important;
-  }
-
-  #people .org-workbench.inspector-open > .org-inspector {
-    position: fixed !important;
-    top: 112px !important;
-    right: 32px !important;
-    bottom: 24px !important;
-    width: var(--org-inspector-width) !important;
-    height: auto !important;
-    max-height: none !important;
-    margin: 0 !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain;
-    transform: none !important;
-    z-index: 140 !important;
-  }
-}
-
-/* ====================================================================
    데스크톱 사이드바 접기 레이아웃
    모바일 오프캔버스 설정은 유지하고, 데스크톱에서만 본문 폭을 확장한다.
    ==================================================================== */
@@ -3710,5 +3660,42 @@ select:focus {
   .app-shell.nav-collapsed .nav-toggle {
     order: -1;
     margin-top: 0;
+  }
+}
+
+/* ====================================================================
+   조직도 상세정보 최종 위치 규칙
+   화면 오른쪽 위에 뜨는 fixed 레이어가 아니라, 조직도 오른쪽 컬럼에
+   정렬된 상태에서 스크롤 중에도 보이는 sticky 패널로 동작시킨다.
+   ==================================================================== */
+@media (min-width: 961px) {
+  #people .main-panel {
+    overflow: visible !important;
+  }
+
+  #people .org-workbench {
+    --org-inspector-width: clamp(360px, 26vw, 430px);
+    align-items: start !important;
+  }
+
+  #people .org-workbench.inspector-open {
+    grid-template-columns: minmax(0, 1fr) var(--org-inspector-width) !important;
+    gap: 18px !important;
+  }
+
+  #people .org-workbench.inspector-open > .org-inspector {
+    position: sticky !important;
+    top: 24px !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: calc(100vh - 48px) !important;
+    margin: 0 !important;
+    align-self: start !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    transform: none !important;
+    z-index: 12 !important;
   }
 }
