@@ -3685,6 +3685,12 @@ select:focus {
     text-overflow: ellipsis;
   }
 
+  .brand-block h1 {
+    white-space: normal !important;
+    overflow-wrap: normal;
+    line-height: 1.12;
+  }
+
   .nav-toggle {
     position: relative;
     z-index: 3;
