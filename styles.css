@@ -491,6 +491,90 @@ input[type="checkbox"] {
   justify-content: flex-start;
 }
 
+.org-sync-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 12px 14px;
+  border: 1px solid rgba(203, 213, 225, 0.78);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.96), rgba(255, 255, 255, 0.88));
+  color: #334155;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.org-sync-dot {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #94a3b8;
+  box-shadow: 0 0 0 6px rgba(148, 163, 184, 0.16);
+}
+
+.org-sync-banner strong,
+.org-sync-banner small {
+  display: block;
+}
+
+.org-sync-banner strong {
+  color: var(--ink-strong);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.org-sync-banner small {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.org-sync-banner[data-state="saved"],
+.org-sync-banner[data-state="loaded"] {
+  border-color: rgba(16, 185, 129, 0.28);
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.98), rgba(240, 253, 250, 0.86));
+}
+
+.org-sync-banner[data-state="saved"] .org-sync-dot,
+.org-sync-banner[data-state="loaded"] .org-sync-dot {
+  background: #10b981;
+  box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.16);
+}
+
+.org-sync-banner[data-state="pending"] {
+  border-color: rgba(95, 109, 238, 0.24);
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.98), rgba(255, 255, 255, 0.86));
+}
+
+.org-sync-banner[data-state="pending"] .org-sync-dot {
+  background: #5f6dee;
+  box-shadow: 0 0 0 6px rgba(95, 109, 238, 0.14);
+}
+
+.org-sync-banner[data-state="local"] {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, rgba(255, 251, 235, 0.98), rgba(255, 255, 255, 0.86));
+}
+
+.org-sync-banner[data-state="local"] .org-sync-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.15);
+}
+
+.org-sync-banner[data-state="error"] {
+  border-color: rgba(244, 63, 94, 0.3);
+  background: linear-gradient(135deg, rgba(255, 241, 242, 0.98), rgba(255, 255, 255, 0.86));
+}
+
+.org-sync-banner[data-state="error"] .org-sync-dot {
+  background: #f43f5e;
+  box-shadow: 0 0 0 6px rgba(244, 63, 94, 0.14);
+}
+
 .main-panel {
   min-height: 660px;
   overflow: hidden;

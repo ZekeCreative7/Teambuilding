@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="modules.css?v=20260606-session-rail" />
-    <link rel="stylesheet" href="styles.css?v=20260606-org-inspector-sticky-final" />
+    <link rel="stylesheet" href="styles.css?v=20260606-org-sync-status" />
   </head>
   <body>
     <div class="app-shell" id="appRoot" style="display:none">
@@ -262,6 +262,13 @@
           <label class="flt flt-risk"><input type="checkbox" data-filter="support" /> 지원 시급</label>
           <label class="flt flt-check"><input type="checkbox" data-filter="review" /> 신뢰도 검토</label>
         </div>
+        <div class="org-sync-banner" id="orgSyncBanner" data-state="local" role="status" aria-live="polite">
+          <span class="org-sync-dot" aria-hidden="true"></span>
+          <div>
+            <strong id="orgSyncTitle">조직 데이터: 로컬 저장</strong>
+            <small id="orgSyncDetail">Firebase 저장 전에는 이 PC 브라우저에만 변경 내용이 보입니다.</small>
+          </div>
+        </div>
       </section>
 
       <section class="main-panel" aria-live="polite">
@@ -493,7 +500,7 @@ pendingUsers/{uid}    승인 대기 사용자</div>
 
     <script src="firebase-config.js"></script>
     <script src="organization_data.js"></script>
-    <script src="app.js?v=20260606-session-dashboard-sync"></script>
+    <script src="app.js?v=20260606-org-sync-status"></script>
     <script src="platform.js?v=20260606-session-rail"></script>
   </body>
 </html>

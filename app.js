@@ -572,10 +572,84 @@ function notifyOrganization(message) {
   else console.log(message);
 }
 
+function organizationCloudStatusMeta(message = organizationCloud.status) {
+  if (message.includes("저장 완료")) {
+    return {
+      state: "saved",
+      title: "조직 데이터: Firebase 저장 완료",
+      detail: `${message} · 모바일에서 같은 계정으로 새로고침하면 변경 내용이 보입니다.`,
+    };
+  }
+  if (message.includes("불러옴")) {
+    return {
+      state: "loaded",
+      title: "조직 데이터: Firebase 불러옴",
+      detail: `${message} · 클라우드 기준 데이터로 화면을 열었습니다.`,
+    };
+  }
+  if (message.includes("실패")) {
+    return {
+      state: "error",
+      title: "조직 데이터: Firebase 동기화 실패",
+      detail: `${message} · 지금 변경 내용은 이 브라우저에만 남아 있습니다.`,
+    };
+  }
+  if (message.includes("불러오는 중") || message.includes("준비")) {
+    return {
+      state: "pending",
+      title: "조직 데이터: Firebase 확인 중",
+      detail: `${message} · 잠시 후 저장 상태를 다시 확인하세요.`,
+    };
+  }
+  return {
+    state: "local",
+    title: "조직 데이터: 로컬 저장",
+    detail: `${message} · Firebase 저장 전에는 이 PC 브라우저에만 변경 내용이 보입니다.`,
+  };
+}
+
+function refreshOrganizationCloudStatusUi() {
+  const meta = organizationCloudStatusMeta();
+  document.querySelectorAll("#orgSyncStatus").forEach((el) => {
+    el.textContent = organizationCloud.status;
+  });
+  const banner = document.getElementById("orgSyncBanner");
+  if (banner) {
+    banner.dataset.state = meta.state;
+    const title = document.getElementById("orgSyncTitle");
+    const detail = document.getElementById("orgSyncDetail");
+    if (title) title.textContent = meta.title;
+    if (detail) detail.textContent = meta.detail;
+  }
+}
+
 function setOrganizationCloudStatus(message) {
   organizationCloud.status = message;
-  const el = document.getElementById("orgSyncStatus");
-  if (el) el.textContent = message;
+  refreshOrganizationCloudStatusUi();
+}
+
+function organizationCloudErrorReason(error) {
+  const rawCode = (error && error.code ? String(error.code) : "").replace(/^firestore\//, "");
+  const message = error && error.message ? String(error.message) : "";
+  if (rawCode.includes("permission-denied")) {
+    return "권한 없음(permission-denied): 승인 계정 또는 Firestore rules 배포를 확인하세요";
+  }
+  if (rawCode.includes("unauthenticated")) {
+    return "로그인 확인 필요(unauthenticated): 다시 로그인한 뒤 저장하세요";
+  }
+  if (rawCode.includes("unavailable")) {
+    return "네트워크 연결 실패(unavailable): 인터넷 연결 또는 Firebase 접속 상태를 확인하세요";
+  }
+  if (rawCode.includes("not-found")) {
+    return "Firebase 문서 경로 확인 필요(not-found)";
+  }
+  if (rawCode) return `${rawCode}: ${message || "Firebase 호출 실패"}`;
+  return message || "Firebase 호출 실패";
+}
+
+function setOrganizationCloudError(action, error) {
+  const reason = organizationCloudErrorReason(error);
+  setOrganizationCloudStatus(`Firebase ${action} 실패 · ${reason}`);
 }
 
 function formatOrgSyncTime(value) {
@@ -596,8 +670,8 @@ function organizationCloudRef() {
 async function saveOrganizationCloudNow() {
   const ref = organizationCloudRef();
   if (!ref) {
-    setOrganizationCloudStatus("로컬 저장");
-    return;
+    setOrganizationCloudStatus("로컬 저장 · Firebase 연결 없음");
+    return false;
   }
   const stamp = Date.now();
   organizationCloud.lastLocalWrite = stamp;
@@ -611,6 +685,7 @@ async function saveOrganizationCloudNow() {
     { merge: true },
   );
   setOrganizationCloudStatus(`Firebase 저장 완료 · ${new Date(stamp).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`);
+  return true;
 }
 
 function scheduleOrganizationCloudSave() {
@@ -619,7 +694,7 @@ function scheduleOrganizationCloudSave() {
   organizationCloud.saveTimer = window.setTimeout(() => {
     saveOrganizationCloudNow().catch((error) => {
       console.warn("Could not sync organization data.", error);
-      setOrganizationCloudStatus("Firebase 저장 실패 · 로컬 저장 유지");
+      setOrganizationCloudError("저장", error);
     });
   }, 900);
 }
@@ -651,7 +726,7 @@ async function connectOrganizationCloud(db, uid) {
     }
   } catch (error) {
     console.warn("Could not load organization cloud data.", error);
-    setOrganizationCloudStatus("Firebase 불러오기 실패 · 로컬 사용");
+    setOrganizationCloudError("불러오기", error);
   } finally {
     organizationCloud.loading = false;
   }
@@ -675,7 +750,11 @@ function persist() {
 
 window.connectOrganizationCloud = connectOrganizationCloud;
 window.disconnectOrganizationCloud = disconnectOrganizationCloud;
-window.saveOrganizationCloudNow = () => saveOrganizationCloudNow().then(() => notifyOrganization("조직도 Firebase 저장 완료"));
+window.saveOrganizationCloudNow = () =>
+  saveOrganizationCloudNow().then((saved) => {
+    notifyOrganization(saved ? "조직도 Firebase 저장 완료" : "Firebase 연결 없음 · PC에만 저장됨");
+    return saved;
+  });
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -1278,6 +1357,7 @@ function render() {
   renderDetail();
   renderTemplates();
   refreshHomeDashboardFromOrgState();
+  refreshOrganizationCloudStatusUi();
   persist();
 }
 
@@ -3952,8 +4032,12 @@ document.addEventListener("click", (event) => {
 
   if (event.target.id === "saveOrgCloudButton") {
     saveOrganizationCloudNow()
-      .then(() => notifyOrganization("조직도 Firebase 저장 완료"))
-      .catch(() => notifyOrganization("Firebase 저장에 실패했습니다. 로컬 저장은 유지됩니다."));
+      .then((saved) => notifyOrganization(saved ? "조직도 Firebase 저장 완료" : "Firebase 연결 없음 · PC에만 저장됨"))
+      .catch((error) => {
+        console.warn("Could not save organization data manually.", error);
+        setOrganizationCloudError("저장", error);
+        notifyOrganization("Firebase 저장 실패 · 상태바에서 원인을 확인하세요");
+      });
     return;
   }
 
