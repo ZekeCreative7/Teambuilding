@@ -793,41 +793,120 @@ function closeDetailModal() {
 }
 
 function isStackedDetailLayout() {
-  return typeof window !== "undefined" && window.matchMedia("(max-width: 1280px)").matches;
+  if (typeof window === "undefined") return false;
+  const viewportWidth = Math.min(window.innerWidth || Infinity, document.documentElement?.clientWidth || Infinity);
+  return window.matchMedia("(max-width: 1280px)").matches || viewportWidth <= 1280;
+}
+
+function getMobileScrollOffset() {
+  const floatingNav = document.querySelector(".nav-fab");
+  if (!floatingNav) return 18;
+  const rect = floatingNav.getBoundingClientRect();
+  return Math.max(18, rect.top + rect.height + 16);
+}
+
+function getScrollParent(element) {
+  let node = element?.parentElement;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const style = window.getComputedStyle(node);
+    const canScrollY = /(auto|scroll|overlay)/.test(style.overflowY);
+    if (canScrollY && node.scrollHeight > node.clientHeight + 2) return node;
+    node = node.parentElement;
+  }
+  return window;
+}
+
+function scrollWindowTo(top, behavior = "smooth") {
+  try {
+    window.scrollTo({ top: Math.max(0, top), behavior });
+  } catch (error) {
+    window.scrollTo(0, Math.max(0, top));
+  }
+}
+
+function scrollElementForMobile(element, block = "start") {
+  if (!element) return;
+  const offset = getMobileScrollOffset();
+  const scrollParent = getScrollParent(element);
+
+  if (scrollParent === window) {
+    const rect = element.getBoundingClientRect();
+    const targetTop = block === "center"
+      ? window.scrollY + rect.top - (window.innerHeight - rect.height) / 2
+      : window.scrollY + rect.top - offset;
+    scrollWindowTo(targetTop, "smooth");
+    window.setTimeout(() => scrollWindowTo(targetTop, "auto"), 260);
+    return;
+  }
+
+  const parentRect = scrollParent.getBoundingClientRect();
+  const rect = element.getBoundingClientRect();
+  const targetTop = block === "center"
+    ? scrollParent.scrollTop + rect.top - parentRect.top - (scrollParent.clientHeight - rect.height) / 2
+    : scrollParent.scrollTop + rect.top - parentRect.top - offset;
+
+  try {
+    scrollParent.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+  } catch (error) {
+    scrollParent.scrollTop = Math.max(0, targetTop);
+  }
+  window.setTimeout(() => {
+    scrollParent.scrollTop = Math.max(0, targetTop);
+  }, 260);
+}
+
+function scheduleMobileScroll(work) {
+  if (!isStackedDetailLayout()) return;
+  window.requestAnimationFrame(() => window.requestAnimationFrame(work));
+  window.setTimeout(work, 180);
+  window.setTimeout(work, 420);
 }
 
 function captureMobileDetailReturn(unitId, sourceElement) {
   if (!isStackedDetailLayout()) return;
   if (mobileDetailReturnContext?.unitId === unitId) return;
   const anchor = sourceElement?.closest?.("[data-unit-card]") || sourceElement;
+  const scrollParent = getScrollParent(anchor);
   mobileDetailReturnContext = {
     unitId,
     scrollY: Math.max(0, window.scrollY + (anchor?.getBoundingClientRect?.().top || 0) - 16),
+    parentScrollTop: scrollParent === window ? null : scrollParent.scrollTop,
   };
 }
 
 function scrollToMobileDetailPanel() {
   if (!isStackedDetailLayout()) return;
-  window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(() => {
-      const inspector = document.querySelector(".org-inspector");
-      if (!inspector) return;
-      inspector.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+  scheduleMobileScroll(() => {
+    scrollElementForMobile(document.querySelector(".org-inspector"), "start");
   });
 }
 
 function restoreMobileDetailReturn() {
   if (!isStackedDetailLayout() || !mobileDetailReturnContext) return;
-  const { unitId, scrollY } = mobileDetailReturnContext;
+  const { unitId, scrollY, parentScrollTop } = mobileDetailReturnContext;
   mobileDetailReturnContext = null;
-  window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(() => {
-      const selector = `[data-unit-card="${cssEscapeSelector(unitId)}"]`;
-      const anchor = document.querySelector(selector);
-      if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "center" });
-      else window.scrollTo({ top: scrollY, behavior: "smooth" });
-    });
+  scheduleMobileScroll(() => {
+    const selector = `[data-unit-card="${cssEscapeSelector(unitId)}"]`;
+    const anchor = document.querySelector(selector);
+    if (anchor) {
+      scrollElementForMobile(anchor, "center");
+      return;
+    }
+    const workbench = document.querySelector(".org-workbench");
+    const scrollParent = getScrollParent(workbench);
+    if (scrollParent !== window && parentScrollTop !== null) {
+      try {
+        scrollParent.scrollTo({ top: parentScrollTop, behavior: "smooth" });
+      } catch (error) {
+        scrollParent.scrollTop = parentScrollTop;
+      }
+      window.setTimeout(() => {
+        scrollParent.scrollTop = parentScrollTop;
+      }, 260);
+      return;
+    }
+    scrollWindowTo(scrollY, "smooth");
+    window.setTimeout(() => scrollWindowTo(scrollY, "auto"), 260);
   });
 }
 
