@@ -351,7 +351,7 @@ const seedGroups = [
     id: "g-ambassador-core",
     name: "전사 캠페인 확산 앰버서더 후보군",
     description: "변화 수용성과 영향력이 높은 구성원을 중심으로 전사 캠페인 파일럿과 후기 확산을 맡길 수 있는 그룹입니다.",
-    criteria: "Change Readiness 75 이상, Influence 65 이상, 앰버서더 후보 또는 연결자 태그",
+    criteria: "변화 수용도 75 이상, 영향력 65 이상, 앰버서더 후보 또는 연결자 태그",
     memberIds: ["p01", "p02", "p03", "p06", "p10", "p15", "p17"],
     unitIds: ["brand-campaign-team", "internal-comms-team", "cx-insight-team", "ai-workplace-team", "culture-design-team", "wellness-lab-team"],
     recommendation: "공식 메시지 전달자처럼 보이지 않도록, 좋은 경험을 먼저 해본 사람들의 자발적 공유 구조로 설계하세요.",
@@ -360,10 +360,40 @@ const seedGroups = [
     id: "g-leader-support",
     name: "피로도 높은 영향력 리더 지원 그룹",
     description: "피로도는 높지만 팀 내 영향력이 큰 리더를 묶어 리더 브리핑과 1:1 지원을 우선 제공하는 그룹입니다.",
-    criteria: "팀장, Influence 75 이상, 소속 조직 Fatigue 60 이상",
+    criteria: "팀장, 영향력 75 이상, 소속 조직 피로도 60 이상",
     memberIds: ["p07", "p09", "p11", "p19"],
     unitIds: ["service-operation-team", "ai-workplace-team", "core-platform-team", "financial-planning-team"],
     recommendation: "감시나 평가처럼 보이지 않게 Leadership Enablement 관점으로 운영하고, 팀장에게 바로 쓸 수 있는 문장을 제공하세요.",
+  },
+];
+
+const seedSessions = [
+  {
+    id: "session-wow-brand",
+    date: "2026-06-10",
+    startTime: "10:00",
+    sessionName: "WOW x BALANCE 리더 킥오프",
+    teamId: "brand-campaign-team",
+    teamName: "브랜드캠페인팀",
+    participants: 18,
+  },
+  {
+    id: "session-wow-service",
+    date: "2026-06-12",
+    startTime: "14:00",
+    sessionName: "WOW x BALANCE 회복 워크숍",
+    teamId: "service-operation-team",
+    teamName: "서비스운영팀",
+    participants: 24,
+  },
+  {
+    id: "session-wow-platform",
+    date: "2026-06-17",
+    startTime: "09:30",
+    sessionName: "WOW x BALANCE 팀 리셋",
+    teamId: "ai-workplace-team",
+    teamName: "AI Workplace 팀",
+    participants: 16,
   },
 ];
 
@@ -375,7 +405,7 @@ const groupTemplates = [
     build: () => buildGroupFromPeople({
       name: "변화 수용성이 높은 30·40대 실무자",
       description: "변화 수용성이 높고 현장 언어로 동료에게 설명할 수 있는 실무자 그룹입니다.",
-      criteria: "실무자, 30대 또는 40대, Change Readiness 75 이상",
+      criteria: "실무자, 30대 또는 40대, 변화 수용도 75 이상",
       peopleFilter: (person) => person.position === "실무자" && ["30대", "40대"].includes(person.generation) && person.readiness >= 75,
       recommendation: "세션 파일럿, 후기 수집, 동료 관점 FAQ 제작에 먼저 참여시키기 좋습니다.",
     }),
@@ -387,7 +417,7 @@ const groupTemplates = [
     build: () => buildGroupFromPeople({
       name: "피로도가 높지만 영향력이 큰 팀장",
       description: "피로도가 높은 조직을 이끄는 영향력 있는 리더에게 리더 브리핑과 지원을 먼저 제공합니다.",
-      criteria: "팀장, Influence 75 이상, 소속 조직 Fatigue 60 이상",
+      criteria: "팀장, 영향력 75 이상, 소속 조직 피로도 60 이상",
       peopleFilter: (person) => person.position === "팀장" && person.influence >= 75 && getUnit(person.unitId)?.fatigue >= 60,
       recommendation: "리더에게 같은 문구를 배포하기보다 팀 상황에 맞춘 말하기 가이드를 제공합니다.",
     }),
@@ -411,7 +441,7 @@ const groupTemplates = [
     build: () => buildGroupFromUnits({
       name: "웰니스 참여 높고 신뢰 낮은 조직",
       description: "웰니스로 유입은 가능하지만 조직 신뢰가 낮아, 활동 이후 구체적 지원이 필요한 조직입니다.",
-      criteria: "웰니스 참여 높음 태그, Trust 60 미만",
+      criteria: "웰니스 참여 높음 태그, 신뢰 60 미만",
       unitFilter: (unit) => unit.tags.includes("웰니스 참여 높음") && unit.trust < 60,
       recommendation: "회복 경험을 먼저 제공하고, 그 다음 회사가 할 수 있는 것과 없는 것을 솔직히 분리해 말하세요.",
     }),
@@ -423,7 +453,7 @@ const groupTemplates = [
     build: () => buildGroupFromUnits({
       name: "타운홀 이후 Follow-up 필요 본부",
       description: "타운홀 이후 질문과 현장 반응을 수집하고, 조직별 후속 세션을 설계할 대상입니다.",
-      criteria: "타운홀 후속 필요 태그 또는 Trust 60 미만 본부",
+      criteria: "타운홀 후속 필요 태그 또는 신뢰 60 미만 본부",
       unitFilter: (unit) => unit.tags.includes("타운홀 후속 필요") || (unit.level === "hq" && unit.trust < 60),
       recommendation: "일괄 공지보다 조직별 예상 질문과 리더 브리핑을 먼저 준비하세요.",
     }),
@@ -431,11 +461,14 @@ const groupTemplates = [
 ];
 
 const leaderTitleOptions = ["이사", "상무", "전무", "부사장", "사장", "대표이사"];
+const leaderRoleOptions = ["대표이사", "부문장", "본부장", "실장", "센터장", "그룹장", "팀장", "파트장", "챕터리드"];
 
 let state = loadState();
 let activeDragPayload = null;
 let pointerDrag = null;
 let suppressNextClick = false;
+let pendingUnitPhotoId = null;
+let pendingPersonPhotoId = null;
 
 function defaultFilters() {
   return { healthy: false, watch: false, support: false, review: false };
@@ -450,11 +483,14 @@ function loadState() {
         units: parsed.units || clone(seedUnits),
         people: parsed.people || clone(seedPeople),
         groups: parsed.groups || clone(seedGroups),
+        sessions: parsed.sessions || clone(seedSessions),
         selectedUnitId: parsed.selectedUnitId || getDefaultSelectedUnitId(),
         view: "official",
         orgLayout: parsed.orgLayout || "horizontal",
-        orgZoom: parsed.orgZoom || 0.72,
+        orgZoom: parsed.orgZoom || 0.68,
         networkLevel: parsed.networkLevel || "team",
+        calendarView: parsed.calendarView || "month",
+        selectedCalendarDate: parsed.selectedCalendarDate || todayIso(),
         expandedUnitIds: parsed.expandedUnitIds || getDefaultExpandedIds(),
         openCardIds: parsed.openCardIds || [],
         detailOpen: false,
@@ -471,11 +507,14 @@ function loadState() {
     units: clone(seedUnits),
     people: clone(seedPeople),
     groups: clone(seedGroups),
+    sessions: clone(seedSessions),
     selectedUnitId: getDefaultSelectedUnitId(),
     view: "official",
     orgLayout: "horizontal",
-    orgZoom: 0.72,
+    orgZoom: 0.68,
     networkLevel: "team",
+    calendarView: "month",
+    selectedCalendarDate: todayIso(),
     expandedUnitIds: getDefaultExpandedIds(),
     openCardIds: [],
     detailOpen: false,
@@ -638,7 +677,8 @@ function createUnit(level, parentId) {
     level,
     orgType: isDivision ? "부문" : isTeam ? "팀" : "본부",
     orgDepth: (parent.orgDepth || 0) + 1,
-    leader: "리더 미정",
+    leader: unsetLeaderLabel(level),
+    leaderRole: defaultLeaderRole(level),
     leaderTitle: "",
     parentId,
     members: 0,
@@ -649,7 +689,7 @@ function createUnit(level, parentId) {
     risk: parent.risk,
     ambassadors: 0,
     tags: isDivision ? ["신규 부문"] : isTeam ? ["신규 팀"] : ["신규 본부"],
-    recommendation: "신규 조직입니다. 조직 목적, 리더, 문화 신호를 업데이트하세요.",
+    recommendation: "신규 조직입니다. 조직 목적, 책임자, 문화 신호를 업데이트하세요.",
     sourcePath: `${parent.sourcePath || parent.name} > ${isDivision ? `새 부문 ${sameLevelCount}` : isTeam ? `새 팀 ${sameLevelCount}` : `새 본부 ${sameLevelCount}`}`,
     status: "active",
     sortOrder: sameLevelCount,
@@ -680,8 +720,15 @@ function movePerson(personId, unitId) {
   const unit = getUnit(unitId);
   if (!person || !unit || unit.level === "company") return false;
 
+  const previousUnit = getUnit(person.unitId);
+  if (previousUnit && previousUnit.leader === person.name) {
+    previousUnit.leader = unsetLeaderForUnit(previousUnit);
+    previousUnit.leaderTitle = "";
+  }
+
   person.unitId = unitId;
-  person.role = ["팀장", "리더"].includes(person.position) ? `${unit.name} 리더` : `${unit.name} 구성원`;
+  person.position = person.position === "팀장" ? "실무자" : person.position;
+  person.role = `${unit.name} 구성원`;
   return true;
 }
 
@@ -727,6 +774,13 @@ function cssEscapeSelector(value) {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function todayIso() {
+  const date = new Date();
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 10);
 }
 
 function setOrgZoom(value) {
@@ -775,10 +829,48 @@ function leaderTitleLabel(title) {
   return title?.trim() || "직급 미정";
 }
 
+function defaultLeaderRole(level) {
+  return {
+    company: "대표이사",
+    division: "부문장",
+    hq: "본부장",
+    team: "팀장",
+  }[level] || "책임자";
+}
+
+function leaderRoleLabel(unit) {
+  return unit?.leaderRole?.trim() || defaultLeaderRole(unit?.level);
+}
+
+function unsetLeaderLabel(level) {
+  return `${defaultLeaderRole(level)} 미정`;
+}
+
+function unsetLeaderForUnit(unit) {
+  return `${leaderRoleLabel(unit)} 미정`;
+}
+
+function hasAssignedLeader(unit) {
+  const name = unit?.leader?.trim();
+  return Boolean(name && name !== "미정" && name !== "리더 미정" && name !== unsetLeaderForUnit(unit));
+}
+
+function leaderNameLabel(unit) {
+  return hasAssignedLeader(unit) ? unit.leader.trim() : unsetLeaderForUnit(unit);
+}
+
 function renderLeaderTitleDatalist() {
   return `
     <datalist id="leaderTitleOptions">
       ${leaderTitleOptions.map((title) => `<option value="${escapeHtml(title)}"></option>`).join("")}
+    </datalist>
+  `;
+}
+
+function renderLeaderRoleDatalist() {
+  return `
+    <datalist id="leaderRoleOptions">
+      ${leaderRoleOptions.map((role) => `<option value="${escapeHtml(role)}"></option>`).join("")}
     </datalist>
   `;
 }
@@ -812,6 +904,48 @@ function updatePersonTitle(personId, title) {
   return true;
 }
 
+function setTeamLeader(unitId, personId) {
+  const unit = getUnit(unitId);
+  const selected = state.people.find((item) => item.id === personId);
+  if (!unit || unit.level !== "team") return false;
+
+  if (!personId) {
+    state.people.forEach((person) => {
+      if (person.unitId === unit.id && person.position === "팀장") {
+        person.position = "실무자";
+        person.role = `${unit.name} 구성원`;
+        person.tags = (person.tags || []).filter((tag) => tag !== "리더");
+      }
+    });
+    unit.leader = unsetLeaderForUnit(unit);
+    unit.leaderTitle = "";
+    unit.leaderRole = unit.leaderRole || defaultLeaderRole(unit.level);
+    return true;
+  }
+
+  if (!selected || selected.unitId !== unit.id) return false;
+
+  state.people.forEach((person) => {
+    if (person.unitId !== unit.id) return;
+    if (person.id === selected.id) {
+      person.position = "팀장";
+      person.role = `${unit.name} 팀장`;
+      person.tags = [...new Set([...(person.tags || []).filter((tag) => tag !== "신규 등록"), "리더"])];
+      return;
+    }
+    if (person.position === "팀장") {
+      person.position = "실무자";
+      person.role = person.role?.includes("팀장") ? `${unit.name} 구성원` : person.role;
+      person.tags = (person.tags || []).filter((tag) => tag !== "리더");
+    }
+  });
+
+  unit.leader = selected.name;
+  unit.leaderTitle = selected.title || unit.leaderTitle || "";
+  unit.leaderRole = unit.leaderRole || defaultLeaderRole(unit.level);
+  return true;
+}
+
 function deletePerson(personId) {
   const person = state.people.find((item) => item.id === personId);
   if (!person) return false;
@@ -823,7 +957,7 @@ function deletePerson(personId) {
     .filter((group) => group.memberIds.length || group.unitIds.length);
 
   if (unit && unit.leader === person.name) {
-    unit.leader = "리더 미정";
+    unit.leader = unsetLeaderForUnit(unit);
     unit.leaderTitle = "";
   }
   return true;
@@ -890,19 +1024,19 @@ function syncControls() {
 
 function getOrgMetrics() {
   const teamUnits = state.units.filter((unit) => unit.level === "team");
-  const averageReadiness = teamUnits.length ? Math.round(teamUnits.reduce((sum, unit) => sum + unit.readiness, 0) / teamUnits.length) : 0;
-  const riskCount = state.units.filter((unit) => unit.risk === "high").length;
+  const averageReadiness = teamUnits.length ? Math.round(teamUnits.reduce((sum, unit) => sum + signalForUnit(unit).readiness, 0) / teamUnits.length) : 0;
+  const riskCount = state.units.filter((unit) => signalForUnit(unit).risk === "high").length;
   const peopleAmbassadorCount = state.people.filter((person) => person.tags.includes("앰버서더 후보")).length;
   const ambassadorCount = peopleAmbassadorCount || state.units.filter((unit) => unit.ambassadors > 0).length;
-  const leaderCount = state.people.length;
+  const leaderCount = state.people.filter((person) => person.position === "팀장").length;
   const groupCount = state.groups.length;
 
   const metrics = [
-    { label: "조직 단위", value: state.units.length, note: "전사·부문·본부·팀" },
-    { label: "리더", value: leaderCount, note: "업로드 리더 명단" },
+    { label: "조직 단위", value: teamUnits.length, note: "팀 기준" },
+    { label: "팀장", value: leaderCount, note: "설정된 책임자 수" },
     { label: peopleAmbassadorCount ? "앰버서더 후보" : "확산 신호 조직", value: ambassadorCount, note: peopleAmbassadorCount ? "수용성·영향력 기준" : "조직도 기반 추정" },
     { label: "지원 필요 조직", value: riskCount, note: "피로도·신뢰 신호" },
-    { label: "평균 Change Readiness", value: `${averageReadiness}%`, note: `${groupCount}개 목적 그룹 운영` },
+    { label: "평균 변화 수용도", value: `${averageReadiness}%`, note: `${groupCount}개 목적 그룹 운영` },
   ];
   return metrics;
 }
@@ -927,7 +1061,7 @@ function renderCompactMetrics() {
 }
 
 function renderView() {
-  if (!["official", "network", "groups"].includes(state.view)) {
+  if (!["official", "network", "calendar", "groups"].includes(state.view)) {
     state.view = "official";
   }
 
@@ -935,6 +1069,8 @@ function renderView() {
     renderOfficialView();
   } else if (state.view === "network") {
     renderNetworkView();
+  } else if (state.view === "calendar") {
+    renderCalendarView();
   } else {
     renderGroupsView();
   }
@@ -950,7 +1086,7 @@ function renderOfficialView() {
       <div>
         <p class="eyebrow">Organization Structure</p>
         <h3>조직도</h3>
-        <p>카드를 누르면 아래로 펼쳐져 진행 현황(타운홀·Pulse·WOW×BALANCE·팀 설문)과 상태 바가 보입니다. <b>+</b> 버튼으로 하위 조직을 펼칩니다.</p>
+        <p>카드를 누르면 진행 현황이 열리고, 상세 버튼을 누르면 오른쪽에 선택 조직 정보가 나옵니다. 조직 생성과 이동은 드래그로도 가능합니다.</p>
       </div>
       <div class="panel-actions">
         <div class="zoom-controls" aria-label="조직도 줌">
@@ -963,6 +1099,8 @@ function renderOfficialView() {
           <button class="segment ${state.orgLayout === "horizontal" ? "active" : ""}" data-layout="horizontal" type="button">가로</button>
           <button class="segment ${state.orgLayout === "vertical" ? "active" : ""}" data-layout="vertical" type="button">세로</button>
         </div>
+        <button class="ghost-button compact-action" id="downloadOrgTemplateButton" type="button">엑셀 템플릿</button>
+        <button class="ghost-button compact-action" id="uploadOrgButton" type="button">엑셀 업로드</button>
         <span class="status-pill">${visibleUnits.length}개 표시</span>
       </div>
     </div>
@@ -1038,6 +1176,48 @@ function pulseTierLabel(tier) {
   return { stable: "안정", watch: "주의", risk: "위험", check: "신뢰도 검토" }[tier] || tier || "";
 }
 
+function signalFromPulse(unit) {
+  const pulse = pulseForUnit(unit.id);
+  if (!pulse || unit.level === "team") return null;
+
+  const readiness = clamp(Math.round(pulse.fav), 0, 100);
+  const trust = clamp(Math.round(pulse.fav * 0.72 + Math.max(0, 100 - pulse.low) * 0.28), 0, 100);
+  const fatigueBase = pulse.low * 1.18 + (pulse.tier === "risk" ? 15 : pulse.tier === "watch" ? 8 : 0);
+  const fatigue = clamp(Math.round(fatigueBase), 0, 100);
+  const risk = pulse.tier === "risk" ? "high" : pulse.tier === "watch" || pulse.reliab ? "medium" : "low";
+  const pulseTags = [
+    pulseTierLabel(pulse.tier),
+    `긍정 ${pulse.fav}%`,
+    `부정 ${pulse.low}%`,
+    pulse.reliab ? "신뢰도 검토" : "",
+  ].filter(Boolean);
+
+  return {
+    readiness,
+    trust,
+    fatigue,
+    risk,
+    tags: [...new Set([...(unit.tags || []), ...pulseTags])].slice(0, 6),
+    recommendation:
+      risk === "high"
+        ? "Pulse Survey상 지원 우선순위가 높습니다. 리더 브리핑과 WOW x BALANCE 회복 세션을 먼저 배치하세요."
+        : risk === "medium"
+          ? "Pulse Survey상 관찰 구간입니다. 팀별 질문을 수집하고 짧은 후속 세션으로 신뢰를 보강하세요."
+          : unit.recommendation,
+  };
+}
+
+function signalForUnit(unit) {
+  return signalFromPulse(unit) || {
+    readiness: unit.readiness,
+    trust: unit.trust,
+    fatigue: unit.fatigue,
+    risk: unit.risk,
+    tags: unit.tags || [],
+    recommendation: unit.recommendation,
+  };
+}
+
 // Pulse Survey 분석 결과로 조직의 상태(state)를 정의한다. 필터/카드에서 공통 사용.
 const ORG_STATUS_FILTERS = [
   { key: "healthy", label: "긍정 안정" },
@@ -1061,7 +1241,7 @@ function pulseStatusDef(unit) {
 // 아바타: 리더 성(姓) 이니셜 + 이름 해시 기반 배경색 (사진은 unit.photo로 추후 교체)
 function unitInitial(name) {
   const n = (name || "").trim();
-  if (!n || n === "미정" || n === "리더 미정") return "";
+  if (!n || n === "미정" || n.endsWith(" 미정")) return "";
   return n.charAt(0);
 }
 function avatarColor(seed) {
@@ -1107,6 +1287,7 @@ const ORG_STATUS_CHIPS = [
 
 function renderUnitCard(unit, childCount = 0) {
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
+  const signal = signalForUnit(unit);
   const selected = unit.id === state.selectedUnitId ? "selected" : "";
   const selectedPath = new Set([state.selectedUnitId, ...getAncestorIds(state.selectedUnitId)]);
   const inPath = selectedPath.has(unit.id) ? "in-path" : "";
@@ -1116,13 +1297,13 @@ function renderUnitCard(unit, childCount = 0) {
   const status = pulseStatusDef(unit);
   const tone = status ? status.tone : null;
   const cardTone = tone ? `tone-${tone}` : "";
-  const scoreTone = tone ? `pulse-${tone}` : `read-${unit.risk}`;
-  const score = pulse ? pulse.fav : unit.readiness;
-  const scoreLabel = pulse ? "Pulse 긍정" : "변화 수용도";
-  const scoreSuffix = pulse ? "%" : "";
+  const scoreTone = tone ? `pulse-${tone}` : `read-${signal.risk}`;
+  const score = pulse && unit.level !== "team" ? pulse.fav : signal.readiness;
+  const scoreLabel = pulse && unit.level !== "team" ? "Pulse 긍정" : "변화 수용도";
+  const scoreSuffix = "%";
   // 리더: 이름(크게/굵게) + 직급(전무·상무·이사) · 직무(부문장·본부장·팀장)
-  const hasLeader = unit.leader && unit.leader !== "미정" && unit.leader !== "리더 미정";
-  const role = unit.leaderRole || "리더"; // 직무
+  const role = leaderRoleLabel(unit); // 직무
+  const hasLeader = hasAssignedLeader(unit);
   const titleTxt = unit.leaderTitle ? leaderTitleLabel(unit.leaderTitle) : ""; // 직급
   const leaderMeta = [titleTxt, role].filter(Boolean).join(" · ");
   const leaderBlock = hasLeader
@@ -1131,16 +1312,16 @@ function renderUnitCard(unit, childCount = 0) {
   const avSeed = hasLeader ? unit.leader : unit.name;
   const initial = unitInitial(hasLeader ? unit.leader : unit.name) || (unit.name || "·").charAt(0);
   const avatar = unit.photo
-    ? `<span class="unit-avatar has-photo"><img src="${escapeHtml(unit.photo)}" alt="${escapeHtml(unit.leader)}" /></span>`
-    : `<span class="unit-avatar" style="--av:${avatarColor(avSeed)}">${escapeHtml(initial)}</span>`;
+    ? `<span class="unit-avatar has-photo photo-trigger" data-upload-unit-photo="${escapeHtml(unit.id)}" title="사진 변경"><img src="${escapeHtml(unit.photo)}" alt="${escapeHtml(leaderNameLabel(unit))}" /></span>`
+    : `<span class="unit-avatar photo-trigger" data-upload-unit-photo="${escapeHtml(unit.id)}" style="--av:${avatarColor(avSeed)}" title="사진 업로드">${escapeHtml(initial)}</span>`;
   const chips = ORG_STATUS_CHIPS.map((c) => {
     const on = c.key === "pulseSurvey" ? Boolean(pulse) || Boolean(unit.pulseSurvey) : Boolean(unit[c.key]);
     const attrs = c.toggle ? `data-toggle-status="${c.key}" data-unit="${escapeHtml(unit.id)}"` : "disabled";
     return `<button type="button" class="schip ${on ? "on" : ""}" ${attrs} title="${escapeHtml(c.label)} ${on ? "완료" : "미완료"}">${escapeHtml(c.label)}</button>`;
   }).join("");
-  const keywords = (unit.tags || []).filter(Boolean);
+  const keywords = (signal.tags || []).filter(Boolean);
   return `
-    <article class="unit-card ${cardTone} risk-${unit.risk} ${selected} ${inPath} ${open ? "card-open" : ""}" draggable="${unit.level !== "company"}" data-unit-card="${escapeHtml(unit.id)}" data-drag-unit-id="${escapeHtml(unit.id)}" data-drop-unit-id="${escapeHtml(unit.id)}">
+    <article class="unit-card ${cardTone} risk-${signal.risk} ${selected} ${inPath} ${open ? "card-open" : ""}" draggable="${unit.level !== "company"}" data-unit-card="${escapeHtml(unit.id)}" data-drag-unit-id="${escapeHtml(unit.id)}" data-drop-unit-id="${escapeHtml(unit.id)}">
       <button class="unit-head" type="button" data-card-open="${escapeHtml(unit.id)}" aria-expanded="${open}" aria-label="${escapeHtml(unit.name)} 카드 ${open ? "닫기" : "열기"}">
         ${avatar}
         <span class="unit-head-main">
@@ -1161,12 +1342,10 @@ function renderUnitCard(unit, childCount = 0) {
               ${
                 status
                   ? `<div class="unit-state pulse-${status.tone}"><b>${escapeHtml(status.label)}</b><span>${escapeHtml(status.note)}</span></div>`
-                  : `<div class="unit-state read-${unit.risk}"><b>${escapeHtml(formatRisk(unit.risk))}</b><span>변화 수용도 ${unit.readiness} 기준</span></div>`
+                  : `<div class="unit-state read-${signal.risk}"><b>${escapeHtml(formatRisk(signal.risk))}</b><span>변화 수용도 ${signal.readiness} 기준</span></div>`
               }
               ${keywords.length ? `<div class="unit-keywords">${keywords.slice(0, 4).map((t) => `<span class="kw">${escapeHtml(t)}</span>`).join("")}</div>` : ""}
               <div class="card-foot">
-                <label class="photo-up" title="리더 사진 업로드"><input type="file" accept="image/*" data-photo-unit="${escapeHtml(unit.id)}" hidden />${unit.photo ? "사진 변경" : "사진 업로드"}</label>
-                ${unit.photo ? `<button class="photo-rm" type="button" data-remove-photo="${escapeHtml(unit.id)}">제거</button>` : ""}
                 <button class="card-detail-link" type="button" data-open-detail="${escapeHtml(unit.id)}">상세 · 편집 →</button>
               </div>
             </div>`
@@ -1187,18 +1366,19 @@ function renderUnitCard(unit, childCount = 0) {
 function renderOrgInspector(unit) {
   const pulse = pulseForUnit(unit.id);
   const status = pulseStatusDef(unit);
+  const signal = signalForUnit(unit);
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
   const directPeople = getPeopleForUnit(unit.id, false);
   const childUnits = getChildren(unit.id);
   const visibleMembers = (directPeople.length ? directPeople : people).slice(0, 8);
   const memberScopeLabel = directPeople.length ? "직접 등록 팀원" : "하위 포함 팀원";
-  const statusLabel = status?.label || formatRisk(unit.risk);
-  const statusNote = status?.note || `변화 수용도 ${unit.readiness} · 신뢰 ${unit.trust}`;
-  const tone = status?.tone || unit.risk;
-  const primaryScore = pulse ? `${pulse.fav}%` : `${unit.readiness}%`;
-  const primaryLabel = pulse ? "Pulse 긍정" : "변화 수용도";
-  const riskText = pulse ? `${pulse.low}%` : `${unit.fatigue}`;
-  const riskLabel = pulse ? "부정 응답" : "피로도";
+  const statusLabel = status?.label || formatRisk(signal.risk);
+  const statusNote = status?.note || `변화 수용도 ${signal.readiness} · 신뢰 ${signal.trust}`;
+  const tone = status?.tone || signal.risk;
+  const primaryScore = pulse && unit.level !== "team" ? `${pulse.fav}%` : `${signal.readiness}%`;
+  const primaryLabel = pulse && unit.level !== "team" ? "Pulse 긍정" : "변화 수용도";
+  const riskText = pulse && unit.level !== "team" ? `${pulse.low}%` : `${signal.fatigue}`;
+  const riskLabel = pulse && unit.level !== "team" ? "부정 응답" : "피로도";
 
   return `
     <aside class="org-inspector tone-${escapeHtml(tone)}" aria-label="선택 조직 요약">
@@ -1229,12 +1409,12 @@ function renderOrgInspector(unit) {
       </div>
 
       <section class="inspector-section">
-        <h4>리더</h4>
+        <h4>${escapeHtml(leaderRoleLabel(unit))}</h4>
         <div class="inspector-leader">
-          ${personAvatar({ name: unit.leader, photo: unit.photo })}
+          ${personAvatar({ name: leaderNameLabel(unit), photo: unit.photo })}
           <div>
-            <strong>${escapeHtml(unit.leader)}</strong>
-            <span>${[leaderTitleLabel(unit.leaderTitle), unit.leaderRole].filter(Boolean).map(escapeHtml).join(" · ")}</span>
+            <strong>${escapeHtml(leaderNameLabel(unit))}</strong>
+            <span>${[leaderTitleLabel(unit.leaderTitle), leaderRoleLabel(unit)].filter(Boolean).map(escapeHtml).join(" · ")}</span>
           </div>
         </div>
       </section>
@@ -1244,7 +1424,7 @@ function renderOrgInspector(unit) {
         <div class="inspector-chip-row">
           <span>${childUnits.length}개 하위 조직</span>
           <span>${directPeople.length}명 직접 등록</span>
-          ${unit.tags.slice(0, 2).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+          ${signal.tags.slice(0, 2).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
         </div>
       </section>
 
@@ -1264,7 +1444,7 @@ function renderOrgInspector(unit) {
 
       <section class="inspector-section">
         <h4>추천 운영</h4>
-        <p>${escapeHtml(unit.recommendation)}</p>
+        <p>${escapeHtml(signal.recommendation)}</p>
       </section>
     </aside>
   `;
@@ -1272,9 +1452,11 @@ function renderOrgInspector(unit) {
 
 function personAvatar(person, cls = "member-avatar") {
   const initial = unitInitial(person.name) || (person.name || "·").charAt(0);
+  const tag = person.id ? "button" : "span";
+  const attrs = person.id ? `type="button" data-upload-person-photo="${escapeHtml(person.id)}" title="사진 변경"` : "";
   return person.photo
-    ? `<span class="${cls} has-photo"><img src="${escapeHtml(person.photo)}" alt="${escapeHtml(person.name)}" /></span>`
-    : `<span class="${cls}" style="--av:${avatarColor(person.name)}">${escapeHtml(initial)}</span>`;
+    ? `<${tag} class="${cls} has-photo photo-trigger" ${attrs}><img src="${escapeHtml(person.photo)}" alt="${escapeHtml(person.name)}" /></${tag}>`
+    : `<${tag} class="${cls} photo-trigger" ${attrs} style="--av:${avatarColor(person.name)}" title="사진 업로드">${escapeHtml(initial)}</${tag}>`;
 }
 
 function renderInspectorMemberRow(person) {
@@ -1288,8 +1470,6 @@ function renderInspectorMemberRow(person) {
           <span>${escapeHtml(person.position)} · 직급 ${escapeHtml(leaderTitleLabel(person.title))}</span>
         </div>
         <div class="member-actions">
-          <label class="photo-up sm" title="${escapeHtml(person.name)} 사진 업로드"><input type="file" accept="image/*" data-photo-person="${escapeHtml(person.id)}" hidden />${person.photo ? "변경" : "사진"}</label>
-          ${person.photo ? `<button type="button" class="photo-rm sm" data-remove-person-photo="${escapeHtml(person.id)}">제거</button>` : ""}
           <button type="button" class="member-delete-button" data-delete-person="${escapeHtml(person.id)}" aria-label="${escapeHtml(person.name)} 삭제">삭제</button>
         </div>
       </div>
@@ -1391,8 +1571,8 @@ function renderNetworkView() {
   const units = getVisibleUnits().filter((unit) => unit.level === state.networkLevel);
   const average = units.length
     ? {
-        readiness: Math.round(units.reduce((sum, unit) => sum + unit.readiness, 0) / units.length),
-        fatigue: Math.round(units.reduce((sum, unit) => sum + unit.fatigue, 0) / units.length),
+        readiness: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).readiness, 0) / units.length),
+        fatigue: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).fatigue, 0) / units.length),
       }
     : { readiness: 0, fatigue: 0 };
 
@@ -1400,7 +1580,7 @@ function renderNetworkView() {
     <div class="panel-header">
       <div>
         <p class="eyebrow">Culture Propagation Map</p>
-        <h3>문화 확산 맵</h3>
+        <h3>조직문화 확산 맵</h3>
         <p>전사 · 부문 · 본부 · 팀 단위로 문화 확산성과 피로도 분포를 읽습니다.</p>
       </div>
       <div class="panel-actions">
@@ -1414,40 +1594,42 @@ function renderNetworkView() {
     </div>
     <div class="network-summary">
       <article>
-        <span>Average Readiness</span>
+        <span>평균 변화 수용도</span>
         <strong>${average.readiness}%</strong>
       </article>
       <article>
-        <span>Average Fatigue</span>
+        <span>평균 피로도</span>
         <strong>${average.fatigue}%</strong>
       </article>
       <article>
-        <span>Support Needed</span>
-        <strong>${units.filter((unit) => unit.risk === "high").length}</strong>
+        <span>지원 필요</span>
+        <strong>${units.filter((unit) => signalForUnit(unit).risk === "high").length}</strong>
       </article>
     </div>
     <div class="network-canvas">
       <div class="axis-line horizontal"></div>
       <div class="axis-line vertical"></div>
-      <span class="axis-label axis-x">Change Readiness →</span>
-      <span class="axis-label axis-y">↑ Fatigue / Support Need</span>
+      <span class="axis-label axis-x">변화 수용도 →</span>
+      <span class="axis-label axis-y">↑ 피로도 / 지원 필요</span>
       ${units.length ? units.map(renderNetworkNode).join("") : `<div class="empty-state"><strong>표시할 조직이 없습니다</strong><span>검색이나 필터를 조정해보세요.</span></div>`}
     </div>
   `;
 }
 
 function networkPosition(unit, index = 0) {
+  const signal = signalForUnit(unit);
   const xOffset = ((index % 3) - 1) * 2.4;
   const yOffset = (Math.floor(index / 3) % 3 - 1) * 2.2;
-  const x = clamp(10 + unit.readiness * 0.78 + xOffset, 8, 88);
-  const y = clamp(90 - unit.fatigue * 0.72 + yOffset, 14, 86);
+  const x = clamp(10 + signal.readiness * 0.78 + xOffset, 8, 88);
+  const y = clamp(90 - signal.fatigue * 0.72 + yOffset, 14, 86);
   return { x, y };
 }
 
 function networkKind(unit) {
-  if (unit.risk === "high" || unit.tags.includes("지원 필요") || unit.tags.includes("고립 신호")) return "support";
-  if (unit.tags.includes("확산 중심") || unit.tags.includes("앰버서더 후보")) return "diffusion";
-  if (unit.tags.includes("연결자") || unit.tags.includes("연결자 많음")) return "bridge";
+  const signal = signalForUnit(unit);
+  if (signal.risk === "high" || signal.tags.includes("지원 필요") || signal.tags.includes("고립 신호")) return "support";
+  if (signal.tags.includes("확산 중심") || signal.tags.includes("앰버서더 후보")) return "diffusion";
+  if (signal.tags.includes("연결자") || signal.tags.includes("연결자 많음")) return "bridge";
   return "watch";
 }
 
@@ -1463,13 +1645,14 @@ function networkLabel(kind) {
 function renderNetworkNode(unit, index) {
   const position = networkPosition(unit, index);
   const kind = networkKind(unit);
+  const signal = signalForUnit(unit);
   const selected = unit.id === state.selectedUnitId ? "selected" : "";
   return `
     <article class="network-node ${kind} ${selected}" style="--x:${position.x}%; --y:${position.y}%">
       <button type="button" data-open-detail="${escapeHtml(unit.id)}" aria-label="${escapeHtml(unit.name)} 상세 정보 열기">
         <span class="network-dot"></span>
         <strong>${escapeHtml(unit.name)}</strong>
-        <small>${escapeHtml(networkLabel(kind))} · R ${unit.readiness} · F ${unit.fatigue}</small>
+        <small>${escapeHtml(networkLabel(kind))} · 수용 ${signal.readiness} · 피로 ${signal.fatigue}</small>
       </button>
     </article>
   `;
@@ -1479,8 +1662,621 @@ function renderNetworkLink(parent, child) {
   if (!parent || !child) return "";
   const p1 = networkPosition(parent);
   const p2 = networkPosition(child);
-  const stroke = child.risk === "high" ? "#be5b45" : "#94a3a8";
+  const stroke = signalForUnit(child).risk === "high" ? "#be5b45" : "#94a3a8";
   return `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${stroke}" stroke-width="0.45" stroke-dasharray="2 2" vector-effect="non-scaling-stroke" />`;
+}
+
+function parseIsoDate(value) {
+  const [year, month, day] = String(value || todayIso()).split("-").map(Number);
+  return new Date(year || new Date().getFullYear(), (month || 1) - 1, day || 1);
+}
+
+function toIsoDate(date) {
+  const local = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const offset = local.getTimezoneOffset();
+  return new Date(local.getTime() - offset * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function shiftCalendarDate(amount) {
+  const date = parseIsoDate(state.selectedCalendarDate);
+  if (state.calendarView === "month") date.setMonth(date.getMonth() + amount);
+  else date.setDate(date.getDate() + amount * (state.calendarView === "week" ? 7 : 1));
+  state.selectedCalendarDate = toIsoDate(date);
+}
+
+function formatCalendarTitle() {
+  const date = parseIsoDate(state.selectedCalendarDate);
+  if (state.calendarView === "month") return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+  if (state.calendarView === "week") {
+    const start = new Date(date);
+    start.setDate(date.getDate() - date.getDay());
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return `${start.getMonth() + 1}.${start.getDate()} - ${end.getMonth() + 1}.${end.getDate()}`;
+  }
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
+function sessionsForDate(iso) {
+  return (state.sessions || [])
+    .filter((session) => session.date === iso)
+    .sort((a, b) => `${a.startTime || ""}`.localeCompare(`${b.startTime || ""}`));
+}
+
+function renderSessionItem(session, compact = false) {
+  if (compact) {
+    return `<span class="session-item compact"><b>${escapeHtml(session.startTime || "--:--")}</b>${escapeHtml(session.teamName || getUnit(session.teamId)?.name || "팀 미정")}</span>`;
+  }
+
+  return `
+    <article class="session-item">
+      <span class="session-time">${escapeHtml(session.startTime || "--:--")}</span>
+      <strong>${escapeHtml(session.sessionName || "WOW x BALANCE 세션")}</strong>
+      <small>${escapeHtml(session.teamName || getUnit(session.teamId)?.name || "팀 미정")} · ${Number(session.participants || 0)}명</small>
+      <button type="button" data-delete-session="${escapeHtml(session.id)}" aria-label="일정 삭제">삭제</button>
+    </article>
+  `;
+}
+
+function renderMonthCalendar() {
+  const selected = parseIsoDate(state.selectedCalendarDate);
+  const year = selected.getFullYear();
+  const month = selected.getMonth();
+  const first = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const blanks = first.getDay();
+  const cells = [];
+  for (let i = 0; i < blanks; i += 1) cells.push(`<div class="calendar-day muted"></div>`);
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const iso = toIsoDate(new Date(year, month, day));
+    const sessions = sessionsForDate(iso);
+    const active = iso === state.selectedCalendarDate ? "active" : "";
+    cells.push(`
+      <button class="calendar-day ${active}" type="button" data-pick-calendar-date="${iso}">
+        <span>${day}</span>
+        <div>${sessions.slice(0, 3).map((session) => renderSessionItem(session, true)).join("")}</div>
+        ${sessions.length > 3 ? `<em>+${sessions.length - 3}</em>` : ""}
+      </button>
+    `);
+  }
+
+  return `
+    <div class="calendar-weekdays">${["일", "월", "화", "수", "목", "금", "토"].map((day) => `<span>${day}</span>`).join("")}</div>
+    <div class="calendar-grid">${cells.join("")}</div>
+  `;
+}
+
+function renderWeekCalendar() {
+  const selected = parseIsoDate(state.selectedCalendarDate);
+  const start = new Date(selected);
+  start.setDate(selected.getDate() - selected.getDay());
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return date;
+  });
+
+  return `
+    <div class="week-board">
+      ${days
+        .map((date) => {
+          const iso = toIsoDate(date);
+          const sessions = sessionsForDate(iso);
+          return `
+            <section class="week-day ${iso === state.selectedCalendarDate ? "active" : ""}">
+              <button type="button" data-pick-calendar-date="${iso}">
+                <span>${["일", "월", "화", "수", "목", "금", "토"][date.getDay()]}</span>
+                <strong>${date.getDate()}</strong>
+              </button>
+              <div>${sessions.map((session) => renderSessionItem(session)).join("") || `<p class="calendar-empty">일정 없음</p>`}</div>
+            </section>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderDayCalendar() {
+  const sessions = sessionsForDate(state.selectedCalendarDate);
+  return `
+    <div class="day-board">
+      ${sessions.map((session) => renderSessionItem(session)).join("") || `<div class="empty-state"><strong>오늘 등록된 세션이 없습니다</strong><span>오른쪽 입력 영역에서 WOW x BALANCE 일정을 추가하세요.</span></div>`}
+    </div>
+  `;
+}
+
+function renderCalendarView() {
+  const teams = state.units.filter((unit) => unit.level === "team").sort((a, b) => a.name.localeCompare(b.name, "ko"));
+  const selectedTeam = teams[0]?.id || "";
+  const totalSessions = (state.sessions || []).length;
+
+  document.getElementById("viewRoot").innerHTML = `
+    <div class="panel-header">
+      <div>
+        <p class="eyebrow">WOW x BALANCE Calendar</p>
+        <h3>캘린더</h3>
+        <p>팀별 WOW x BALANCE 세션 일정을 월·주·일 단위로 확인하고 바로 추가합니다.</p>
+      </div>
+      <div class="panel-actions">
+        <div class="segmented compact" aria-label="캘린더 보기">
+          <button class="segment ${state.calendarView === "month" ? "active" : ""}" data-calendar-view="month" type="button">월</button>
+          <button class="segment ${state.calendarView === "week" ? "active" : ""}" data-calendar-view="week" type="button">주</button>
+          <button class="segment ${state.calendarView === "day" ? "active" : ""}" data-calendar-view="day" type="button">일</button>
+        </div>
+        <span class="status-pill">${totalSessions}개 일정</span>
+      </div>
+    </div>
+    <div class="calendar-shell">
+      <section class="calendar-main">
+        <div class="calendar-toolbar">
+          <button class="icon-button" type="button" data-calendar-shift="-1" aria-label="이전">‹</button>
+          <strong>${escapeHtml(formatCalendarTitle())}</strong>
+          <button class="icon-button" type="button" data-calendar-shift="1" aria-label="다음">›</button>
+          <input id="calendarDateInput" type="date" value="${escapeHtml(state.selectedCalendarDate)}" />
+        </div>
+        ${
+          state.calendarView === "month"
+            ? renderMonthCalendar()
+            : state.calendarView === "week"
+              ? renderWeekCalendar()
+              : renderDayCalendar()
+        }
+      </section>
+      <aside class="calendar-side">
+        <h4>세션 스케줄 추가</h4>
+        <form id="sessionForm" class="session-form">
+          <label>날짜<input id="sessionDateInput" type="date" value="${escapeHtml(state.selectedCalendarDate)}" required /></label>
+          <label>시간<input id="sessionTimeInput" type="time" value="10:00" required /></label>
+          <label>세션 명<input id="sessionNameInput" type="text" value="WOW x BALANCE 세션" required /></label>
+          <label>팀 이름
+            <select id="sessionTeamInput" required>
+              ${teams.map((team) => `<option value="${escapeHtml(team.id)}" ${team.id === selectedTeam ? "selected" : ""}>${escapeHtml(team.name)}</option>`).join("")}
+            </select>
+          </label>
+          <label>참여인원<input id="sessionParticipantsInput" type="number" min="1" value="12" required /></label>
+          <button class="primary-button wide" type="submit">일정 추가</button>
+        </form>
+        <div class="session-today-list">
+          <h4>선택일 일정</h4>
+          ${sessionsForDate(state.selectedCalendarDate).map((session) => renderSessionItem(session)).join("") || `<p class="calendar-empty">선택한 날짜에 일정이 없습니다.</p>`}
+        </div>
+      </aside>
+    </div>
+  `;
+}
+
+function organizationTemplateRows() {
+  const headers = ["id", "level", "parentId", "name", "leader", "leaderTitle", "leaderRole", "readiness", "trust", "fatigue", "risk", "tags"];
+  const rows = state.units
+    .slice()
+    .sort((a, b) => (a.sourcePath || a.name).localeCompare(b.sourcePath || b.name, "ko"))
+    .map((unit) => [
+      unit.id,
+      unit.level,
+      unit.parentId || "",
+      unit.name,
+      unit.leader || "",
+      unit.leaderTitle || "",
+      leaderRoleLabel(unit),
+      unit.readiness,
+      unit.trust,
+      unit.fatigue,
+      unit.risk,
+      (unit.tags || []).join(";"),
+    ]);
+
+  return [headers, ...rows];
+}
+
+function xmlEscape(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function columnName(index) {
+  let name = "";
+  let value = index + 1;
+  while (value > 0) {
+    const mod = (value - 1) % 26;
+    name = String.fromCharCode(65 + mod) + name;
+    value = Math.floor((value - mod) / 26);
+  }
+  return name;
+}
+
+function buildWorksheetXml(rows) {
+  const sheetRows = rows
+    .map((row, rowIndex) => {
+      const rowNumber = rowIndex + 1;
+      const cells = row
+        .map((value, columnIndex) => {
+          const ref = `${columnName(columnIndex)}${rowNumber}`;
+          return `<c r="${ref}" t="inlineStr"><is><t>${xmlEscape(value)}</t></is></c>`;
+        })
+        .join("");
+      return `<row r="${rowNumber}">${cells}</row>`;
+    })
+    .join("");
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>${sheetRows}</sheetData>
+</worksheet>`;
+}
+
+function crc32(bytes) {
+  if (!crc32.table) {
+    crc32.table = Array.from({ length: 256 }, (_, index) => {
+      let value = index;
+      for (let i = 0; i < 8; i += 1) value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+      return value >>> 0;
+    });
+  }
+
+  let crc = 0xffffffff;
+  bytes.forEach((byte) => {
+    crc = crc32.table[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  });
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function textBytes(value) {
+  return new TextEncoder().encode(value);
+}
+
+function concatBytes(chunks) {
+  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  chunks.forEach((chunk) => {
+    out.set(chunk, offset);
+    offset += chunk.length;
+  });
+  return out;
+}
+
+function makeZip(entries) {
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+
+  entries.forEach(({ name, content }) => {
+    const nameBytes = textBytes(name);
+    const data = typeof content === "string" ? textBytes(content) : content;
+    const crc = crc32(data);
+    const local = new Uint8Array(30 + nameBytes.length);
+    const localView = new DataView(local.buffer);
+    localView.setUint32(0, 0x04034b50, true);
+    localView.setUint16(4, 20, true);
+    localView.setUint16(6, 0, true);
+    localView.setUint16(8, 0, true);
+    localView.setUint16(10, 0, true);
+    localView.setUint16(12, 0, true);
+    localView.setUint32(14, crc, true);
+    localView.setUint32(18, data.length, true);
+    localView.setUint32(22, data.length, true);
+    localView.setUint16(26, nameBytes.length, true);
+    localView.setUint16(28, 0, true);
+    local.set(nameBytes, 30);
+    localParts.push(local, data);
+
+    const central = new Uint8Array(46 + nameBytes.length);
+    const centralView = new DataView(central.buffer);
+    centralView.setUint32(0, 0x02014b50, true);
+    centralView.setUint16(4, 20, true);
+    centralView.setUint16(6, 20, true);
+    centralView.setUint16(8, 0, true);
+    centralView.setUint16(10, 0, true);
+    centralView.setUint16(12, 0, true);
+    centralView.setUint16(14, 0, true);
+    centralView.setUint32(16, crc, true);
+    centralView.setUint32(20, data.length, true);
+    centralView.setUint32(24, data.length, true);
+    centralView.setUint16(28, nameBytes.length, true);
+    centralView.setUint16(30, 0, true);
+    centralView.setUint16(32, 0, true);
+    centralView.setUint16(34, 0, true);
+    centralView.setUint16(36, 0, true);
+    centralView.setUint32(38, 0, true);
+    centralView.setUint32(42, offset, true);
+    central.set(nameBytes, 46);
+    centralParts.push(central);
+    offset += local.length + data.length;
+  });
+
+  const centralOffset = offset;
+  const centralDirectory = concatBytes(centralParts);
+  const end = new Uint8Array(22);
+  const endView = new DataView(end.buffer);
+  endView.setUint32(0, 0x06054b50, true);
+  endView.setUint16(4, 0, true);
+  endView.setUint16(6, 0, true);
+  endView.setUint16(8, entries.length, true);
+  endView.setUint16(10, entries.length, true);
+  endView.setUint32(12, centralDirectory.length, true);
+  endView.setUint32(16, centralOffset, true);
+  endView.setUint16(20, 0, true);
+
+  return new Blob([...localParts, centralDirectory, end], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+}
+
+function makeOrganizationXlsxBlob(rows) {
+  return makeZip([
+    {
+      name: "[Content_Types].xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>`,
+    },
+    {
+      name: "_rels/.rels",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`,
+    },
+    {
+      name: "xl/workbook.xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="Organization" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`,
+    },
+    {
+      name: "xl/_rels/workbook.xml.rels",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+</Relationships>`,
+    },
+    { name: "xl/worksheets/sheet1.xml", content: buildWorksheetXml(rows) },
+  ]);
+}
+
+function downloadOrganizationTemplate() {
+  const blob = makeOrganizationXlsxBlob(organizationTemplateRows());
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "lina_organization_template.xlsx";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function parseCsvRows(text) {
+  const rows = [];
+  let current = "";
+  let row = [];
+  let quoted = false;
+  const source = String(text || "").replace(/^\uFEFF/, "");
+
+  for (let i = 0; i < source.length; i += 1) {
+    const char = source[i];
+    const next = source[i + 1];
+    if (char === '"' && quoted && next === '"') {
+      current += '"';
+      i += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      row.push(current);
+      current = "";
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && next === "\n") i += 1;
+      row.push(current);
+      if (row.some((cell) => cell.trim())) rows.push(row);
+      row = [];
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  row.push(current);
+  if (row.some((cell) => cell.trim())) rows.push(row);
+  if (!rows.length) return [];
+
+  const headers = rows[0].map((cell) => cell.trim());
+  return rows.slice(1).map((cells) => Object.fromEntries(headers.map((header, index) => [header, cells[index] ?? ""])));
+}
+
+function findEndOfCentralDirectory(view) {
+  const minOffset = Math.max(0, view.byteLength - 66000);
+  for (let offset = view.byteLength - 22; offset >= minOffset; offset -= 1) {
+    if (view.getUint32(offset, true) === 0x06054b50) return offset;
+  }
+  throw new Error("엑셀 파일 구조를 읽을 수 없습니다.");
+}
+
+async function inflateRaw(bytes) {
+  if (!window.DecompressionStream) {
+    throw new Error("이 브라우저는 압축된 엑셀 업로드를 지원하지 않습니다.");
+  }
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+function normalizeXlsxPath(basePath, target) {
+  const cleanTarget = String(target || "").replace(/^\/+/, "");
+  if (cleanTarget.startsWith("xl/")) return cleanTarget;
+  const stack = basePath.split("/").filter(Boolean);
+  cleanTarget.split("/").forEach((part) => {
+    if (!part || part === ".") return;
+    if (part === "..") stack.pop();
+    else stack.push(part);
+  });
+  return stack.join("/");
+}
+
+function xmlElements(root, localName) {
+  return [...root.getElementsByTagName("*")].filter((node) => node.localName === localName);
+}
+
+function xmlFirst(root, localName) {
+  return xmlElements(root, localName)[0] || null;
+}
+
+async function readXlsxEntries(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+  const view = new DataView(arrayBuffer);
+  const decoder = new TextDecoder();
+  const eocdOffset = findEndOfCentralDirectory(view);
+  const entryCount = view.getUint16(eocdOffset + 10, true);
+  const centralOffset = view.getUint32(eocdOffset + 16, true);
+  const entries = {};
+  let offset = centralOffset;
+
+  for (let i = 0; i < entryCount; i += 1) {
+    if (view.getUint32(offset, true) !== 0x02014b50) break;
+    const method = view.getUint16(offset + 10, true);
+    const compressedSize = view.getUint32(offset + 20, true);
+    const nameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    const localOffset = view.getUint32(offset + 42, true);
+    const name = decoder.decode(bytes.slice(offset + 46, offset + 46 + nameLength));
+
+    const localNameLength = view.getUint16(localOffset + 26, true);
+    const localExtraLength = view.getUint16(localOffset + 28, true);
+    const dataOffset = localOffset + 30 + localNameLength + localExtraLength;
+    const compressed = bytes.slice(dataOffset, dataOffset + compressedSize);
+    let data;
+    if (method === 0) data = compressed;
+    else if (method === 8) data = await inflateRaw(compressed);
+    else throw new Error("지원하지 않는 엑셀 압축 방식입니다.");
+
+    entries[name] = decoder.decode(data);
+    offset += 46 + nameLength + extraLength + commentLength;
+  }
+
+  return entries;
+}
+
+function getFirstWorksheetPath(entries) {
+  const parser = new DOMParser();
+  const workbook = parser.parseFromString(entries["xl/workbook.xml"], "application/xml");
+  const rels = parser.parseFromString(entries["xl/_rels/workbook.xml.rels"], "application/xml");
+  const firstSheet = xmlFirst(workbook, "sheet");
+  const relId =
+    firstSheet?.getAttribute("r:id") ||
+    firstSheet?.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+  const rel = xmlElements(rels, "Relationship").find((item) => item.getAttribute("Id") === relId);
+  const target = rel?.getAttribute("Target") || "worksheets/sheet1.xml";
+  return normalizeXlsxPath("xl", target);
+}
+
+function parseSharedStrings(xmlText) {
+  if (!xmlText) return [];
+  const xml = new DOMParser().parseFromString(xmlText, "application/xml");
+  return xmlElements(xml, "si").map((item) => xmlElements(item, "t").map((node) => node.textContent || "").join(""));
+}
+
+function columnIndexFromRef(ref) {
+  const letters = String(ref || "").match(/[A-Z]+/i)?.[0]?.toUpperCase() || "A";
+  return [...letters].reduce((sum, char) => sum * 26 + char.charCodeAt(0) - 64, 0) - 1;
+}
+
+function textFromInlineString(cell) {
+  return xmlElements(cell, "t").map((node) => node.textContent || "").join("");
+}
+
+async function parseXlsxRows(file) {
+  const entries = await readXlsxEntries(await file.arrayBuffer());
+  const worksheetPath = getFirstWorksheetPath(entries);
+  const worksheetXml = entries[worksheetPath] || entries["xl/worksheets/sheet1.xml"];
+  if (!worksheetXml) throw new Error("엑셀 첫 시트를 찾을 수 없습니다.");
+
+  const sharedStrings = parseSharedStrings(entries["xl/sharedStrings.xml"]);
+  const xml = new DOMParser().parseFromString(worksheetXml, "application/xml");
+  const rowArrays = xmlElements(xml, "row").map((row) => {
+    const cells = [];
+    xmlElements(row, "c").forEach((cell) => {
+      const type = cell.getAttribute("t");
+      const raw = xmlFirst(cell, "v")?.textContent || "";
+      let value = raw;
+      if (type === "s") value = sharedStrings[Number(raw)] || "";
+      if (type === "inlineStr") value = textFromInlineString(cell);
+      cells[columnIndexFromRef(cell.getAttribute("r"))] = value;
+    });
+    return cells;
+  });
+
+  const headerIndex = rowArrays.findIndex((row) => row.some((value) => String(value || "").trim()));
+  if (headerIndex < 0) return [];
+  const headers = rowArrays[headerIndex].map((header) => String(header || "").trim());
+  return rowArrays
+    .slice(headerIndex + 1)
+    .filter((row) => row.some((value) => String(value || "").trim()))
+    .map((row) => Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""])));
+}
+
+async function parseOrganizationUpload(file) {
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".xlsx")) return parseXlsxRows(file);
+  if (name.endsWith(".csv") || file.type.includes("csv")) return parseCsvRows(await file.text());
+  throw new Error("xlsx 또는 csv 파일만 업로드할 수 있습니다.");
+}
+
+function applyOrganizationTemplate(rows) {
+  if (!rows.length) return false;
+
+  rows.forEach((row, index) => {
+    const id = (row.id || "").trim() || `uploaded-unit-${Date.now()}-${index}`;
+    const existing = getUnit(id);
+    const level = (row.level || existing?.level || "team").trim();
+    const unit = existing || {
+      id,
+      level,
+      orgType: levelLabel(level),
+      parentId: "",
+      members: 0,
+      engagement: 60,
+      ambassadors: 0,
+      recommendation: "업로드된 조직입니다. 문화 신호와 운영 액션을 확인하세요.",
+      status: "active",
+      sortOrder: state.units.length + index + 1,
+    };
+
+    unit.level = level;
+    unit.orgType = levelLabel(level);
+    unit.parentId = (row.parentId || "").trim() || "";
+    unit.name = (row.name || unit.name || `${levelLabel(level)} ${index + 1}`).trim();
+    unit.leaderRole = (row.leaderRole || unit.leaderRole || defaultLeaderRole(level)).trim();
+    unit.leader = (row.leader || unit.leader || unsetLeaderForUnit(unit)).trim();
+    unit.leaderTitle = (row.leaderTitle || unit.leaderTitle || "").trim();
+    unit.readiness = clamp(Number(row.readiness || unit.readiness || 60), 0, 100);
+    unit.trust = clamp(Number(row.trust || unit.trust || 60), 0, 100);
+    unit.fatigue = clamp(Number(row.fatigue || unit.fatigue || 45), 0, 100);
+    unit.risk = ["low", "medium", "high"].includes(row.risk) ? row.risk : unit.risk || "medium";
+    unit.tags = String(row.tags || "")
+      .split(/[;,]/)
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+      .slice(0, 6);
+
+    if (!existing) state.units.push(unit);
+  });
+
+  state.units.forEach((unit) => {
+    if (!unit.parentId || !getUnit(unit.parentId)) unit.parentId = unit.level === "company" ? "" : getDefaultSelectedUnitId();
+  });
+  state.units.filter((unit) => !unit.parentId).forEach((unit) => refreshSourcePaths(unit.id));
+  state.view = "official";
+  state.detailOpen = false;
+  state.detailModal = null;
+  return true;
 }
 
 function renderGroupsView() {
@@ -1488,7 +2284,7 @@ function renderGroupsView() {
     <div class="panel-header">
       <div>
         <p class="eyebrow">Purpose-Based Groups</p>
-        <h3>목적 기반 그룹</h3>
+        <h3>타겟그룹 설정</h3>
         <p>팀 단위가 아니라 변화 수용성, 영향력, 신뢰, 피로도, 캠페인 목적을 기준으로 대상을 묶습니다.</p>
       </div>
       <button class="primary-button" id="openGroupPanelButtonInline" type="button">새 그룹</button>
@@ -1563,29 +2359,30 @@ function renderOverviewModal(unit) {
   const directPeople = getPeopleForUnit(unit.id, false);
   const childUnits = getChildren(unit.id);
   const pulse = pulseForUnit(unit.id);
+  const signal = signalForUnit(unit);
 
   return `
     <div class="detail-title">
       <div class="detail-title-row">
         <div class="tag-list">
-          <span class="risk-pill risk-${unit.risk}">${escapeHtml(formatRisk(unit.risk))}</span>
+          <span class="risk-pill risk-${signal.risk}">${escapeHtml(formatRisk(signal.risk))}</span>
           <span class="tag">${escapeHtml(displayOrgType(unit))}</span>
         </div>
         <button class="icon-button" id="closeDetailButton" type="button" aria-label="상세 정보 닫기">×</button>
       </div>
       <h3>${escapeHtml(unit.name)}</h3>
-      <p class="detail-sub">리더 ${escapeHtml(unit.leader)} · 직급 ${escapeHtml(leaderTitleLabel(unit.leaderTitle))} · ${escapeHtml(getParentName(unit))} 소속 · ${people.length || unit.members}명 범위</p>
+      <p class="detail-sub">${escapeHtml(leaderRoleLabel(unit))} ${escapeHtml(leaderNameLabel(unit))} · 직급 ${escapeHtml(leaderTitleLabel(unit.leaderTitle))} · ${escapeHtml(getParentName(unit))} 소속 · ${people.length || unit.members}명 범위</p>
       <p class="path-crumb">${escapeHtml(unit.sourcePath || unit.name)}</p>
     </div>
 
     <section class="detail-section">
       <h4>1. 현재 신호</h4>
       <div class="unit-bars">
-        ${renderBar("Readiness", unit.readiness, "")}
-        ${renderBar("Trust", unit.trust, "trust")}
-        ${renderBar("Fatigue", unit.fatigue, "fatigue")}
+        ${renderBar("변화 수용도", signal.readiness, "")}
+        ${renderBar("신뢰", signal.trust, "trust")}
+        ${renderBar("피로도", signal.fatigue, "fatigue")}
       </div>
-      <div class="tag-list">${unit.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>
+      <div class="tag-list">${signal.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>
     </section>
 
     ${
@@ -1608,7 +2405,7 @@ function renderOverviewModal(unit) {
 
     <section class="detail-section">
       <h4>3. 다음 액션</h4>
-      <div class="recommend-card">${escapeHtml(unit.recommendation)}</div>
+      <div class="recommend-card">${escapeHtml(signal.recommendation)}</div>
       <div class="modal-action-row">
         <button class="primary-button" type="button" data-open-detail-modal="settings">설정하기</button>
         <button class="ghost-button" type="button" onclick="if(typeof showView==='function')showView('pulse')">Pulse 분석으로 이동</button>
@@ -1621,6 +2418,7 @@ function renderSettingsModal(unit) {
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
   const directPeople = getPeopleForUnit(unit.id, false);
   const childUnits = getChildren(unit.id);
+  const signal = signalForUnit(unit);
 
   return `
     <div class="detail-title">
@@ -1632,8 +2430,32 @@ function renderSettingsModal(unit) {
         <button class="icon-button" id="closeDetailButton" type="button" aria-label="닫기">×</button>
       </div>
       <h3>${escapeHtml(unit.name)} 설정</h3>
-      <p class="detail-sub">조직명, 리더, 직급, 키워드와 구성원 소속을 수정합니다.</p>
+      <p class="detail-sub">조직명, 책임자 호칭, 직급, 문화 신호와 구성원 소속을 수정합니다.</p>
     </div>
+    ${
+      unit.level === "team"
+        ? `<section class="detail-section team-leader-picker">
+            <h4>팀장 설정</h4>
+            ${
+              directPeople.length
+                ? `<label>
+                    팀원 중 팀장 선택
+                    <select id="teamLeaderSelect">
+                      <option value="">팀장 미정</option>
+                      ${directPeople
+                        .map((person) => `<option value="${escapeHtml(person.id)}" ${person.position === "팀장" ? "selected" : ""}>${escapeHtml(person.name)} · ${escapeHtml(leaderTitleLabel(person.title))}</option>`)
+                        .join("")}
+                    </select>
+                  </label>
+                  <p class="field-hint">선택한 팀원이 카드와 조직도 지표의 팀장으로 반영됩니다.</p>`
+                : `<div class="recommend-card">먼저 구성원을 추가한 뒤 팀장을 선택할 수 있습니다.</div>`
+            }
+          </section>`
+        : `<section class="detail-section auto-signal-note">
+            <h4>Pulse Survey 자동 반영</h4>
+            <div class="recommend-card">본부 이상 조직은 Pulse Survey 기준으로 변화 수용도, 신뢰, 피로도, 리스크와 키워드를 자동 보정합니다.</div>
+          </section>`
+    }
     <section class="detail-section">
       <h4>조직 값 편집</h4>
       <form class="edit-form" id="editUnitForm">
@@ -1643,29 +2465,40 @@ function renderSettingsModal(unit) {
         </label>
         <div class="form-grid two">
           <label>
-            리더
-            <input id="editUnitLeader" type="text" value="${escapeHtml(unit.leader)}" />
+            책임자 이름
+            <input id="editUnitLeader" type="text" value="${escapeHtml(hasAssignedLeader(unit) ? unit.leader : "")}" placeholder="${escapeHtml(unsetLeaderForUnit(unit))}" />
           </label>
+          <label>
+            책임자 호칭
+            <input id="editUnitLeaderRole" type="text" list="leaderRoleOptions" value="${escapeHtml(leaderRoleLabel(unit))}" placeholder="본부장, 부문장, 팀장, 파트장" />
+          </label>
+        </div>
+        <div class="form-grid two">
           <label>
             직급
             <input id="editUnitLeaderTitle" type="text" list="leaderTitleOptions" value="${escapeHtml(unit.leaderTitle || "")}" placeholder="이사, 상무, 전무" />
           </label>
+          <label>
+            조직 유형
+            <input type="text" value="${escapeHtml(displayOrgType(unit))}" disabled />
+          </label>
         </div>
         ${renderLeaderTitleDatalist()}
+        ${renderLeaderRoleDatalist()}
         <div class="slider-line">
-          <label for="editReadiness">Change Readiness <output id="editReadinessOutput">${unit.readiness}</output></label>
+          <label for="editReadiness">변화 수용도(Change Readiness) <output id="editReadinessOutput">${signal.readiness}</output></label>
           <input id="editReadiness" type="range" min="0" max="100" value="${unit.readiness}" />
         </div>
         <div class="slider-line">
-          <label for="editTrust">Trust <output id="editTrustOutput">${unit.trust}</output></label>
+          <label for="editTrust">신뢰(Trust) <output id="editTrustOutput">${signal.trust}</output></label>
           <input id="editTrust" type="range" min="0" max="100" value="${unit.trust}" />
         </div>
         <div class="slider-line">
-          <label for="editFatigue">Fatigue <output id="editFatigueOutput">${unit.fatigue}</output></label>
+          <label for="editFatigue">피로도(Fatigue) <output id="editFatigueOutput">${signal.fatigue}</output></label>
           <input id="editFatigue" type="range" min="0" max="100" value="${unit.fatigue}" />
         </div>
         <label>
-          Risk
+          리스크(Risk)
           <select id="editRisk">
             <option value="low" ${unit.risk === "low" ? "selected" : ""}>안정</option>
             <option value="medium" ${unit.risk === "medium" ? "selected" : ""}>관찰</option>
@@ -1711,11 +2544,14 @@ function renderSettingsModal(unit) {
 function renderPersonRow(person) {
   return `
     <article class="people-row">
-      <div class="people-row-header">
-        <strong>${escapeHtml(person.name)}</strong>
-        <span>${escapeHtml(person.position)} · 직급 ${escapeHtml(leaderTitleLabel(person.title))}</span>
+      <div class="people-row-main">
+        ${personAvatar(person, "member-avatar settings-avatar")}
+        <div class="people-row-header">
+          <strong>${escapeHtml(person.name)}</strong>
+          <span>${escapeHtml(person.position)} · 직급 ${escapeHtml(leaderTitleLabel(person.title))}</span>
+        </div>
       </div>
-      <span>${escapeHtml(person.role)} · ${escapeHtml(person.generation)} · Influence ${person.influence} · Readiness ${person.readiness}</span>
+      <span>${escapeHtml(person.role)} · ${escapeHtml(person.generation)} · 영향력 ${person.influence} · 변화 수용도 ${person.readiness}</span>
       <div class="tag-list">
         ${person.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
       </div>
@@ -1804,7 +2640,7 @@ function createCustomGroup() {
     id: `g-${Date.now()}`,
     name,
     description: "직접 설정한 조건으로 만든 목적 기반 그룹입니다.",
-    criteria: `역할 ${role}, 신호 ${signal}, Readiness ${readiness} 이상, Influence ${influence} 이상`,
+    criteria: `역할 ${role}, 신호 ${signal}, 변화 수용도 ${readiness} 이상, 영향력 ${influence} 이상`,
     memberIds: members.map((person) => person.id),
     unitIds,
     recommendation: "그룹을 캠페인 타겟으로 쓰기 전, 개인 낙인이 아니라 팀 단위 지원 목적임을 운영 원칙에 명확히 남기세요.",
@@ -1838,6 +2674,24 @@ document.addEventListener("click", (event) => {
     suppressNextClick = false;
     event.preventDefault();
     event.stopPropagation();
+    return;
+  }
+
+  const unitPhotoTrigger = event.target.closest("[data-upload-unit-photo]");
+  if (unitPhotoTrigger) {
+    event.preventDefault();
+    event.stopPropagation();
+    pendingUnitPhotoId = unitPhotoTrigger.dataset.uploadUnitPhoto;
+    document.getElementById("unitPhotoInput")?.click();
+    return;
+  }
+
+  const personPhotoTrigger = event.target.closest("[data-upload-person-photo]");
+  if (personPhotoTrigger) {
+    event.preventDefault();
+    event.stopPropagation();
+    pendingPersonPhotoId = personPhotoTrigger.dataset.uploadPersonPhoto;
+    document.getElementById("personPhotoInput")?.click();
     return;
   }
 
@@ -1948,6 +2802,27 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const calendarViewButton = event.target.closest("[data-calendar-view]");
+  if (calendarViewButton) {
+    state.calendarView = calendarViewButton.dataset.calendarView;
+    render();
+    return;
+  }
+
+  const calendarShiftButton = event.target.closest("[data-calendar-shift]");
+  if (calendarShiftButton) {
+    shiftCalendarDate(Number(calendarShiftButton.dataset.calendarShift || 0));
+    render();
+    return;
+  }
+
+  const calendarDateButton = event.target.closest("[data-pick-calendar-date]");
+  if (calendarDateButton) {
+    state.selectedCalendarDate = calendarDateButton.dataset.pickCalendarDate;
+    render();
+    return;
+  }
+
   const filterInput = event.target.closest("[data-filter]");
   if (filterInput) {
     state.filters[filterInput.dataset.filter] = filterInput.checked;
@@ -1979,6 +2854,23 @@ document.addEventListener("click", (event) => {
       deletePerson(person.id);
       render();
     }
+    return;
+  }
+
+  const deleteSessionButton = event.target.closest("[data-delete-session]");
+  if (deleteSessionButton) {
+    state.sessions = (state.sessions || []).filter((session) => session.id !== deleteSessionButton.dataset.deleteSession);
+    render();
+    return;
+  }
+
+  if (event.target.id === "downloadOrgTemplateButton") {
+    downloadOrganizationTemplate();
+    return;
+  }
+
+  if (event.target.id === "uploadOrgButton") {
+    document.getElementById("orgUploadInput")?.click();
     return;
   }
 
@@ -2030,12 +2922,16 @@ document.addEventListener("click", (event) => {
       units: clone(seedUnits),
       people: clone(seedPeople),
       groups: clone(seedGroups),
+      sessions: clone(seedSessions),
       selectedUnitId: getDefaultSelectedUnitId(),
       view: "official",
       orgLayout: "horizontal",
-      orgZoom: 0.72,
+      orgZoom: 0.68,
       networkLevel: "team",
+      calendarView: "month",
+      selectedCalendarDate: todayIso(),
       expandedUnitIds: getDefaultExpandedIds(),
+      openCardIds: [],
       detailOpen: false,
       detailModal: null,
       search: "",
@@ -2078,6 +2974,69 @@ document.addEventListener("input", (event) => {
 });
 
 document.addEventListener("change", (event) => {
+  if (event.target.id === "unitPhotoInput" && event.target.files && event.target.files[0]) {
+    const unitId = pendingUnitPhotoId;
+    readImageDownscaled(event.target.files[0], 180)
+      .then((dataUrl) => {
+        const unit = getUnit(unitId);
+        if (unit) {
+          unit.photo = dataUrl;
+          render();
+        }
+      })
+      .finally(() => {
+        pendingUnitPhotoId = null;
+        event.target.value = "";
+      })
+      .catch(() => {});
+    return;
+  }
+
+  if (event.target.id === "personPhotoInput" && event.target.files && event.target.files[0]) {
+    const personId = pendingPersonPhotoId;
+    readImageDownscaled(event.target.files[0], 140)
+      .then((dataUrl) => {
+        const person = state.people.find((p) => p.id === personId);
+        if (person) {
+          person.photo = dataUrl;
+          render();
+        }
+      })
+      .finally(() => {
+        pendingPersonPhotoId = null;
+        event.target.value = "";
+      })
+      .catch(() => {});
+    return;
+  }
+
+  if (event.target.id === "orgUploadInput" && event.target.files && event.target.files[0]) {
+    parseOrganizationUpload(event.target.files[0])
+      .then((rows) => {
+        if (applyOrganizationTemplate(rows)) render();
+      })
+      .catch((error) => {
+        window.alert(error.message || "조직도 업로드 중 오류가 발생했습니다.");
+      })
+      .finally(() => {
+        event.target.value = "";
+      });
+    return;
+  }
+
+  if (event.target.id === "calendarDateInput") {
+    state.selectedCalendarDate = event.target.value || todayIso();
+    render();
+    return;
+  }
+
+  if (event.target.id === "teamLeaderSelect") {
+    if (setTeamLeader(state.selectedUnitId, event.target.value)) {
+      render();
+    }
+    return;
+  }
+
   const photoInput = event.target.closest("[data-photo-unit]");
   if (photoInput && photoInput.files && photoInput.files[0]) {
     const unitId = photoInput.dataset.photoUnit;
@@ -2126,12 +3085,31 @@ document.addEventListener("change", (event) => {
 });
 
 document.addEventListener("submit", (event) => {
+  if (event.target.id === "sessionForm") {
+    event.preventDefault();
+    const team = getUnit(document.getElementById("sessionTeamInput").value);
+    const session = {
+      id: `session-${Date.now()}`,
+      date: document.getElementById("sessionDateInput").value || state.selectedCalendarDate,
+      startTime: document.getElementById("sessionTimeInput").value || "10:00",
+      sessionName: document.getElementById("sessionNameInput").value.trim() || "WOW x BALANCE 세션",
+      teamId: team?.id || "",
+      teamName: team?.name || "팀 미정",
+      participants: Math.max(1, Number(document.getElementById("sessionParticipantsInput").value || 1)),
+    };
+    state.sessions = [...(state.sessions || []), session];
+    state.selectedCalendarDate = session.date;
+    render();
+    return;
+  }
+
   if (event.target.id === "editUnitForm") {
     event.preventDefault();
     const unit = getUnit(state.selectedUnitId);
     if (!unit) return;
     unit.name = document.getElementById("editUnitName").value.trim() || unit.name;
-    unit.leader = document.getElementById("editUnitLeader").value.trim() || "리더 미정";
+    unit.leaderRole = document.getElementById("editUnitLeaderRole").value.trim() || defaultLeaderRole(unit.level);
+    unit.leader = document.getElementById("editUnitLeader").value.trim() || unsetLeaderForUnit(unit);
     unit.leaderTitle = document.getElementById("editUnitLeaderTitle").value.trim();
     unit.readiness = Number(document.getElementById("editReadiness").value);
     unit.trust = Number(document.getElementById("editTrust").value);
@@ -2171,6 +3149,9 @@ document.addEventListener("submit", (event) => {
     };
 
     state.people.push(person);
+    if (unit.level === "team" && position === "팀장") {
+      setTeamLeader(unit.id, person.id);
+    }
     render();
   }
 });

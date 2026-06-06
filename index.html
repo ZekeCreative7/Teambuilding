@@ -241,12 +241,13 @@
       <section class="control-surface" aria-label="조직도 제어">
         <div class="search-wrap">
           <label for="searchInput">검색</label>
-          <input id="searchInput" type="search" placeholder="조직, 리더, 구성원, 태그 검색" />
+          <input id="searchInput" type="search" placeholder="조직, 책임자, 구성원, 태그 검색" />
         </div>
         <div class="segmented" role="tablist" aria-label="보기 방식">
           <button class="segment active" data-view="official" type="button">조직도</button>
-          <button class="segment" data-view="network" type="button">문화 확산 맵</button>
-          <button class="segment" data-view="groups" type="button">타겟 그룹</button>
+          <button class="segment" data-view="network" type="button">조직문화 확산 맵</button>
+          <button class="segment" data-view="calendar" type="button">캘린더</button>
+          <button class="segment" data-view="groups" type="button">타겟그룹 설정</button>
         </div>
         <div class="filter-strip" aria-label="Pulse 상태 필터">
           <label class="flt flt-stable"><input type="checkbox" data-filter="healthy" /> 긍정 안정</label>
@@ -334,6 +335,9 @@ pendingUsers/{uid}    승인 대기 사용자</div>
     </div>
 
   <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <input id="unitPhotoInput" type="file" accept="image/*" hidden />
+  <input id="personPhotoInput" type="file" accept="image/*" hidden />
+  <input id="orgUploadInput" type="file" accept=".xlsx,.csv,text/csv" hidden />
   <aside class="detail-drawer" id="detailDrawer" aria-label="선택 항목 상세" aria-hidden="true">
     <div id="detailPanel"></div>
   </aside>
@@ -353,7 +357,7 @@ pendingUsers/{uid}    승인 대기 사용자</div>
       <label>대상 역할
         <select id="groupRoleSelect">
           <option value="all">전체</option>
-          <option value="leader">리더</option>
+          <option value="leader">책임자</option>
           <option value="member">구성원</option>
         </select>
       </label>
@@ -368,9 +372,9 @@ pendingUsers/{uid}    승인 대기 사용자</div>
       </label>
     </div>
     <div class="drawer-section slider-stack">
-      <label for="readinessRange">Change Readiness 최소값 <output id="readinessOutput">65</output></label>
+      <label for="readinessRange">변화 수용도 최소값 <output id="readinessOutput">65</output></label>
       <input id="readinessRange" type="range" min="0" max="100" value="65" />
-      <label for="influenceRange">Influence 최소값 <output id="influenceOutput">60</output></label>
+      <label for="influenceRange">영향력 최소값 <output id="influenceOutput">60</output></label>
       <input id="influenceRange" type="range" min="0" max="100" value="60" />
     </div>
     <button class="primary-button wide" id="createGroupButton" type="button">타겟 그룹 생성</button>
