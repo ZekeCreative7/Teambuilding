@@ -317,8 +317,14 @@
       <div class="grid2" style="margin-top:14px">
         <div class="card">
           <h3>CSV 템플릿 / 업로드</h3>
-          <p class="sub">템플릿은 현재 데이터 구조를 그대로 내려받습니다. 값을 수정한 뒤 업로드하면 대시보드가 새 데이터로 바뀝니다.</p>
-          <div class="toolbar" style="margin:12px 0"><button class="primary" onclick="downloadTemplate()">템플릿 다운로드</button><input type="file" id="uploadCsv" accept=".csv,text/csv" onchange="handleCsvUpload(event)"></div>
+          <p class="sub">템플릿은 현재 데이터 구조를 그대로 내려받습니다. 업로드 전 변경 범위와 경고를 확인한 뒤 새 데이터셋으로 저장합니다.</p>
+          <div class="toolbar" style="margin:12px 0"><button class="primary" onclick="downloadTemplate()">템플릿 다운로드</button><button class="ghost" onclick="downloadCurrentDatasetJson()">현재 데이터 JSON</button><input type="file" id="uploadCsv" accept=".csv,text/csv" onchange="handleCsvUpload(event)"></div>
+        </div>
+        <div class="card">
+          <h3>저장된 데이터셋</h3>
+          <p class="sub">Firebase에 저장된 Pulse 버전을 불러와 이전 데이터로 복원하거나 비교 기준을 바꿀 수 있습니다.</p>
+          <div class="toolbar" style="margin:12px 0"><button class="ghost" onclick="loadDatasetCatalog()">목록 새로고침</button></div>
+          <div id="datasetVersionList" class="analysisBox">로그인 후 저장된 데이터셋 목록을 불러옵니다.</div>
         </div>
         <div class="card">
           <h3>Firebase 구조</h3>
@@ -327,7 +333,13 @@
 - company: 전사 문항/카테고리 집계
 - divisions: 본부별 문항/카테고리/등급 (orgId로 조직도 연결)
 - analysis: GPT 분석 결과
-- speech: 커뮤니케이션 솔루션 결과
+- communications: 커뮤니케이션 솔루션 결과
+
+users/{uid}/organizationStates/default
+- units / people / sessions / groups: 조직도·구성원·캘린더·타겟그룹
+
+users/{uid}/sessionDesigner/default
+- state / board: 세션 디자이너 현재 프로젝트와 저장 보드
 
 approvedUsers/{uid}   승인된 사용자
 pendingUsers/{uid}    승인 대기 사용자</div>

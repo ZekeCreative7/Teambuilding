@@ -462,6 +462,8 @@ const groupTemplates = [
 
 const leaderTitleOptions = ["이사", "상무", "전무", "부사장", "사장", "대표이사"];
 const leaderRoleOptions = ["대표이사", "부문장", "본부장", "실장", "센터장", "그룹장", "팀장", "파트장", "챕터리드"];
+const ORG_CLOUD_DOC_ID = "default";
+const ORG_CLOUD_WRITER = `org_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 
 let state = loadState();
 let activeDragPayload = null;
@@ -469,40 +471,20 @@ let pointerDrag = null;
 let suppressNextClick = false;
 let pendingUnitPhotoId = null;
 let pendingPersonPhotoId = null;
+let organizationCloud = {
+  db: null,
+  uid: null,
+  saveTimer: null,
+  loading: false,
+  status: "로컬 저장",
+  lastLocalWrite: 0,
+};
 
 function defaultFilters() {
   return { sessionDone: false, sessionNone: false, healthy: false, watch: false, support: false, review: false };
 }
 
-function loadState() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        units: parsed.units || clone(seedUnits),
-        people: parsed.people || clone(seedPeople),
-        groups: parsed.groups || clone(seedGroups),
-        sessions: parsed.sessions || clone(seedSessions),
-        selectedUnitId: parsed.selectedUnitId || getDefaultSelectedUnitId(),
-        view: "official",
-        orgLayout: parsed.orgLayout || "horizontal",
-        orgZoom: parsed.orgZoom || 0.68,
-        networkLevel: parsed.networkLevel || "team",
-        calendarView: parsed.calendarView || "month",
-        selectedCalendarDate: parsed.selectedCalendarDate || todayIso(),
-        expandedUnitIds: parsed.expandedUnitIds || getDefaultExpandedIds(),
-        openCardIds: parsed.openCardIds || [],
-        detailOpen: false,
-        detailModal: null,
-        search: parsed.search || "",
-        filters: { ...defaultFilters(), ...(parsed.filters || {}) },
-      };
-    }
-  } catch (error) {
-    console.warn("Could not load saved organization data.", error);
-  }
-
+function defaultOrganizationState() {
   return {
     units: clone(seedUnits),
     people: clone(seedPeople),
@@ -524,13 +506,174 @@ function loadState() {
   };
 }
 
+function normalizeOrganizationState(parsed = {}) {
+  const base = defaultOrganizationState();
+  return {
+    ...base,
+    units: Array.isArray(parsed.units) && parsed.units.length ? parsed.units : base.units,
+    people: Array.isArray(parsed.people) ? parsed.people : base.people,
+    groups: Array.isArray(parsed.groups) ? parsed.groups : base.groups,
+    sessions: Array.isArray(parsed.sessions) ? parsed.sessions : base.sessions,
+    selectedUnitId: parsed.selectedUnitId || base.selectedUnitId,
+    view: "official",
+    orgLayout: parsed.orgLayout || base.orgLayout,
+    orgZoom: parsed.orgZoom || base.orgZoom,
+    networkLevel: parsed.networkLevel || base.networkLevel,
+    calendarView: parsed.calendarView || base.calendarView,
+    selectedCalendarDate: parsed.selectedCalendarDate || base.selectedCalendarDate,
+    expandedUnitIds: Array.isArray(parsed.expandedUnitIds) ? parsed.expandedUnitIds : base.expandedUnitIds,
+    openCardIds: Array.isArray(parsed.openCardIds) ? parsed.openCardIds : base.openCardIds,
+    detailOpen: false,
+    detailModal: null,
+    search: parsed.search || "",
+    filters: { ...defaultFilters(), ...(parsed.filters || {}) },
+  };
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return normalizeOrganizationState(parsed);
+    }
+  } catch (error) {
+    console.warn("Could not load saved organization data.", error);
+  }
+
+  return defaultOrganizationState();
+}
+
+function organizationSnapshot() {
+  return {
+    schemaVersion: 5,
+    units: state.units,
+    people: state.people,
+    groups: state.groups,
+    sessions: state.sessions,
+    selectedUnitId: state.selectedUnitId,
+    view: "official",
+    orgLayout: state.orgLayout,
+    orgZoom: state.orgZoom,
+    networkLevel: state.networkLevel,
+    calendarView: state.calendarView,
+    selectedCalendarDate: state.selectedCalendarDate,
+    expandedUnitIds: state.expandedUnitIds,
+    openCardIds: state.openCardIds,
+    search: state.search,
+    filters: state.filters,
+  };
+}
+
+function notifyOrganization(message) {
+  if (typeof window.toast === "function") window.toast(message);
+  else console.log(message);
+}
+
+function setOrganizationCloudStatus(message) {
+  organizationCloud.status = message;
+  const el = document.getElementById("orgSyncStatus");
+  if (el) el.textContent = message;
+}
+
+function formatOrgSyncTime(value) {
+  if (!value) return "시간 없음";
+  const date = value.toDate ? value.toDate() : new Date(value);
+  return Number.isNaN(date.getTime()) ? "시간 없음" : date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function organizationCloudRef() {
+  if (!organizationCloud.db || !organizationCloud.uid) return null;
+  return organizationCloud.db
+    .collection("users")
+    .doc(organizationCloud.uid)
+    .collection("organizationStates")
+    .doc(ORG_CLOUD_DOC_ID);
+}
+
+async function saveOrganizationCloudNow() {
+  const ref = organizationCloudRef();
+  if (!ref) {
+    setOrganizationCloudStatus("로컬 저장");
+    return;
+  }
+  const stamp = Date.now();
+  organizationCloud.lastLocalWrite = stamp;
+  await ref.set(
+    {
+      state: organizationSnapshot(),
+      updatedAt: stamp,
+      updatedAtIso: new Date(stamp).toISOString(),
+      writer: ORG_CLOUD_WRITER,
+    },
+    { merge: true },
+  );
+  setOrganizationCloudStatus(`Firebase 저장 완료 · ${new Date(stamp).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`);
+}
+
+function scheduleOrganizationCloudSave() {
+  if (organizationCloud.loading || !organizationCloudRef()) return;
+  window.clearTimeout(organizationCloud.saveTimer);
+  organizationCloud.saveTimer = window.setTimeout(() => {
+    saveOrganizationCloudNow().catch((error) => {
+      console.warn("Could not sync organization data.", error);
+      setOrganizationCloudStatus("Firebase 저장 실패 · 로컬 저장 유지");
+    });
+  }, 900);
+}
+
+async function connectOrganizationCloud(db, uid) {
+  organizationCloud.db = db || null;
+  organizationCloud.uid = uid || null;
+  window.clearTimeout(organizationCloud.saveTimer);
+  if (!db || !uid) {
+    setOrganizationCloudStatus("로컬 저장");
+    return;
+  }
+  const ref = organizationCloudRef();
+  if (!ref) return;
+  organizationCloud.loading = true;
+  setOrganizationCloudStatus("Firebase 불러오는 중");
+  try {
+    const snap = await ref.get();
+    if (snap.exists && snap.data()?.state) {
+      state = normalizeOrganizationState(snap.data().state);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      setOrganizationCloudStatus(`Firebase 불러옴 · ${formatOrgSyncTime(snap.data().updatedAt)}`);
+      render();
+    } else {
+      setOrganizationCloudStatus("Firebase 최초 저장 준비");
+      organizationCloud.loading = false;
+      await saveOrganizationCloudNow();
+      return;
+    }
+  } catch (error) {
+    console.warn("Could not load organization cloud data.", error);
+    setOrganizationCloudStatus("Firebase 불러오기 실패 · 로컬 사용");
+  } finally {
+    organizationCloud.loading = false;
+  }
+}
+
+function disconnectOrganizationCloud() {
+  organizationCloud.db = null;
+  organizationCloud.uid = null;
+  window.clearTimeout(organizationCloud.saveTimer);
+  setOrganizationCloudStatus("로컬 저장");
+}
+
 function persist() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
     console.warn("Could not save organization data.", error);
   }
+  scheduleOrganizationCloudSave();
 }
+
+window.connectOrganizationCloud = connectOrganizationCloud;
+window.disconnectOrganizationCloud = disconnectOrganizationCloud;
+window.saveOrganizationCloudNow = () => saveOrganizationCloudNow().then(() => notifyOrganization("조직도 Firebase 저장 완료"));
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -1034,8 +1177,8 @@ function syncControls() {
 
 function getOrgMetrics() {
   const teamUnits = state.units.filter((unit) => unit.level === "team");
-  const averageReadiness = teamUnits.length ? Math.round(teamUnits.reduce((sum, unit) => sum + signalForUnit(unit).readiness, 0) / teamUnits.length) : 0;
-  const riskCount = state.units.filter((unit) => signalForUnit(unit).risk === "high").length;
+  const averageReadiness = teamUnits.length ? Math.round(teamUnits.reduce((sum, unit) => sum + signalForUnit(unit).changeAcceptance, 0) / teamUnits.length) : 0;
+  const riskCount = state.units.filter((unit) => signalForUnit(unit).supportNeeded).length;
   const peopleAmbassadorCount = state.people.filter((person) => person.tags.includes("앰버서더 후보")).length;
   const ambassadorCount = peopleAmbassadorCount || state.units.filter((unit) => unit.ambassadors > 0).length;
   const leaderCount = state.people.filter((person) => person.position === "팀장").length;
@@ -1111,6 +1254,9 @@ function renderOfficialView() {
         </div>
         <button class="ghost-button compact-action" id="downloadOrgTemplateButton" type="button">엑셀 템플릿</button>
         <button class="ghost-button compact-action" id="uploadOrgButton" type="button">엑셀 업로드</button>
+        <button class="ghost-button compact-action" id="saveOrgCloudButton" type="button">Firebase 저장</button>
+        <button class="ghost-button compact-action" id="restoreOrgBackupButton" type="button">업로드 되돌리기</button>
+        <span class="status-pill" id="orgSyncStatus">${escapeHtml(organizationCloud.status)}</span>
         <span class="status-pill">${visibleUnits.length}개 표시</span>
       </div>
     </div>
@@ -1225,46 +1371,239 @@ function pulseTierLabel(tier) {
   return { stable: "안정", watch: "주의", risk: "위험", check: "신뢰도 검토" }[tier] || tier || "";
 }
 
+const CULTURE_METRIC_FORMULA = {
+  changeAcceptance: [
+    { no: 1, weight: 0.16, label: "회사 추천 의향" },
+    { no: 2, weight: 0.12, label: "재직 자부심" },
+    { no: 3, weight: 0.13, label: "개인적 성취감" },
+    { no: 4, weight: 0.12, label: "잔류 의향" },
+    { no: 7, weight: 0.15, label: "목표 기여 이해" },
+    { no: 8, weight: 0.12, label: "역할 명확성" },
+    { no: 10, weight: 0.1, label: "스킬 학습 기회" },
+    { no: 22, weight: 0.1, label: "동료 협업" },
+  ],
+  trust: [
+    { no: 5, weight: 0.11, label: "의견 존중" },
+    { no: 13, weight: 0.1, label: "적시 피드백" },
+    { no: 14, weight: 0.1, label: "인정" },
+    { no: 15, weight: 0.1, label: "문제 해결 지원" },
+    { no: 16, weight: 0.09, label: "성장 대화" },
+    { no: 17, weight: 0.14, label: "두려움 없는 문제 제기" },
+    { no: 18, weight: 0.1, label: "리더 소통" },
+    { no: 19, weight: 0.12, label: "서베이 조치 신뢰" },
+    { no: 20, weight: 0.07, label: "포용 노력" },
+    { no: 21, weight: 0.07, label: "소속감" },
+  ],
+  fatigue: [
+    { no: 10, weight: 0.1, label: "성장 기회 부족" },
+    { no: 11, weight: 0.14, label: "웰빙 요청 어려움" },
+    { no: 12, weight: 0.11, label: "웰빙 지원 부족" },
+    { no: 13, weight: 0.1, label: "피드백 부족" },
+    { no: 14, weight: 0.11, label: "인정 부족" },
+    { no: 15, weight: 0.09, label: "문제 해결 지원 부족" },
+    { no: 16, weight: 0.11, label: "성장 대화 부족" },
+    { no: 17, weight: 0.1, label: "문제 제기 부담" },
+    { no: 19, weight: 0.08, label: "후속조치 불신" },
+    { no: 21, weight: 0.06, label: "소속감 약화" },
+  ],
+  risk: [
+    { no: 1, weight: 0.1, label: "추천 의향 약화" },
+    { no: 4, weight: 0.1, label: "잔류 의향 약화" },
+    { no: 5, weight: 0.11, label: "의견 존중 약화" },
+    { no: 17, weight: 0.16, label: "심리적 안전 약화" },
+    { no: 18, weight: 0.11, label: "리더 소통 약화" },
+    { no: 19, weight: 0.16, label: "서베이 조치 불신" },
+    { no: 20, weight: 0.09, label: "포용 체감 약화" },
+    { no: 21, weight: 0.09, label: "소속감 약화" },
+    { no: 22, weight: 0.08, label: "협업 약화" },
+  ],
+};
+
+function positivePulseScore(question) {
+  if (!question) return null;
+  const fav = Number(question.fav);
+  if (!Number.isFinite(fav)) return null;
+  const low = Number(question.low);
+  return clamp(Math.round(fav - 0.5 * (Number.isFinite(low) ? low : 0)), 0, 100);
+}
+
+function pulseQuestionMap(pulse) {
+  return new Map((pulse?.questions || []).map((question) => [Number(question.no), question]));
+}
+
+function weightedPulseScore(questionMap, mapping, invert = false) {
+  let totalWeight = 0;
+  let total = 0;
+  const drivers = [];
+  mapping.forEach((item) => {
+    const question = questionMap.get(item.no);
+    const positive = positivePulseScore(question);
+    if (positive == null) return;
+    const value = invert ? 100 - positive : positive;
+    total += value * item.weight;
+    totalWeight += item.weight;
+    drivers.push({
+      no: item.no,
+      label: item.label,
+      value: Math.round(value),
+      positive,
+      fav: Math.round(Number(question.fav) || 0),
+      low: Math.round(Number(question.low) || 0),
+    });
+  });
+  return {
+    value: totalWeight ? clamp(Math.round(total / totalWeight), 0, 100) : null,
+    drivers,
+  };
+}
+
+function riskLevelFromScore(score) {
+  if (score >= 60) return "high";
+  if (score >= 42) return "medium";
+  return "low";
+}
+
+function cultureQuadrant(x, y) {
+  if (x < 50 && y >= 50) return "위험";
+  if (x >= 50 && y >= 50) return "피로도/지원 필요";
+  if (x >= 50 && y < 50) return "안정";
+  return "관망/정체";
+}
+
+function quadrantTone(quadrant) {
+  return {
+    위험: "risk",
+    "피로도/지원 필요": "support",
+    안정: "stable",
+    "관망/정체": "watch",
+  }[quadrant] || "watch";
+}
+
+function cultureMapCoordinates(signal) {
+  const riskScore = Number.isFinite(Number(signal.riskScore)) ? Number(signal.riskScore) : signal.risk === "high" ? 72 : signal.risk === "medium" ? 52 : 28;
+  const x = clamp(Math.round(0.55 * signal.changeAcceptance + 0.3 * signal.trust + 0.15 * (100 - riskScore)), 0, 100);
+  const y = clamp(Math.round(0.55 * signal.fatigue + 0.3 * riskScore + 0.15 * (100 - signal.trust)), 0, 100);
+  return { x, y };
+}
+
+function supportNeededFromSignal(signal) {
+  return (
+    signal.quadrant === "위험" ||
+    signal.quadrant === "피로도/지원 필요" ||
+    signal.riskScore >= 60 ||
+    signal.fatigue >= 60 ||
+    signal.trust < 45
+  );
+}
+
+function cultureDriverSummary(signal) {
+  const drivers = signal.drivers || [];
+  if (!drivers.length) return [];
+  return drivers
+    .slice()
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 3);
+}
+
+function renderCultureDrivers(signal, compact = false) {
+  const drivers = cultureDriverSummary(signal);
+  if (!drivers.length) return "";
+  return `
+    <div class="culture-driver-list ${compact ? "compact" : ""}">
+      ${drivers
+        .map(
+          (driver) => `
+        <div class="culture-driver">
+          <b>Q${driver.no} ${escapeHtml(driver.label)}</b>
+          <span>${escapeHtml(driver.metric)} · 영향 ${driver.value} · 긍정 ${driver.fav}% · 부정 ${driver.low}%</span>
+        </div>
+      `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function recommendationFromCultureSignal(signal, fallback) {
+  if (signal.quadrant === "위험") {
+    return "Pulse 문항상 신뢰와 수용도가 동시에 약한 위험 구간입니다. 리더 브리핑, 심리적 안전 대화, 후속조치 약속을 먼저 설계하세요.";
+  }
+  if (signal.quadrant === "피로도/지원 필요") {
+    return "수용도는 있지만 피로도/지원 필요 신호가 높습니다. 실행 과제를 늘리기보다 회복, 인정, 매니저 지원 루틴을 먼저 배치하세요.";
+  }
+  if (signal.quadrant === "관망/정체") {
+    return "급한 위험은 낮지만 변화 에너지가 충분히 올라오지 않은 구간입니다. 작은 성공 경험과 역할 명확화를 통해 참여 진입 장벽을 낮추세요.";
+  }
+  return fallback || "안정 구간입니다. 현재 신뢰 자산을 유지하면서 앰버서더와 성공 사례를 확산하세요.";
+}
+
 function signalFromPulse(unit) {
   const pulse = pulseForUnit(unit.id);
   if (!pulse || unit.level === "team") return null;
 
-  const readiness = clamp(Math.round(pulse.fav), 0, 100);
-  const trust = clamp(Math.round(pulse.fav * 0.72 + Math.max(0, 100 - pulse.low) * 0.28), 0, 100);
-  const fatigueBase = pulse.low * 1.18 + (pulse.tier === "risk" ? 15 : pulse.tier === "watch" ? 8 : 0);
-  const fatigue = clamp(Math.round(fatigueBase), 0, 100);
-  const risk = pulse.tier === "risk" ? "high" : pulse.tier === "watch" || pulse.reliab ? "medium" : "low";
+  const questionMap = pulseQuestionMap(pulse);
+  const changeMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.changeAcceptance);
+  const trustMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.trust);
+  const fatigueMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.fatigue, true);
+  const riskMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.risk, true);
+  const changeAcceptance = changeMetric.value ?? clamp(Math.round(pulse.fav), 0, 100);
+  const trust = trustMetric.value ?? clamp(Math.round(pulse.fav * 0.72 + Math.max(0, 100 - pulse.low) * 0.28), 0, 100);
+  const fatigue = fatigueMetric.value ?? clamp(Math.round(pulse.low * 1.18 + (pulse.tier === "risk" ? 15 : pulse.tier === "watch" ? 8 : 0)), 0, 100);
+  const riskScore = riskMetric.value ?? (pulse.tier === "risk" ? 72 : pulse.tier === "watch" || pulse.reliab ? 52 : 28);
+  const risk = riskLevelFromScore(riskScore);
+  const coords = cultureMapCoordinates({ changeAcceptance, trust, fatigue, riskScore, risk });
+  const quadrant = cultureQuadrant(coords.x, coords.y);
+  const supportNeeded = supportNeededFromSignal({ trust, fatigue, riskScore, quadrant });
+  const drivers = [
+    ...fatigueMetric.drivers.map((driver) => ({ ...driver, metric: "피로도 / 지원 필요" })),
+    ...riskMetric.drivers.map((driver) => ({ ...driver, metric: "문화 리스크" })),
+    ...trustMetric.drivers.map((driver) => ({ ...driver, metric: "신뢰도" })),
+    ...changeMetric.drivers.map((driver) => ({ ...driver, metric: "변화 수용도" })),
+  ];
   const pulseTags = [
     pulseTierLabel(pulse.tier),
     `긍정 ${pulse.fav}%`,
     `부정 ${pulse.low}%`,
+    quadrant,
+    supportNeeded ? "지원 필요" : "",
     pulse.reliab ? "신뢰도 검토" : "",
   ].filter(Boolean);
 
   return {
-    readiness,
+    readiness: changeAcceptance,
+    changeAcceptance,
     trust,
     fatigue,
     risk,
+    riskScore,
+    mapX: coords.x,
+    mapY: coords.y,
+    quadrant,
+    supportNeeded,
+    drivers,
     tags: [...new Set([...(unit.tags || []), ...pulseTags])].slice(0, 6),
-    recommendation:
-      risk === "high"
-        ? "Pulse Survey상 지원 우선순위가 높습니다. 리더 브리핑과 WOW x BALANCE 회복 세션을 먼저 배치하세요."
-        : risk === "medium"
-          ? "Pulse Survey상 관찰 구간입니다. 팀별 질문을 수집하고 짧은 후속 세션으로 신뢰를 보강하세요."
-          : unit.recommendation,
+    recommendation: recommendationFromCultureSignal({ quadrant }, unit.recommendation),
   };
 }
 
 function signalForUnit(unit) {
-  return signalFromPulse(unit) || {
+  const fallback = {
     readiness: unit.readiness,
+    changeAcceptance: unit.readiness,
     trust: unit.trust,
     fatigue: unit.fatigue,
     risk: unit.risk,
+    riskScore: unit.risk === "high" ? 72 : unit.risk === "medium" ? 52 : 28,
     tags: unit.tags || [],
     recommendation: unit.recommendation,
   };
+  const coords = cultureMapCoordinates(fallback);
+  fallback.mapX = coords.x;
+  fallback.mapY = coords.y;
+  fallback.quadrant = cultureQuadrant(coords.x, coords.y);
+  fallback.supportNeeded = supportNeededFromSignal(fallback);
+  fallback.drivers = [];
+  return signalFromPulse(unit) || fallback;
 }
 
 // Pulse Survey 분석 결과로 조직의 상태(state)를 정의한다. 필터/카드에서 공통 사용.
@@ -1278,10 +1617,17 @@ const ORG_STATUS_FILTERS = [
 function pulseStatusDef(unit) {
   const p = pulseForUnit(unit.id);
   if (!p) return null;
+  const signal = signalFromPulse(unit);
+  if (signal?.supportNeeded) {
+    return {
+      key: "support",
+      label: signal.quadrant === "위험" ? "위험" : "지원 필요",
+      note: `수용 ${signal.changeAcceptance}% · 리스크 ${signal.riskScore}%`,
+      tone: signal.quadrant === "위험" ? "risk" : "watch",
+    };
+  }
   if (p.reliab || p.tier === "check")
     return { key: "review", label: "신뢰도 검토", note: "점수가 고점, 데이터 확인 필요", tone: "check" };
-  if (p.tier === "risk")
-    return { key: "support", label: "지원 시급", note: `긍정 ${p.fav}% · 부정 ${p.low}%`, tone: "risk" };
   if (p.tier === "watch")
     return { key: "watch", label: "주의 관찰", note: `긍정 ${p.fav}% · 추세 관찰`, tone: "watch" };
   return { key: "healthy", label: "긍정 안정", note: `긍정 ${p.fav}% · 부정 낮음`, tone: "stable" };
@@ -1388,8 +1734,8 @@ function renderUnitCard(unit, childCount = 0) {
   const tone = status ? status.tone : null;
   const cardTone = tone ? `tone-${tone}` : "";
   const scoreTone = tone ? `pulse-${tone}` : `read-${signal.risk}`;
-  const score = pulse && unit.level !== "team" ? pulse.fav : signal.readiness;
-  const scoreLabel = pulse && unit.level !== "team" ? "Pulse 긍정" : "변화 수용도";
+  const score = signal.changeAcceptance;
+  const scoreLabel = "변화 수용도";
   const scoreSuffix = "%";
   // 리더: 이름(크게/굵게) + 직급(전무·상무·이사) · 직무(부문장·본부장·팀장)
   const role = leaderRoleLabel(unit); // 직무
@@ -1459,12 +1805,9 @@ function renderOrgInspector(unit) {
   const visibleMembers = (directPeople.length ? directPeople : people).slice(0, 8);
   const memberScopeLabel = directPeople.length ? "직접 등록 팀원" : "하위 포함 팀원";
   const statusLabel = status?.label || formatRisk(signal.risk);
-  const statusNote = status?.note || `변화 수용도 ${signal.readiness} · 신뢰 ${signal.trust}`;
+  const statusNote = `사분면 ${signal.quadrant} · X ${signal.mapX} · Y ${signal.mapY}`;
   const tone = status?.tone || signal.risk;
-  const primaryScore = pulse && unit.level !== "team" ? `${pulse.fav}%` : `${signal.readiness}%`;
-  const primaryLabel = pulse && unit.level !== "team" ? "Pulse 긍정" : "변화 수용도";
-  const riskText = pulse && unit.level !== "team" ? `${pulse.low}%` : `${signal.fatigue}`;
-  const riskLabel = pulse && unit.level !== "team" ? "부정 응답" : "피로도";
+  const sourceNote = pulse && unit.level !== "team" ? `Pulse ${pulse.sources.join(", ")}` : "수동 설정값";
 
   return `
     <aside class="org-inspector tone-${escapeHtml(tone)}" aria-label="선택 조직 요약">
@@ -1489,10 +1832,20 @@ function renderOrgInspector(unit) {
       </section>
 
       <div class="inspector-metrics">
-        <article><span>${escapeHtml(primaryLabel)}</span><strong>${escapeHtml(primaryScore)}</strong></article>
-        <article><span>${escapeHtml(riskLabel)}</span><strong>${escapeHtml(riskText)}</strong></article>
+        <article><span>변화 수용도</span><strong>${signal.changeAcceptance}%</strong></article>
+        <article><span>신뢰도</span><strong>${signal.trust}%</strong></article>
+        <article><span>피로도 / 지원 필요</span><strong>${signal.fatigue}%</strong></article>
+        <article><span>문화 리스크</span><strong>${signal.riskScore}%</strong></article>
         <article><span>범위</span><strong>${people.length || unit.members}명</strong></article>
       </div>
+
+      <section class="inspector-section">
+        <div class="inspector-section-title-row">
+          <h4>맵 위치 근거</h4>
+          <span>${escapeHtml(sourceNote)}</span>
+        </div>
+        ${renderCultureDrivers(signal, true) || `<div class="recommend-card">팀 단위는 설정값을 기준으로 표시됩니다. 설정하기에서 네 개 지표를 조정하면 맵 위치가 바로 바뀝니다.</div>`}
+      </section>
 
       <section class="inspector-section">
         <div class="inspector-section-title-row">
@@ -1665,17 +2018,20 @@ function renderNetworkView() {
   const units = getVisibleUnits().filter((unit) => unit.level === state.networkLevel);
   const average = units.length
     ? {
-        readiness: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).readiness, 0) / units.length),
+        readiness: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).changeAcceptance, 0) / units.length),
+        trust: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).trust, 0) / units.length),
         fatigue: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).fatigue, 0) / units.length),
+        risk: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).riskScore, 0) / units.length),
       }
-    : { readiness: 0, fatigue: 0 };
+    : { readiness: 0, trust: 0, fatigue: 0, risk: 0 };
+  const supportCount = units.filter((unit) => signalForUnit(unit).supportNeeded).length;
 
   document.getElementById("viewRoot").innerHTML = `
     <div class="panel-header">
       <div>
         <p class="eyebrow">Culture Propagation Map</p>
         <h3>조직문화 확산 맵</h3>
-        <p>전사 · 부문 · 본부 · 팀 단위로 문화 확산성과 피로도 분포를 읽습니다.</p>
+        <p>Pulse 22개 문항을 변화 수용도, 신뢰도, 문화 리스크, 피로도 / 지원 필요 지표로 환산해 분포를 읽습니다.</p>
       </div>
       <div class="panel-actions">
         <div class="segmented compact" aria-label="문화지도 레벨">
@@ -1692,24 +2048,28 @@ function renderNetworkView() {
         <strong>${average.readiness}%</strong>
       </article>
       <article>
-        <span>평균 피로도</span>
+        <span>평균 신뢰도</span>
+        <strong>${average.trust}%</strong>
+      </article>
+      <article>
+        <span>평균 피로도 / 지원 필요</span>
         <strong>${average.fatigue}%</strong>
       </article>
       <article>
-        <span>지원 필요</span>
-        <strong>${units.filter((unit) => signalForUnit(unit).risk === "high").length}</strong>
+        <span>문화 리스크 / 지원 조직</span>
+        <strong>${average.risk}% · ${supportCount}</strong>
       </article>
     </div>
     <div class="quad-legend" aria-label="사분면 안내">
       <span class="ql ql-risk"><i></i>좌상 위험</span>
-      <span class="ql ql-watch"><i></i>우상 주의</span>
+      <span class="ql ql-watch"><i></i>우상 피로도/지원 필요</span>
       <span class="ql ql-calm"><i></i>좌하 관망</span>
       <span class="ql ql-stable"><i></i>우하 안정</span>
     </div>
     <div class="network-canvas quad-tinted">
       <div class="axis-line horizontal"></div>
       <div class="axis-line vertical"></div>
-      <span class="axis-label axis-x">변화 수용도 →</span>
+      <span class="axis-label axis-x">X: 변화 수용도 + 신뢰도 − 리스크 →</span>
       <span class="axis-label axis-y">↑ 피로도 / 지원 필요</span>
       ${units.length ? units.map(renderNetworkNode).join("") : `<div class="empty-state"><strong>표시할 조직이 없습니다</strong><span>검색이나 필터를 조정해보세요.</span></div>`}
     </div>
@@ -1720,14 +2080,16 @@ function networkPosition(unit, index = 0) {
   const signal = signalForUnit(unit);
   const xOffset = ((index % 3) - 1) * 2.4;
   const yOffset = (Math.floor(index / 3) % 3 - 1) * 2.2;
-  const x = clamp(10 + signal.readiness * 0.78 + xOffset, 8, 88);
-  const y = clamp(90 - signal.fatigue * 0.72 + yOffset, 14, 86);
+  const x = clamp(signal.mapX + xOffset, 8, 92);
+  const y = clamp(100 - signal.mapY + yOffset, 8, 92);
   return { x, y };
 }
 
 function networkKind(unit) {
   const signal = signalForUnit(unit);
-  if (signal.risk === "high" || signal.tags.includes("지원 필요") || signal.tags.includes("고립 신호")) return "support";
+  if (signal.quadrant === "위험") return "risk";
+  if (signal.quadrant === "피로도/지원 필요" || signal.supportNeeded) return "support";
+  if (signal.quadrant === "안정") return "stable";
   if (signal.tags.includes("확산 중심") || signal.tags.includes("앰버서더 후보")) return "diffusion";
   if (signal.tags.includes("연결자") || signal.tags.includes("연결자 많음")) return "bridge";
   return "watch";
@@ -1737,7 +2099,9 @@ function networkLabel(kind) {
   return {
     diffusion: "확산 중심",
     bridge: "연결자",
+    risk: "위험",
     support: "지원 필요",
+    stable: "안정",
     watch: "관찰",
   }[kind];
 }
@@ -1747,12 +2111,13 @@ function renderNetworkNode(unit, index) {
   const kind = networkKind(unit);
   const signal = signalForUnit(unit);
   const selected = unit.id === state.selectedUnitId ? "selected" : "";
+  const drivers = cultureDriverSummary(signal);
   return `
     <article class="network-node ${kind} ${selected}" style="--x:${position.x}%; --y:${position.y}%">
       <button type="button" data-open-detail="${escapeHtml(unit.id)}" aria-label="${escapeHtml(unit.name)} 상세 정보 열기">
         <span class="network-dot"></span>
         <strong>${escapeHtml(unit.name)}</strong>
-        <small>${escapeHtml(networkLabel(kind))} · 수용 ${signal.readiness} · 피로 ${signal.fatigue}</small>
+        <small>${escapeHtml(signal.quadrant || networkLabel(kind))} · X ${signal.mapX} · Y ${signal.mapY}<br>수용 ${signal.changeAcceptance} · 신뢰 ${signal.trust} · 리스크 ${signal.riskScore} · 피로 ${signal.fatigue}${drivers.length ? `<br>${drivers.map((driver) => `Q${driver.no} ${driver.label}`).join(" / ")}` : ""}</small>
       </button>
     </article>
   `;
@@ -1955,11 +2320,49 @@ function renderCalendarView() {
 }
 
 function organizationTemplateRows() {
-  const headers = ["id", "level", "parentId", "name", "leader", "leaderTitle", "leaderRole", "readiness", "trust", "fatigue", "risk", "tags"];
-  const rows = state.units
+  const headers = [
+    "recordType",
+    "id",
+    "level",
+    "parentId",
+    "name",
+    "leader",
+    "leaderTitle",
+    "leaderRole",
+    "readiness",
+    "trust",
+    "fatigue",
+    "risk",
+    "tags",
+    "personId",
+    "personName",
+    "position",
+    "role",
+    "generation",
+    "unitId",
+    "influence",
+    "personReadiness",
+    "sessionId",
+    "date",
+    "startTime",
+    "sessionName",
+    "category",
+    "teamId",
+    "teamName",
+    "participants",
+    "groupId",
+    "groupName",
+    "description",
+    "criteria",
+    "recommendation",
+    "memberIds",
+    "unitIds",
+  ];
+  const unitRows = state.units
     .slice()
     .sort((a, b) => (a.sourcePath || a.name).localeCompare(b.sourcePath || b.name, "ko"))
     .map((unit) => [
+      "unit",
       unit.id,
       unit.level,
       unit.parentId || "",
@@ -1972,9 +2375,157 @@ function organizationTemplateRows() {
       unit.fatigue,
       unit.risk,
       (unit.tags || []).join(";"),
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
     ]);
 
-  return [headers, ...rows];
+  const personRows = state.people
+    .slice()
+    .sort((a, b) => (getUnit(a.unitId)?.name || "").localeCompare(getUnit(b.unitId)?.name || "", "ko") || a.name.localeCompare(b.name, "ko"))
+    .map((person) => [
+      "person",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      (person.tags || []).join(";"),
+      person.id,
+      person.name,
+      person.position || "",
+      person.role || "",
+      person.generation || "",
+      person.unitId || "",
+      person.influence ?? "",
+      person.readiness ?? "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+  const sessionRows = (state.sessions || []).map((session) => [
+    "session",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    session.id,
+    session.date || "",
+    session.startTime || "",
+    session.sessionName || "",
+    session.category || "",
+    session.teamId || "",
+    session.teamName || "",
+    session.participants || "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
+
+  const groupRows = (state.groups || []).map((group) => [
+    "group",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    group.id,
+    group.name,
+    group.description || "",
+    group.criteria || "",
+    group.recommendation || "",
+    (group.memberIds || []).join(";"),
+    (group.unitIds || []).join(";"),
+  ]);
+
+  const bodyRows = [...unitRows, ...personRows, ...sessionRows, ...groupRows].map((row) => {
+    if (row.length === headers.length) return row;
+    if (row.length > headers.length) return row.slice(0, headers.length);
+    return [...row, ...Array.from({ length: headers.length - row.length }, () => "")];
+  });
+
+  return [headers, ...bodyRows];
 }
 
 function xmlEscape(value) {
@@ -2337,13 +2888,160 @@ async function parseOrganizationUpload(file) {
   throw new Error("xlsx 또는 csv 파일만 업로드할 수 있습니다.");
 }
 
+const uploadAliases = {
+  recordType: ["recordType", "type", "구분"],
+  id: ["id", "조직ID", "unitId"],
+  level: ["level", "조직레벨"],
+  parentId: ["parentId", "상위조직ID"],
+  name: ["name", "조직명"],
+  leader: ["leader", "조직장"],
+  leaderTitle: ["leaderTitle", "직급"],
+  leaderRole: ["leaderRole", "호칭"],
+  readiness: ["readiness", "변화수용도"],
+  trust: ["trust", "신뢰"],
+  fatigue: ["fatigue", "피로도"],
+  risk: ["risk", "위험도"],
+  tags: ["tags", "태그"],
+  personId: ["personId", "구성원ID"],
+  personName: ["personName", "구성원명"],
+  position: ["position", "직책"],
+  role: ["role", "역할"],
+  generation: ["generation", "세대"],
+  personUnitId: ["unitId", "소속조직ID"],
+  influence: ["influence", "영향력"],
+  personReadiness: ["personReadiness", "구성원변화수용도"],
+  sessionId: ["sessionId", "일정ID"],
+  date: ["date", "날짜"],
+  startTime: ["startTime", "시간"],
+  sessionName: ["sessionName", "세션명"],
+  category: ["category", "유형"],
+  teamId: ["teamId", "팀ID"],
+  teamName: ["teamName", "팀명"],
+  participants: ["participants", "참여인원"],
+  groupId: ["groupId", "그룹ID"],
+  groupName: ["groupName", "그룹명"],
+  description: ["description", "설명"],
+  criteria: ["criteria", "기준"],
+  recommendation: ["recommendation", "추천액션"],
+  memberIds: ["memberIds", "구성원ID목록"],
+  unitIds: ["unitIds", "조직ID목록"],
+};
+
+function uploadValue(row, field) {
+  const aliases = uploadAliases[field] || [field];
+  const keys = Object.keys(row);
+  for (const alias of aliases) {
+    if (Object.prototype.hasOwnProperty.call(row, alias)) return String(row[alias] ?? "").trim();
+    const found = keys.find((key) => key.toLowerCase() === alias.toLowerCase());
+    if (found) return String(row[found] ?? "").trim();
+  }
+  return "";
+}
+
+function splitUploadList(value) {
+  return String(value || "")
+    .split(/[;,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function uploadRecordType(row) {
+  const explicit = uploadValue(row, "recordType").toLowerCase();
+  if (["unit", "person", "session", "group"].includes(explicit)) return explicit;
+  if (uploadValue(row, "level") || uploadValue(row, "parentId") || uploadValue(row, "leader")) return "unit";
+  if (uploadValue(row, "personName") || uploadValue(row, "position")) return "person";
+  if (uploadValue(row, "sessionName") || uploadValue(row, "date")) return "session";
+  if (uploadValue(row, "groupName") || uploadValue(row, "memberIds")) return "group";
+  return "unknown";
+}
+
+function analyzeOrganizationUpload(rows) {
+  const report = { unit: 0, person: 0, session: 0, group: 0, unknown: 0, issues: [] };
+  const uploadedUnitIds = new Set(state.units.map((unit) => unit.id));
+  rows.forEach((row, index) => {
+    const type = uploadRecordType(row);
+    report[type] = (report[type] || 0) + 1;
+    const rowNo = index + 2;
+    if (type === "unit") {
+      const id = uploadValue(row, "id");
+      const name = uploadValue(row, "name");
+      const parentId = uploadValue(row, "parentId");
+      if (!name) report.issues.push(`${rowNo}행: 조직명이 비어 있습니다.`);
+      if (id) uploadedUnitIds.add(id);
+      if (parentId && !uploadedUnitIds.has(parentId)) report.issues.push(`${rowNo}행: 상위 조직 ID(${parentId})를 아직 찾지 못했습니다. 적용 시 전사 하위로 보정됩니다.`);
+    } else if (type === "person") {
+      if (!uploadValue(row, "personName")) report.issues.push(`${rowNo}행: 구성원명이 비어 있습니다.`);
+      const unitId = uploadValue(row, "personUnitId");
+      if (unitId && !uploadedUnitIds.has(unitId)) report.issues.push(`${rowNo}행: 구성원 소속 조직 ID(${unitId})를 찾지 못했습니다.`);
+    } else if (type === "session") {
+      if (!uploadValue(row, "sessionName")) report.issues.push(`${rowNo}행: 세션명이 비어 있습니다.`);
+      if (!uploadValue(row, "date")) report.issues.push(`${rowNo}행: 일정 날짜가 비어 있습니다.`);
+    } else if (type === "group") {
+      if (!uploadValue(row, "groupName")) report.issues.push(`${rowNo}행: 그룹명이 비어 있습니다.`);
+    } else {
+      report.issues.push(`${rowNo}행: recordType을 인식하지 못했습니다.`);
+    }
+  });
+  return report;
+}
+
+function confirmOrganizationUpload(rows) {
+  const report = analyzeOrganizationUpload(rows);
+  const recognized = report.unit + report.person + report.session + report.group;
+  if (!recognized) {
+    window.alert("업로드할 수 있는 조직/구성원/일정/그룹 행을 찾지 못했습니다.");
+    return false;
+  }
+  const warnings = report.issues.slice(0, 8).join("\n");
+  const more = report.issues.length > 8 ? `\n외 ${report.issues.length - 8}개 경고` : "";
+  return window.confirm(
+    `업로드 내용을 적용할까요?\n\n조직 ${report.unit}개 · 구성원 ${report.person}명 · 일정 ${report.session}개 · 타겟그룹 ${report.group}개\n\n기존 데이터는 먼저 백업되고, 업로드된 행은 기존 데이터에 업데이트됩니다. 업로드에 없는 데이터는 삭제하지 않습니다.${
+      warnings ? `\n\n확인할 점:\n${warnings}${more}` : ""
+    }`,
+  );
+}
+
+function createOrganizationBackup(reason = "manual") {
+  try {
+    localStorage.setItem(
+      `${STORAGE_KEY}.backup.latest`,
+      JSON.stringify({
+        reason,
+        createdAt: new Date().toISOString(),
+        state: organizationSnapshot(),
+      }),
+    );
+  } catch (error) {
+    console.warn("Could not create organization backup.", error);
+  }
+}
+
+function restoreOrganizationBackup() {
+  try {
+    const backup = JSON.parse(localStorage.getItem(`${STORAGE_KEY}.backup.latest`) || "null");
+    if (!backup?.state) {
+      window.alert("복원할 업로드 백업이 없습니다.");
+      return false;
+    }
+    if (!window.confirm(`마지막 백업(${new Date(backup.createdAt).toLocaleString("ko-KR")})으로 되돌릴까요?`)) return false;
+    state = normalizeOrganizationState(backup.state);
+    render();
+    notifyOrganization("업로드 이전 상태로 복원했습니다");
+    return true;
+  } catch (error) {
+    window.alert("백업을 복원할 수 없습니다.");
+    return false;
+  }
+}
+
 function applyOrganizationTemplate(rows) {
   if (!rows.length) return false;
+  createOrganizationBackup("upload");
 
-  rows.forEach((row, index) => {
-    const id = (row.id || "").trim() || `uploaded-unit-${Date.now()}-${index}`;
+  rows.filter((row) => uploadRecordType(row) === "unit").forEach((row, index) => {
+    const id = uploadValue(row, "id") || `uploaded-unit-${Date.now()}-${index}`;
     const existing = getUnit(id);
-    const level = (row.level || existing?.level || "team").trim();
+    const level = uploadValue(row, "level") || existing?.level || "team";
     const unit = existing || {
       id,
       level,
@@ -2359,22 +3057,77 @@ function applyOrganizationTemplate(rows) {
 
     unit.level = level;
     unit.orgType = levelLabel(level);
-    unit.parentId = (row.parentId || "").trim() || "";
-    unit.name = (row.name || unit.name || `${levelLabel(level)} ${index + 1}`).trim();
-    unit.leaderRole = (row.leaderRole || unit.leaderRole || defaultLeaderRole(level)).trim();
-    unit.leader = (row.leader || unit.leader || unsetLeaderForUnit(unit)).trim();
-    unit.leaderTitle = (row.leaderTitle || unit.leaderTitle || "").trim();
-    unit.readiness = clamp(Number(row.readiness || unit.readiness || 60), 0, 100);
-    unit.trust = clamp(Number(row.trust || unit.trust || 60), 0, 100);
-    unit.fatigue = clamp(Number(row.fatigue || unit.fatigue || 45), 0, 100);
-    unit.risk = ["low", "medium", "high"].includes(row.risk) ? row.risk : unit.risk || "medium";
-    unit.tags = String(row.tags || "")
-      .split(/[;,]/)
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-      .slice(0, 6);
+    unit.parentId = uploadValue(row, "parentId") || "";
+    unit.name = uploadValue(row, "name") || unit.name || `${levelLabel(level)} ${index + 1}`;
+    unit.leaderRole = uploadValue(row, "leaderRole") || unit.leaderRole || defaultLeaderRole(level);
+    unit.leader = uploadValue(row, "leader") || unit.leader || unsetLeaderForUnit(unit);
+    unit.leaderTitle = uploadValue(row, "leaderTitle") || unit.leaderTitle || "";
+    unit.readiness = clamp(Number(uploadValue(row, "readiness") || unit.readiness || 60), 0, 100);
+    unit.trust = clamp(Number(uploadValue(row, "trust") || unit.trust || 60), 0, 100);
+    unit.fatigue = clamp(Number(uploadValue(row, "fatigue") || unit.fatigue || 45), 0, 100);
+    const risk = uploadValue(row, "risk");
+    unit.risk = ["low", "medium", "high"].includes(risk) ? risk : unit.risk || "medium";
+    const tags = splitUploadList(uploadValue(row, "tags"));
+    if (tags.length) unit.tags = tags.slice(0, 6);
 
     if (!existing) state.units.push(unit);
+  });
+
+  rows.filter((row) => uploadRecordType(row) === "person").forEach((row, index) => {
+    const id = uploadValue(row, "personId") || `p-uploaded-${Date.now()}-${index}`;
+    const existing = state.people.find((person) => person.id === id);
+    const unitId = uploadValue(row, "personUnitId") || existing?.unitId || getDefaultSelectedUnitId();
+    const person = existing || {
+      id,
+      name: "",
+      role: "",
+      position: "구성원",
+      generation: "",
+      unitId,
+      influence: 55,
+      readiness: 60,
+      tags: [],
+    };
+    person.name = uploadValue(row, "personName") || person.name || `구성원 ${index + 1}`;
+    person.position = uploadValue(row, "position") || person.position || "구성원";
+    person.role = uploadValue(row, "role") || person.role || `${getUnit(unitId)?.name || "조직"} ${person.position}`;
+    person.generation = uploadValue(row, "generation") || person.generation || "";
+    person.unitId = getUnit(unitId) ? unitId : getDefaultSelectedUnitId();
+    person.influence = clamp(Number(uploadValue(row, "influence") || person.influence || 55), 0, 100);
+    person.readiness = clamp(Number(uploadValue(row, "personReadiness") || person.readiness || 60), 0, 100);
+    const tags = splitUploadList(uploadValue(row, "tags"));
+    if (tags.length) person.tags = tags;
+    if (!existing) state.people.push(person);
+  });
+
+  rows.filter((row) => uploadRecordType(row) === "session").forEach((row, index) => {
+    const id = uploadValue(row, "sessionId") || `session-uploaded-${Date.now()}-${index}`;
+    const existing = (state.sessions || []).find((session) => session.id === id);
+    const teamId = uploadValue(row, "teamId") || existing?.teamId || "";
+    const session = existing || { id };
+    session.date = uploadValue(row, "date") || session.date || todayIso();
+    session.startTime = uploadValue(row, "startTime") || session.startTime || "10:00";
+    session.sessionName = uploadValue(row, "sessionName") || session.sessionName || "WOW x BALANCE 세션";
+    session.category = uploadValue(row, "category") || session.category || "wowTeam";
+    session.teamId = getUnit(teamId) ? teamId : session.teamId || "";
+    session.teamName = uploadValue(row, "teamName") || getUnit(session.teamId)?.name || session.teamName || "팀 미정";
+    session.participants = Math.max(1, Number(uploadValue(row, "participants") || session.participants || 1));
+    if (!existing) state.sessions = [...(state.sessions || []), session];
+  });
+
+  rows.filter((row) => uploadRecordType(row) === "group").forEach((row, index) => {
+    const id = uploadValue(row, "groupId") || `group-uploaded-${Date.now()}-${index}`;
+    const existing = (state.groups || []).find((group) => group.id === id);
+    const group = existing || { id, memberIds: [], unitIds: [] };
+    group.name = uploadValue(row, "groupName") || group.name || `타겟그룹 ${index + 1}`;
+    group.description = uploadValue(row, "description") || group.description || "";
+    group.criteria = uploadValue(row, "criteria") || group.criteria || "업로드 조건";
+    group.recommendation = uploadValue(row, "recommendation") || group.recommendation || "업로드된 그룹입니다. 대상과 액션을 확인하세요.";
+    const memberIds = splitUploadList(uploadValue(row, "memberIds"));
+    const unitIds = splitUploadList(uploadValue(row, "unitIds"));
+    if (memberIds.length) group.memberIds = memberIds;
+    if (unitIds.length) group.unitIds = unitIds;
+    if (!existing) state.groups = [group, ...(state.groups || [])];
   });
 
   state.units.forEach((unit) => {
@@ -2486,9 +3239,15 @@ function renderOverviewModal(unit) {
     <section class="detail-section">
       <h4>1. 현재 신호</h4>
       <div class="unit-bars">
-        ${renderBar("변화 수용도", signal.readiness, "")}
-        ${renderBar("신뢰", signal.trust, "trust")}
-        ${renderBar("피로도", signal.fatigue, "fatigue")}
+        ${renderBar("변화 수용도", signal.changeAcceptance, "")}
+        ${renderBar("신뢰도", signal.trust, "trust")}
+        ${renderBar("피로도 / 지원 필요", signal.fatigue, "fatigue")}
+        ${renderBar("문화 리스크", signal.riskScore, "fatigue")}
+      </div>
+      <div class="culture-map-readout">
+        <article><span>사분면</span><strong>${escapeHtml(signal.quadrant)}</strong></article>
+        <article><span>X 좌표</span><strong>${signal.mapX}</strong></article>
+        <article><span>Y 좌표</span><strong>${signal.mapY}</strong></article>
       </div>
       <div class="tag-list">${signal.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>
     </section>
@@ -2507,6 +3266,7 @@ function renderOverviewModal(unit) {
         <div class="pulse-readout-item"><span>등급</span><strong>${escapeHtml(pulseTierLabel(pulse.tier))}</strong></div>
       </div>
       <p class="detail-foot">출처: ${pulse.sources.map(escapeHtml).join(", ")}${pulse.reliab ? " · 신뢰도 검토 포함" : ""}</p>
+      ${renderCultureDrivers(signal)}
     </section>`
         : ""
     }
@@ -2563,7 +3323,7 @@ function renderSettingsModal(unit) {
         unit.level !== "team"
           ? `<section class="detail-section auto-signal-note">
             <h4>Pulse Survey 자동 반영</h4>
-            <div class="recommend-card">본부 이상 조직은 Pulse Survey 기준으로 변화 수용도, 신뢰, 피로도, 리스크와 키워드를 자동 보정합니다.</div>
+            <div class="recommend-card">본부 이상 조직은 Pulse Survey 22개 문항 기준으로 변화 수용도, 신뢰도, 피로도 / 지원 필요, 문화 리스크와 키워드를 자동 보정합니다.</div>
           </section>`
           : "";
       return picker + pulseNote;
@@ -2598,19 +3358,19 @@ function renderSettingsModal(unit) {
         ${renderLeaderTitleDatalist()}
         ${renderLeaderRoleDatalist()}
         <div class="slider-line">
-          <label for="editReadiness">변화 수용도(Change Readiness) <output id="editReadinessOutput">${signal.readiness}</output></label>
+          <label for="editReadiness">변화 수용도(Change Acceptance) <output id="editReadinessOutput">${signal.changeAcceptance}</output></label>
           <input id="editReadiness" type="range" min="0" max="100" value="${unit.readiness}" />
         </div>
         <div class="slider-line">
-          <label for="editTrust">신뢰(Trust) <output id="editTrustOutput">${signal.trust}</output></label>
+          <label for="editTrust">신뢰도(Trust) <output id="editTrustOutput">${signal.trust}</output></label>
           <input id="editTrust" type="range" min="0" max="100" value="${unit.trust}" />
         </div>
         <div class="slider-line">
-          <label for="editFatigue">피로도(Fatigue) <output id="editFatigueOutput">${signal.fatigue}</output></label>
+          <label for="editFatigue">피로도 / 지원 필요(Fatigue / Support Need) <output id="editFatigueOutput">${signal.fatigue}</output></label>
           <input id="editFatigue" type="range" min="0" max="100" value="${unit.fatigue}" />
         </div>
         <label>
-          리스크(Risk)
+          문화 리스크(Risk)
           <select id="editRisk">
             <option value="low" ${unit.risk === "low" ? "selected" : ""}>안정</option>
             <option value="medium" ${unit.risk === "medium" ? "selected" : ""}>관찰</option>
@@ -2986,6 +3746,18 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  if (event.target.id === "saveOrgCloudButton") {
+    saveOrganizationCloudNow()
+      .then(() => notifyOrganization("조직도 Firebase 저장 완료"))
+      .catch(() => notifyOrganization("Firebase 저장에 실패했습니다. 로컬 저장은 유지됩니다."));
+    return;
+  }
+
+  if (event.target.id === "restoreOrgBackupButton") {
+    restoreOrganizationBackup();
+    return;
+  }
+
   const templateButton = event.target.closest("[data-template-id]");
   if (templateButton) {
     const template = groupTemplates.find((item) => item.id === templateButton.dataset.templateId);
@@ -3030,25 +3802,8 @@ document.addEventListener("click", (event) => {
   }
 
   if (event.target.id === "resetDataButton") {
-    state = {
-      units: clone(seedUnits),
-      people: clone(seedPeople),
-      groups: clone(seedGroups),
-      sessions: clone(seedSessions),
-      selectedUnitId: getDefaultSelectedUnitId(),
-      view: "official",
-      orgLayout: "horizontal",
-      orgZoom: 0.68,
-      networkLevel: "team",
-      calendarView: "month",
-      selectedCalendarDate: todayIso(),
-      expandedUnitIds: getDefaultExpandedIds(),
-      openCardIds: [],
-      detailOpen: false,
-      detailModal: null,
-      search: "",
-      filters: defaultFilters(),
-    };
+    createOrganizationBackup("reset");
+    state = defaultOrganizationState();
     render();
   }
 });
@@ -3132,7 +3887,10 @@ document.addEventListener("change", (event) => {
   if (event.target.id === "orgUploadInput" && event.target.files && event.target.files[0]) {
     parseOrganizationUpload(event.target.files[0])
       .then((rows) => {
-        if (applyOrganizationTemplate(rows)) render();
+        if (confirmOrganizationUpload(rows) && applyOrganizationTemplate(rows)) {
+          render();
+          notifyOrganization("조직 마스터 업로드를 적용했습니다");
+        }
       })
       .catch((error) => {
         window.alert(error.message || "조직도 업로드 중 오류가 발생했습니다.");

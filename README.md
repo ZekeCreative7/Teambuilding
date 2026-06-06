@@ -38,6 +38,11 @@ assets/               로고 및 원본 소스 데이터(CSV·XLSX)
 
 - 원본 소스 데이터는 분석 결과와 분리해 보존합니다.
 - Pulse 응답·상담·FGD·구성원 데이터는 팀·그룹 단위 집계를 기본으로 합니다.
+- Firestore 저장 경로는 승인된 사용자 본인 계정 아래에 분리됩니다.
+  - `users/{uid}/pulseDatasets/{datasetId}`: Pulse 원본, GPT 분석, 커뮤니케이션 기록
+  - `users/{uid}/organizationStates/default`: 조직도, 구성원, 캘린더, 타겟그룹
+  - `users/{uid}/sessionDesigner/default`: 세션 디자이너 현재 프로젝트와 저장 보드
+- 조직 마스터 템플릿은 `recordType`으로 `unit`, `person`, `session`, `group` 행을 함께 관리합니다.
 
 ## Pulse ↔ 조직 연결
 

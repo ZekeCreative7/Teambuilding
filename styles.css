@@ -1039,7 +1039,7 @@ input[type="checkbox"] {
 
 .network-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
   gap: 12px;
   padding: 16px 24px 0;
 }
@@ -1175,6 +1175,21 @@ input[type="checkbox"] {
   box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.11);
 }
 
+.network-node.risk .network-dot {
+  background: #fb7185;
+  box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.14);
+}
+
+.network-node.stable .network-dot {
+  background: var(--mint);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.14);
+}
+
+.network-node.watch .network-dot {
+  background: #8b93f0;
+  box-shadow: 0 0 0 4px rgba(95, 109, 238, 0.12);
+}
+
 .network-node strong {
   position: absolute;
   left: 50%;
@@ -1182,7 +1197,7 @@ input[type="checkbox"] {
   z-index: 10;
   min-width: 0;
   width: max-content;
-  max-width: 180px;
+  max-width: 240px;
   padding: 8px 10px 4px;
   border: 1px solid rgba(203, 213, 225, 0.78);
   border-radius: 14px 14px 4px 4px;
@@ -1203,7 +1218,7 @@ input[type="checkbox"] {
   top: 67px;
   z-index: 10;
   width: max-content;
-  max-width: 180px;
+  max-width: 260px;
   padding: 0 10px 8px;
   border: 1px solid rgba(203, 213, 225, 0.78);
   border-top: 0;
@@ -1212,6 +1227,7 @@ input[type="checkbox"] {
   color: var(--muted);
   font-size: 10px;
   font-weight: 850;
+  line-height: 1.45;
   opacity: 0;
   pointer-events: none;
   transform: translateX(-50%) translateY(-4px);
@@ -3032,6 +3048,64 @@ select:focus {
   border-color: rgba(255, 255, 255, 0.64);
 }
 
+.culture-map-readout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.culture-map-readout article,
+.culture-driver {
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 251, 255, 0.78));
+  box-shadow: var(--inner-glow);
+}
+
+.culture-map-readout article {
+  padding: 12px;
+}
+
+.culture-map-readout span,
+.culture-driver span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.culture-map-readout strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-strong);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.culture-driver-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.culture-driver-list.compact {
+  margin-top: 0;
+}
+
+.culture-driver {
+  padding: 11px 12px;
+}
+
+.culture-driver b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink-strong);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .inspector-metrics article,
 .calendar-day.active,
 .week-day.active {
@@ -3059,6 +3133,18 @@ select:focus {
 
 .network-node.support .network-dot {
   background: #fb7185;
+}
+
+.network-node.risk .network-dot {
+  background: #fb7185;
+}
+
+.network-node.stable .network-dot {
+  background: #14b8a6;
+}
+
+.network-node.watch .network-dot {
+  background: #8b93f0;
 }
 
 .calendar-shell {
@@ -3256,9 +3342,9 @@ select:focus {
 }
 
 /* ====================================================================
-   조직문화 확산 맵 — 사분면 배경에 아주 약한 컬러 + 코너 라벨
-   X=변화 수용도(우=높음) · Y=피로도(상=높음)
-   위험(좌상) · 주의(우상) · 관망(좌하) · 안정(우하)
+   조직문화 확산 맵 — Pulse 문항 기반 4지표 좌표계
+   X=변화 수용도+신뢰도-리스크(우=높음) · Y=피로도/지원 필요(상=높음)
+   위험(좌상) · 피로도/지원 필요(우상) · 관망/정체(좌하) · 안정(우하)
    ==================================================================== */
 .network-canvas.quad-tinted::before {
   content: "";

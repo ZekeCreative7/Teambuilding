@@ -10,7 +10,7 @@ function openGuide(){let m=$('#guideModal');if(m)m.classList.add('show')}
 function closeGuide(){let m=$('#guideModal');if(m)m.classList.remove('show');try{localStorage.setItem(ONBOARD_KEY,'1')}catch(e){}}
 function maybeShowOnboarding(){try{if(localStorage.getItem(ONBOARD_KEY)==='1')return}catch(e){}openGuide()}
 /* ADMIN_EMAIL, firebaseConfig, friendlyAuthErr, download은 app.js에서 제공됩니다(전역). */
-let fbAuth=null,fbDb=null,uid=null,currentDataset=null,localMode=false,toastTimer=null;
+let fbAuth=null,fbDb=null,uid=null,currentDataset=null,localMode=false,toastTimer=null,datasetCatalog=[];
 const catMap=[
   ['몰입·추천',[1,2,3,4]],['조직명확성',[5,6,7,8,9,10]],['웰빙',[11,12]],['매니저',[13,14,15,16]],['심리안전·소속감',[17,18,19,20,21,22]]
 ];
@@ -155,9 +155,11 @@ function initFirebase(){
         renderAll();
         showInitialView();
         showPlatform(user);
+        if(typeof connectOrganizationCloud==='function') connectOrganizationCloud(fbDb,uid);
         setAccountStatus('Firebase 연결됨');
       }else{
         uid=null;
+        if(typeof disconnectOrganizationCloud==='function') disconnectOrganizationCloud();
         showLoginGate('', '');
       }
     });
@@ -265,9 +267,42 @@ async function loadLatestCloudDataset(){
   try{
     let snap=await fbDb.collection('users').doc(uid).collection('pulseDatasets').orderBy('updatedAt','desc').limit(1).get();
     if(!snap.empty){currentDataset=snap.docs[0].data();localStorage.setItem(DATASET_KEY,JSON.stringify(currentDataset));setAccountStatus('Firebase 데이터셋 불러옴');}
+    await loadDatasetCatalog();
   }catch(e){
     if((e.code||'').includes('permission-denied')) setAccountStatus('승인 필요');
     else setAccountStatus('Firebase 불러오기 실패');
+  }
+}
+async function loadDatasetCatalog(){
+  if(!fbDb||!uid){renderDatasetCatalog();return}
+  try{
+    let snap=await fbDb.collection('users').doc(uid).collection('pulseDatasets').orderBy('updatedAt','desc').limit(30).get();
+    datasetCatalog=snap.docs.map(doc=>{let d=doc.data()||{};return{id:doc.id,name:d.name||doc.id,year:d.year||'',source:d.source||'',updatedAt:d.updatedAt||d.createdAt||'',divisionCount:d.data?.divisions?.length||0,questionCount:d.data?.company?.questions?.length||0,current:currentDataset&&doc.id===currentDataset.id}});
+    renderDatasetCatalog();
+  }catch(e){
+    datasetCatalog=[];
+    renderDatasetCatalog('Firebase 목록을 불러오지 못했습니다.');
+  }
+}
+function renderDatasetCatalog(message=''){
+  let el=$('#datasetVersionList');if(!el)return;
+  if(message){el.textContent=message;return}
+  if(!datasetCatalog.length){el.textContent=uid?'저장된 데이터셋이 아직 없습니다. 현재 데이터를 저장하면 여기에 표시됩니다.':'로그인 후 저장된 데이터셋 목록을 불러옵니다.';return}
+  el.innerHTML=`<div class="versionList">${datasetCatalog.map(item=>`<div class="versionRow"><div><b>${esc(item.name)}</b><span>${esc(item.year||'-')} · ${esc(item.source||'dataset')} · 본부 ${item.divisionCount}개 · 문항 ${item.questionCount}개</span><small>${esc(formatDate(item.updatedAt))}</small></div><button class="${item.current?'green':'ghost'}" onclick="loadCloudDataset('${escAttr(item.id)}')" ${item.current?'disabled':''}>${item.current?'현재 사용 중':'불러오기'}</button></div>`).join('')}</div>`;
+}
+async function loadCloudDataset(datasetId){
+  if(!fbDb||!uid||!datasetId){toast('Firebase 연결 후 사용할 수 있습니다');return}
+  try{
+    let snap=await fbDb.collection('users').doc(uid).collection('pulseDatasets').doc(datasetId).get();
+    if(!snap.exists){toast('데이터셋을 찾지 못했습니다');return}
+    localStorage.setItem(`${DATASET_KEY}.backup.latest`,JSON.stringify({createdAt:new Date().toISOString(),dataset:currentDataset}));
+    currentDataset=snap.data();
+    localStorage.setItem(DATASET_KEY,JSON.stringify(currentDataset));
+    renderAll();
+    await loadDatasetCatalog();
+    toast('선택한 Pulse 데이터셋을 불러왔습니다');
+  }catch(e){
+    toast('데이터셋 불러오기 실패: '+friendlyAuthErr(e));
   }
 }
 async function persistDataset(reason){
@@ -275,7 +310,7 @@ async function persistDataset(reason){
   currentDataset.updatedAt=new Date().toISOString();
   localStorage.setItem(DATASET_KEY,JSON.stringify(currentDataset));
   if(datasetRef()){
-    try{await datasetRef().set(currentDataset);$('#dataStatus').textContent='Firebase 저장 완료: '+new Date().toLocaleString('ko-KR');setAccountStatus('Firebase 저장 완료');}
+    try{await datasetRef().set(currentDataset);$('#dataStatus').textContent='Firebase 저장 완료: '+new Date().toLocaleString('ko-KR');setAccountStatus('Firebase 저장 완료');await loadDatasetCatalog();}
     catch(e){
       let msg=(e.code||'').includes('permission-denied')?'Firebase 저장 실패: 아직 승인되지 않은 계정입니다. 마스터 계정의 승인 관리에서 사용자를 승인해 주세요.':'Firebase 저장 실패. 로컬에는 저장됨: '+e.message;
       $('#dataStatus').textContent=msg;setAccountStatus('저장 실패');
@@ -291,7 +326,7 @@ async function loadSeedData(forceSeed=false){
   }catch(e){
     seed=EMBEDDED_PULSE_SEED;
   }
-  currentDataset={id:'pulse_2026_seed',name:'Lina Pulse Survey 2026',year:2026,source:seed===EMBEDDED_PULSE_SEED?'embedded-source':'pulse-seed-data.json',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:enrichData(seed),analysis:{company:'',divisions:{}},speech:{}};
+  currentDataset={id:'pulse_2026_seed',name:'Lina Pulse Survey 2026',year:2026,source:seed===EMBEDDED_PULSE_SEED?'embedded-source':'pulse-seed-data.json',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:enrichData(seed),analysis:{company:'',divisions:{}},communications:[]};
   localStorage.setItem(DATASET_KEY,JSON.stringify(currentDataset));
 }
 function enrichData(data){
@@ -325,14 +360,29 @@ function buildPulseByOrg(){
       let ds=groups[orgId];
       let fav=avg(ds.map(d=>d.avgFav)), low=avg(ds.map(d=>d.avgLow));
       let t=tier(fav, Math.max(...ds.map(d=>d.hi90||0)));
+      let questionNos=[...new Set(ds.flatMap(d=>(d.qs||[]).map(q=>Number(q.no)).filter(Boolean)))].sort((a,b)=>a-b);
+      let questions=questionNos.map(no=>{
+        let rows=ds.flatMap(d=>(d.qs||[]).filter(q=>Number(q.no)===no));
+        let meta=(data().company.questions||[]).find(q=>Number(q.no)===no)||{};
+        return {
+          no,
+          short:meta.short||'',
+          text:meta.text||meta.short||'',
+          fav:avg(rows.map(q=>q.fav)),
+          low:avg(rows.map(q=>q.low)),
+          fav25:avg(rows.map(q=>q.fav25)),
+          low25:avg(rows.map(q=>q.low25)),
+          category:qCategory(no)
+        };
+      });
       map[orgId]={fav:Math.round(fav), low:Math.round(low), tier:t,
-        sources:ds.map(d=>d.name), reliab:ds.some(d=>d.tier==='check')};
+        sources:ds.map(d=>d.name), reliab:ds.some(d=>d.tier==='check'), questions};
     });
   }catch(e){}
   window.LINA_PULSE_BY_ORG=map;
   return map;
 }
-function renderAll(){buildPulseByOrg();renderHome();fillSelects();renderPulse();renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();renderComms();if(typeof render==='function'){try{render()}catch(e){}}}
+function renderAll(){buildPulseByOrg();renderHome();fillSelects();renderPulse();renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();renderComms();renderDatasetCatalog();if(typeof render==='function'){try{render()}catch(e){}}}
 function homeInsight(title,value,body,tone=''){
   return`<div class="insightItem ${tone}"><b>${esc(title)}</b><strong>${esc(value)}</strong><span>${esc(body)}</span></div>`;
 }
@@ -784,13 +834,56 @@ function downloadTemplate(){
   data().divisions.forEach(dv=>dv.qs.forEach(q=>{let m=data().company.questions[q.no-1]||{};rows.push(['division_question',currentDataset.year,dv.name,qCategory(q.no),q.no,m.short,m.text,q.fav,q.low,q.fav25,q.low25,q.fav24,q.low24,'',''])}));
   download('lina_pulse_survey_upload_template.csv',rows.map(r=>r.map(csvCell).join(',')).join('\n'),'text/csv;charset=utf-8');
 }
+function downloadCurrentDatasetJson(){
+  if(!currentDataset){toast('내려받을 데이터가 없습니다');return}
+  download((currentDataset.id||'lina_pulse_dataset')+'.json',JSON.stringify(currentDataset,null,2),'application/json;charset=utf-8');
+}
 function parseCSV(text){
   let rows=[],row=[],cell='',q=false;
   for(let i=0;i<text.length;i++){let ch=text[i],nx=text[i+1];if(q){if(ch==='"'&&nx==='"'){cell+='"';i++}else if(ch==='"')q=false;else cell+=ch}else{if(ch==='"')q=true;else if(ch===','){row.push(cell);cell=''}else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell=''}else if(ch!=='\r')cell+=ch}}
   row.push(cell);rows.push(row);let head=rows.shift().map(h=>h.trim());return rows.filter(r=>r.some(Boolean)).map(r=>Object.fromEntries(head.map((h,i)=>[h,r[i]||''])));
 }
+function analyzePulseRows(rows){
+  let report={company:0,division:0,issues:[]};
+  let required=['recordType','questionNo','fav','low'];
+  if(!rows.length){report.issues.push('데이터 행이 없습니다.');return report}
+  required.forEach(h=>{if(!(h in rows[0]))report.issues.push(`필수 컬럼 ${h}가 없습니다.`)});
+  rows.forEach((r,i)=>{
+    let rowNo=i+2,type=r.recordType;
+    if(type==='company_question')report.company+=1;
+    else if(type==='division_question')report.division+=1;
+    else report.issues.push(`${rowNo}행: recordType이 company_question 또는 division_question이 아닙니다.`);
+    if(!r.questionNo)report.issues.push(`${rowNo}행: questionNo가 비어 있습니다.`);
+    if(type==='division_question'&&!r.division)report.issues.push(`${rowNo}행: division이 비어 있습니다.`);
+    if(r.fav!==''&&num(r.fav)==null)report.issues.push(`${rowNo}행: fav는 숫자여야 합니다.`);
+    if(r.low!==''&&num(r.low)==null)report.issues.push(`${rowNo}행: low는 숫자여야 합니다.`);
+  });
+  if(!report.company)report.issues.push('전사 문항(company_question)이 없습니다. 기존 전사 문항을 유지합니다.');
+  if(!report.division)report.issues.push('본부 문항(division_question)이 없습니다. 본부별 그래프가 비어 보일 수 있습니다.');
+  return report;
+}
+function confirmPulseUpload(rows){
+  let report=analyzePulseRows(rows);
+  let blocking=report.issues.filter(x=>x.includes('필수 컬럼')||x.includes('데이터 행'));
+  if(blocking.length){window.alert(blocking.join('\n'));return false}
+  let warnings=report.issues.slice(0,8).join('\n');
+  let more=report.issues.length>8?`\n외 ${report.issues.length-8}개 경고`:'';
+  return window.confirm(`Pulse CSV를 새 데이터셋으로 저장할까요?\n\n전사 문항 ${report.company}개 · 본부 문항 ${report.division}개\n\n현재 데이터는 백업되고, 기존 GPT 분석/커뮤니케이션 기록은 새 데이터셋에 자동으로 복사하지 않습니다.${warnings?`\n\n확인할 점:\n${warnings}${more}`:''}`);
+}
 async function handleCsvUpload(ev){
-  let file=ev.target.files[0];if(!file)return;let rows=parseCSV(await file.text());currentDataset={id:'pulse_'+Date.now(),name:'Lina Pulse Survey '+(rows[0]?.year||new Date().getFullYear()),year:rows[0]?.year||new Date().getFullYear(),source:'csv-upload',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:buildDataFromRows(rows),analysis:{company:'',divisions:{}},speech:{}};await persistDataset('upload');renderAll();toast('업로드 데이터로 대시보드를 업데이트했습니다')}
+  let file=ev.target.files[0];if(!file)return;
+  try{
+    let rows=parseCSV(await file.text());
+    if(!confirmPulseUpload(rows))return;
+    localStorage.setItem(`${DATASET_KEY}.backup.latest`,JSON.stringify({createdAt:new Date().toISOString(),dataset:currentDataset}));
+    currentDataset={id:'pulse_'+Date.now(),name:'Lina Pulse Survey '+(rows[0]?.year||new Date().getFullYear()),year:rows[0]?.year||new Date().getFullYear(),source:'csv-upload',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),data:buildDataFromRows(rows),analysis:{company:'',divisions:{}},communications:[]};
+    await persistDataset('upload');renderAll();toast('업로드 데이터로 대시보드를 업데이트했습니다')
+  }catch(error){
+    toast('CSV 업로드 실패: '+(error.message||error));
+  }finally{
+    ev.target.value='';
+  }
+}
 function buildDataFromRows(rows){
   let qRows=rows.filter(r=>r.recordType==='company_question'), divRows=rows.filter(r=>r.recordType==='division_question'), qBase=data().company.questions;
   let questions=qRows.map(r=>({no:Number(r.questionNo),short:r.questionShort,text:r.questionText||r.questionShort,benchMed:num(r.benchMed),benchChubb:num(r.benchChubb),fav:{'24':num(r.fav24),'25':num(r.fav25),'26':num(r.fav)},low:{'24':num(r.low24),'25':num(r.low25),'26':num(r.low)},dist26:{}})).sort((a,b)=>a.no-b.no);

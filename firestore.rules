@@ -25,6 +25,21 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && request.auth.uid == uid && isApproved();
     }
 
+    // People & Organization 상태: 조직도, 구성원, 캘린더, 타겟그룹
+    match /users/{uid}/organizationStates/{stateId} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid && isApproved();
+    }
+
+    // Session Designer 상태: 현재 프로젝트와 보드 목록
+    match /users/{uid}/sessionDesigner/{docId} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid && isApproved();
+    }
+
+    // 이전 배포본 호환 경로. 새 코드는 users/{uid}/sessionDesigner/default를 사용한다.
+    match /userStates/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid && isApproved();
+    }
+
     // 가입 신청: 본인이 자기 신청서 생성·조회, 마스터가 검토·삭제
     match /pendingUsers/{uid} {
       allow create: if isSignedIn() && request.auth.uid == uid;
