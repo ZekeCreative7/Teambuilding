@@ -480,6 +480,7 @@ let organizationCloud = {
   loading: false,
   status: "로컬 저장",
   lastLocalWrite: 0,
+  suppressPersist: false,
 };
 
 function defaultFilters() {
@@ -508,15 +509,66 @@ function defaultOrganizationState() {
   };
 }
 
+function sanitizeOrganizationUnits(rawUnits = []) {
+  const seenIds = new Set();
+  const units = rawUnits
+    .filter((unit) => unit && unit.id)
+    .filter((unit) => {
+      if (seenIds.has(unit.id)) return false;
+      seenIds.add(unit.id);
+      return true;
+    })
+    .map((unit) => ({
+      ...unit,
+      parentId: unit.parentId || "",
+      tags: Array.isArray(unit.tags) ? unit.tags : [],
+    }));
+
+  if (!units.length) return clone(seedUnits);
+
+  const byId = new Map(units.map((unit) => [unit.id, unit]));
+  const root = units.find((unit) => unit.level === "company") || units.find((unit) => !unit.parentId) || units[0];
+  root.parentId = "";
+
+  const fallbackParentId = (unit) => (unit.id === root.id || unit.level === "company" ? "" : root.id);
+  const parentChainHasCycle = (unit) => {
+    const seen = new Set([unit.id]);
+    let parentId = unit.parentId;
+    while (parentId) {
+      if (seen.has(parentId)) return true;
+      seen.add(parentId);
+      const parent = byId.get(parentId);
+      if (!parent) return false;
+      parentId = parent.parentId;
+    }
+    return false;
+  };
+
+  units.forEach((unit) => {
+    if (unit.id === root.id) {
+      unit.parentId = "";
+      return;
+    }
+    if (!unit.parentId || unit.parentId === unit.id || !byId.has(unit.parentId) || parentChainHasCycle(unit)) {
+      unit.parentId = fallbackParentId(unit);
+    }
+  });
+
+  return units;
+}
+
 function normalizeOrganizationState(parsed = {}) {
   const base = defaultOrganizationState();
+  const units = sanitizeOrganizationUnits(Array.isArray(parsed.units) && parsed.units.length ? parsed.units : base.units);
+  const unitIds = new Set(units.map((unit) => unit.id));
+  const rootId = units.find((unit) => !unit.parentId)?.id || getDefaultSelectedUnitId();
   return {
     ...base,
-    units: Array.isArray(parsed.units) && parsed.units.length ? parsed.units : base.units,
+    units,
     people: Array.isArray(parsed.people) ? parsed.people : base.people,
     groups: Array.isArray(parsed.groups) ? parsed.groups : base.groups,
     sessions: Array.isArray(parsed.sessions) ? parsed.sessions : base.sessions,
-    selectedUnitId: parsed.selectedUnitId || base.selectedUnitId,
+    selectedUnitId: unitIds.has(parsed.selectedUnitId) ? parsed.selectedUnitId : rootId,
     view: "official",
     orgLayout: parsed.orgLayout || base.orgLayout,
     orgZoom: parsed.orgZoom || base.orgZoom,
@@ -717,7 +769,12 @@ async function connectOrganizationCloud(db, uid) {
       state = normalizeOrganizationState(snap.data().state);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       setOrganizationCloudStatus(`Firebase 불러옴 · ${formatOrgSyncTime(snap.data().updatedAt)}`);
-      render();
+      organizationCloud.suppressPersist = true;
+      try {
+        render({ skipPersist: true, skipHomeRefresh: true });
+      } finally {
+        organizationCloud.suppressPersist = false;
+      }
     } else {
       setOrganizationCloudStatus("Firebase 최초 저장 준비");
       organizationCloud.loading = false;
@@ -740,6 +797,7 @@ function disconnectOrganizationCloud() {
 }
 
 function persist() {
+  if (organizationCloud.suppressPersist) return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
@@ -785,8 +843,11 @@ function getChildren(parentId) {
 
 function getDescendantUnitIds(unitId) {
   const ids = [unitId];
+  const visited = new Set([unitId]);
   const walk = (parentId) => {
     getChildren(parentId).forEach((child) => {
+      if (visited.has(child.id)) return;
+      visited.add(child.id);
       ids.push(child.id);
       walk(child.id);
     });
@@ -819,21 +880,26 @@ function hasActiveRefinement() {
 function getAncestorIds(unitId) {
   const ids = [];
   let unit = getUnit(unitId);
+  const visited = new Set([unitId]);
   while (unit?.parentId) {
+    if (visited.has(unit.parentId)) break;
+    visited.add(unit.parentId);
     ids.push(unit.parentId);
     unit = getUnit(unit.parentId);
   }
   return ids;
 }
 
-function refreshSourcePaths(unitId) {
+function refreshSourcePaths(unitId, visited = new Set()) {
+  if (visited.has(unitId)) return;
+  visited.add(unitId);
   const unit = getUnit(unitId);
   if (!unit) return;
 
   const parent = unit.parentId ? getUnit(unit.parentId) : null;
   unit.orgDepth = parent ? (parent.orgDepth || 0) + 1 : 0;
   unit.sourcePath = parent ? `${parent.sourcePath || parent.name} > ${unit.name}` : unit.name;
-  getChildren(unit.id).forEach((child) => refreshSourcePaths(child.id));
+  getChildren(unit.id).forEach((child) => refreshSourcePaths(child.id, visited));
 }
 
 function hasVisibleDescendant(unitId) {
@@ -1350,15 +1416,15 @@ function getVisibleUnits() {
   return state.units.filter(unitMatches);
 }
 
-function render() {
+function render(options = {}) {
   syncControls();
   renderMetrics();
   renderView();
   renderDetail();
   renderTemplates();
-  refreshHomeDashboardFromOrgState();
+  if (!options.skipHomeRefresh) refreshHomeDashboardFromOrgState();
   refreshOrganizationCloudStatusUi();
-  persist();
+  if (!options.skipPersist) persist();
 }
 
 function refreshHomeDashboardFromOrgState() {
