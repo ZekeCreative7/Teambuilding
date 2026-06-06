@@ -727,9 +727,17 @@ async function saveOrganizationCloudNow() {
   }
   const stamp = Date.now();
   organizationCloud.lastLocalWrite = stamp;
+  // 순환 참조를 제거한 순수 데이터만 Firestore로 보낸다 (없으면 그대로 통과).
+  const payload = safeForCloud(organizationSnapshot());
+  if (safeForCloud.lastDropped) {
+    console.warn(
+      `조직 상태에 순환 참조 ${safeForCloud.lastDropped}건이 있어 Firebase 저장 전에 제거했습니다. 문제 필드:`,
+      circularFields(organizationSnapshot()),
+    );
+  }
   await ref.set(
     {
-      state: organizationSnapshot(),
+      state: payload,
       updatedAt: stamp,
       updatedAtIso: new Date(stamp).toISOString(),
       writer: ORG_CLOUD_WRITER,
@@ -778,7 +786,13 @@ async function connectOrganizationCloud(db, uid) {
     } else {
       setOrganizationCloudStatus("Firebase 최초 저장 준비");
       organizationCloud.loading = false;
-      await saveOrganizationCloudNow();
+      // 최초 저장 실패는 "불러오기" 실패가 아니라 "저장" 실패로 표기해야 한다.
+      try {
+        await saveOrganizationCloudNow();
+      } catch (saveError) {
+        console.warn("Could not perform initial organization cloud save.", saveError);
+        setOrganizationCloudError("저장", saveError);
+      }
       return;
     }
   } catch (error) {
@@ -801,7 +815,14 @@ function persist() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
-    console.warn("Could not save organization data.", error);
+    // 순환 참조 등으로 직렬화에 실패하면 어떤 필드가 문제인지 알려주고(원인 추적),
+    // 순환 참조를 제거한 사본으로라도 로컬 저장을 시도한다.
+    console.error("조직 상태 직렬화 실패 — 문제 필드:", circularFields(state), error);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(safeForCloud(state)));
+    } catch (fallbackError) {
+      console.warn("Could not save organization data.", fallbackError);
+    }
   }
   scheduleOrganizationCloudSave();
 }
@@ -816,6 +837,38 @@ window.saveOrganizationCloudNow = () =>
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+// Firebase에 넘기기 전에 순환 참조·함수·undefined·DOM 노드를 제거한 "순수 데이터"로 변환한다.
+// Firestore의 직렬화는 객체를 재귀 순회하므로, 순환 참조가 있으면 "Maximum call stack size exceeded"로 죽는다.
+function safeForCloud(value) {
+  const seen = new WeakSet();
+  let dropped = 0;
+  const json = JSON.stringify(value, (key, val) => {
+    if (val && typeof val === "object") {
+      if (seen.has(val)) {
+        dropped += 1;
+        return undefined; // 순환(또는 중복) 참조 제거 → Firestore 직렬화 폭주 방지
+      }
+      seen.add(val);
+    }
+    return val;
+  });
+  safeForCloud.lastDropped = dropped;
+  return json ? JSON.parse(json) : {};
+}
+
+// JSON 직렬화에 실패하는(순환 참조 등) 최상위 필드 이름을 찾아낸다 — 원인 추적용 진단.
+function circularFields(obj) {
+  if (!obj || typeof obj !== "object") return [];
+  return Object.keys(obj).filter((key) => {
+    try {
+      JSON.stringify(obj[key]);
+      return false;
+    } catch (error) {
+      return true;
+    }
+  });
 }
 
 function getUnit(id) {
