@@ -1277,7 +1277,20 @@ function render() {
   renderView();
   renderDetail();
   renderTemplates();
+  refreshHomeDashboardFromOrgState();
   persist();
+}
+
+function refreshHomeDashboardFromOrgState() {
+  if (typeof renderHome !== "function") return;
+  if (typeof currentDataset === "undefined" || !currentDataset) return;
+  if (!document.getElementById("sessionOps")) return;
+
+  try {
+    renderHome();
+  } catch (error) {
+    console.warn("Could not refresh home dashboard from organization state.", error);
+  }
 }
 
 function syncControls() {

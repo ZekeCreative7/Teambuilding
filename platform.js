@@ -80,9 +80,22 @@ function restoreSidebar(){
   try{if(!isMobileNav()&&localStorage.getItem('cp-nav-collapsed')==='1')shell.classList.add('nav-collapsed')}catch(e){}
 }
 window.addEventListener('resize',()=>{if(!isMobileNav())closeMobileNav()});
+function normalizeAuthMessageLayout(){
+  let el=$('#authMsg'), pane=document.querySelector('.authPane');if(!el||!pane)return;
+  let anchor=$('#pendingActions')||$('#authActions');
+  if(anchor&&anchor.parentElement===pane&&el.previousElementSibling!==anchor) anchor.insertAdjacentElement('afterend',el);
+  el.setAttribute('role','status');
+  el.setAttribute('aria-live','polite');
+}
 function setAuthMsg(t,tone=''){
+  normalizeAuthMessageLayout();
   let el=$('#authMsg');if(!el)return;
   el.textContent=t||'';el.className='authMsg '+tone;el.style.display=t?'block':'none';
+}
+function scrollSessionTrackTeams(track,dir){
+  let rail=document.querySelector(`[data-track-team-rail="${track}"]`);if(!rail)return;
+  let amount=Math.max(240,Math.round(rail.clientWidth*.82));
+  rail.scrollBy({left:amount*dir,behavior:'smooth'});
 }
 function setAuthBusy(isBusy){
   ['authEmail','authPass'].forEach(id=>{let el=$('#'+id);if(el)el.disabled=!!isBusy});
@@ -455,12 +468,15 @@ function renderHome(){
     if(typeof trackSummary!=='function'||typeof WOW_TRACKS==='undefined'||!WOW_TRACKS[track]) return '';
     let S=trackSummary(track), label=WOW_TRACKS[track].label;
     let funnel=S.steps.map((st,i)=>{let h=S.participating?Math.max(8,Math.round(S.stepCounts[i]/S.participating*100)):6;return `<div class="tf-step" title="${esc((i+1)+'. '+st)} · ${S.stepCounts[i]}팀 완료"><span class="tf-fill" style="height:${h}%"></span><em>${i+1}</em></div>`;}).join('');
-    let rows=S.teamRows.slice(0,4).map(r=>`<div class="tb-team"><span>${esc(r.name)}</span><div class="tb-dots">${Array.from({length:r.total},(_,i)=>`<i class="${i<r.done?'on':''}"></i>`).join('')}</div><b>${r.done}/${r.total}</b></div>`).join('');
+    let rows=S.teamRows.map(r=>`<div class="tb-team" title="${esc(r.name)}"><span>${esc(r.name)}</span><div class="tb-dots">${Array.from({length:r.total},(_,i)=>`<i class="${i<r.done?'on':''}"></i>`).join('')}</div><b>${r.done}/${r.total}</b></div>`).join('');
     return `<div class="track-board">
       <div class="track-head"><b>${esc(label)}</b><span>${S.participating}팀 참여 · ${S.finished}팀 완료</span><strong>${S.overall}%</strong></div>
       <div class="track-bar"><i style="width:${S.overall}%"></i></div>
       <div class="track-funnel">${funnel}</div>
-      ${rows?`<div class="tb-list">${rows}</div>`:''}</div>`;
+      ${rows?`<div class="tb-list">
+        <div class="tb-list-head"><span>팀별 완료 현황 · 전체 ${S.teamRows.length}팀</span><div><button type="button" onclick="scrollSessionTrackTeams('${escAttr(track)}',-1)" aria-label="${esc(label)} 이전 팀 보기">‹</button><button type="button" onclick="scrollSessionTrackTeams('${escAttr(track)}',1)" aria-label="${esc(label)} 다음 팀 보기">›</button></div></div>
+        <div class="tb-rail" data-track-team-rail="${esc(track)}">${rows}</div>
+      </div>`:''}</div>`;
   }
   $('#sessionOps').innerHTML=trackBoard('team')+trackBoard('lead')+(sessions.length?'':'<div class="recommend-card" style="margin-top:10px">캘린더에서 <b>트랙(팀/팀장)</b>과 <b>단계</b>를 골라 세션 일정을 추가하면 참여·완료·진행률이 채워집니다.</div>');
   // 우선순위 액션

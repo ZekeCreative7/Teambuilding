@@ -3598,3 +3598,111 @@ select:focus {
 
 /* 인스펙터 진행현황 */
 .inspector-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ====================================================================
+   조직도 상세 패널 위치 고정
+   데스크톱/태블릿에서는 조직도 높이에 끌려가지 않는 독립 패널로 둔다.
+   ==================================================================== */
+@media (min-width: 961px) {
+  #people .main-panel {
+    overflow: visible !important;
+  }
+
+  #people .org-workbench {
+    --org-inspector-width: clamp(340px, 28vw, 410px);
+  }
+
+  #people .org-workbench.inspector-open {
+    grid-template-columns: minmax(0, 1fr) var(--org-inspector-width) !important;
+    align-items: start !important;
+  }
+
+  #people .org-workbench.inspector-open > .org-inspector {
+    position: fixed !important;
+    top: 112px !important;
+    right: 32px !important;
+    bottom: 24px !important;
+    width: var(--org-inspector-width) !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    transform: none !important;
+    z-index: 140 !important;
+  }
+}
+
+/* ====================================================================
+   데스크톱 사이드바 접기 레이아웃
+   모바일 오프캔버스 설정은 유지하고, 데스크톱에서만 본문 폭을 확장한다.
+   ==================================================================== */
+@media (min-width: 1181px) {
+  .app-shell,
+  .app-shell.nav-collapsed {
+    display: grid !important;
+    width: 100%;
+    max-width: none;
+    transition: grid-template-columns 0.2s ease;
+  }
+
+  .app-shell {
+    grid-template-columns: 250px minmax(0, 1fr) !important;
+  }
+
+  .app-shell.nav-collapsed {
+    grid-template-columns: 78px minmax(0, 1fr) !important;
+  }
+
+  .workspace {
+    width: 100%;
+    max-width: none !important;
+    min-width: 0;
+  }
+
+  .sidebar {
+    overflow-x: visible;
+  }
+
+  .brand-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    align-items: start;
+    gap: 8px;
+  }
+
+  .brand-block {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .brand-text,
+  .brand-block h1,
+  .brand-block .eyebrow {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-toggle {
+    position: relative;
+    z-index: 3;
+    width: 34px;
+    height: 34px;
+    margin-top: 2px;
+    padding: 0;
+    border-radius: 12px;
+  }
+
+  .app-shell.nav-collapsed .brand-row {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 10px;
+  }
+
+  .app-shell.nav-collapsed .nav-toggle {
+    order: -1;
+    margin-top: 0;
+  }
+}
