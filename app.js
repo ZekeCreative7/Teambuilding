@@ -3455,6 +3455,12 @@ function renderSettingsModal(unit) {
   const directPeople = getPeopleForUnit(unit.id, false);
   const childUnits = getChildren(unit.id);
   const signal = signalForUnit(unit);
+  const settingsPeople = directPeople.length ? directPeople : people.slice(0, 5);
+  const settingsPeopleLabel = directPeople.length
+    ? `${directPeople.length}명 직접 등록`
+    : people.length
+      ? `${Math.min(people.length, 5)}명 미리보기`
+      : "0명";
 
   return `
     <div class="detail-title">
@@ -3554,10 +3560,10 @@ function renderSettingsModal(unit) {
     </section>
 
     <section class="detail-section">
-      <h4>${unit.level === "team" ? "구성원" : "하위 조직과 구성원"}</h4>
+      <h4>${unit.level === "team" ? "구성원" : "하위 조직과 구성원"} · ${escapeHtml(settingsPeopleLabel)}</h4>
       ${childUnits.length ? `<div class="tag-list">${childUnits.map((child) => `<span class="tag">${escapeHtml(child.name)}</span>`).join("")}</div>` : ""}
       <div class="people-list">
-        ${(directPeople.length ? directPeople : people.slice(0, 5)).slice(0, 6).map(renderPersonRow).join("") || `<div class="recommend-card">이 조직에 직접 등록된 구성원이 없습니다.</div>`}
+        ${settingsPeople.map(renderPersonRow).join("") || `<div class="recommend-card">이 조직에 직접 등록된 구성원이 없습니다.</div>`}
       </div>
       <form class="add-person-form" id="addPersonForm">
         <input id="personNameInput" type="text" placeholder="구성원 이름" required />
