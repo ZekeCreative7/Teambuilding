@@ -1820,24 +1820,63 @@ function unitSessionDone(unitId) {
 }
 
 // 진행 현황 칩(읽기 전용): 카드/폴더/상세 공용. Pulse는 데이터, 세션류는 캘린더 기준.
-function chipOn(unit, key) {
-  if (key === "pulseSurvey") return Boolean(pulseForUnit(unit.id)) || Boolean(unit.pulseSurvey);
-  return sessionDoneForUnit(unit.id, key) || Boolean(unit[key]);
+// WOW x BALANCE 세션 트랙: 팀 세션(7단계) · 팀장 세션(4단계)
+const WOW_TRACKS = {
+  team: { label: "팀 세션", short: "팀", steps: ["WOW 세션", "명상·호흡 세션", "커뮤니케이션 세션", "중간 서베이", "점심 간담회", "협동 웰니스", "마무리 웰니스"] },
+  lead: { label: "팀장 세션", short: "팀장", steps: ["회복·에너지 관리", "자기 이해·리더십 인식", "건강한 소통·협업", "네트워킹"] },
+};
+function trackSteps(track) { return (WOW_TRACKS[track] || {}).steps || []; }
+// 트랙 변경 시 단계 드롭다운 갱신 (캘린더 세션 폼)
+function onSessionTrackChange() {
+  const track = document.getElementById("sessionTrackInput")?.value || "team";
+  const sel = document.getElementById("sessionStepInput");
+  if (sel) sel.innerHTML = trackSteps(track).map((s, i) => `<option value="${i + 1}">${i + 1}. ${escapeHtml(s)}</option>`).join("");
 }
+// 특정 조직(팀)이 트랙에서 완료(오늘 이전 일정)한 단계 집합
+function teamTrackDoneSteps(unitId, track) {
+  const today = todayISO();
+  const done = new Set();
+  (state.sessions || []).forEach((s) => {
+    if (s.teamId === unitId && s.track === track && s.step && s.date && s.date <= today) done.add(Number(s.step));
+  });
+  return done;
+}
+function trackSummary(track) {
+  const steps = trackSteps(track), total = steps.length, today = todayISO();
+  const byTeam = {};
+  (state.sessions || []).forEach((s) => {
+    if (s.track !== track || !s.teamId || !s.step) return;
+    const b = (byTeam[s.teamId] = byTeam[s.teamId] || { sched: new Set(), done: new Set(), name: s.teamName || (getUnit(s.teamId) || {}).name || s.teamId });
+    b.sched.add(Number(s.step));
+    if (s.date && s.date <= today) b.done.add(Number(s.step));
+  });
+  const ids = Object.keys(byTeam);
+  const stepCounts = steps.map((_, i) => ids.filter((id) => byTeam[id].done.has(i + 1)).length);
+  const doneInstances = ids.reduce((a, id) => a + byTeam[id].done.size, 0);
+  const teamRows = ids.map((id) => ({ id, name: byTeam[id].name, done: byTeam[id].done.size, sched: byTeam[id].sched.size, total })).sort((a, b) => b.done - a.done);
+  return {
+    track, steps, total,
+    participating: ids.length,
+    finished: ids.filter((id) => total > 0 && byTeam[id].done.size >= total).length,
+    stepCounts, teamRows,
+    overall: ids.length ? Math.round((doneInstances / (ids.length * total)) * 100) : 0,
+  };
+}
+
+// 진행 현황 칩: Pulse + 팀 세션 진행 + 팀장 세션 진행 (읽기 전용, 캘린더 기준)
 function renderStatusChips(unit, opts = {}) {
   const cls = "schip" + (opts.mini ? " mini" : "");
-  const list = opts.sessionsOnly ? ORG_STATUS_CHIPS.filter((c) => c.session) : ORG_STATUS_CHIPS;
-  return list
-    .map((c) => {
-      const on = chipOn(unit, c.key);
-      const text = opts.mini ? c.short : c.label;
-      const hint =
-        c.key === "pulseSurvey"
-          ? `${c.label} ${on ? "완료" : "미연동"}`
-          : `${c.label} ${on ? "완료 · 캘린더 일정 반영됨" : "미완료 · 캘린더 일정 등록 시 자동"}`;
-      return `<span class="${cls} ${on ? "on" : ""}" title="${escapeHtml(hint)}">${escapeHtml(text)}</span>`;
-    })
-    .join("");
+  const pulse = pulseForUnit(unit.id);
+  const pOn = Boolean(pulse) || Boolean(unit.pulseSurvey);
+  const team = teamTrackDoneSteps(unit.id, "team").size, teamTot = trackSteps("team").length;
+  const lead = teamTrackDoneSteps(unit.id, "lead").size, leadTot = trackSteps("lead").length;
+  const items = [
+    { key: "pulse", txt: "Pulse", on: pOn, hint: `Pulse ${pOn ? "완료" : "미연동"}` },
+    { key: "team", txt: `팀 ${team}/${teamTot}`, on: team > 0, hint: `팀 세션 ${team}/${teamTot} 단계 완료` },
+    { key: "lead", txt: `팀장 ${lead}/${leadTot}`, on: lead > 0, hint: `팀장 세션 ${lead}/${leadTot} 단계 완료` },
+  ];
+  const shown = opts.sessionsOnly ? items.filter((i) => i.key !== "pulse") : items;
+  return shown.map((c) => `<span class="${cls} ${c.on ? "on" : ""}" title="${escapeHtml(c.hint)}">${escapeHtml(c.txt)}</span>`).join("");
 }
 
 function renderUnitCard(unit, childCount = 0) {
@@ -2412,16 +2451,18 @@ function renderCalendarView() {
         <form id="sessionForm" class="session-form">
           <label>날짜<input id="sessionDateInput" type="date" value="${escapeHtml(state.selectedCalendarDate)}" required /></label>
           <label>시간<input id="sessionTimeInput" type="time" value="10:00" required /></label>
-          <label>세션 명<input id="sessionNameInput" type="text" value="WOW x BALANCE 세션" required /></label>
-          <label>유형
-            <select id="sessionCategoryInput">
-              <option value="wowTeam">WOW×BALANCE · 팀</option>
-              <option value="wowLead">WOW×BALANCE · 팀장</option>
-              <option value="townhall">타운홀</option>
-              <option value="teamSurvey">팀 설문</option>
+          <label>트랙
+            <select id="sessionTrackInput" onchange="onSessionTrackChange()">
+              <option value="team">팀 세션 (7단계)</option>
+              <option value="lead">팀장 세션 (4단계)</option>
             </select>
           </label>
-          <label>팀 이름
+          <label>단계
+            <select id="sessionStepInput">
+              ${trackSteps("team").map((s, i) => `<option value="${i + 1}">${i + 1}. ${escapeHtml(s)}</option>`).join("")}
+            </select>
+          </label>
+          <label>대상 팀
             <select id="sessionTeamInput" required>
               ${teams.map((team) => `<option value="${escapeHtml(team.id)}" ${team.id === selectedTeam ? "selected" : ""}>${escapeHtml(team.name)}</option>`).join("")}
             </select>
@@ -2586,7 +2627,7 @@ function organizationTemplateRows() {
     session.date || "",
     session.startTime || "",
     session.sessionName || "",
-    session.category || "",
+    session.track ? `${session.track}:${session.step || 1}` : session.category || "",
     session.teamId || "",
     session.teamName || "",
     session.participants || "",
@@ -3227,7 +3268,15 @@ function applyOrganizationTemplate(rows) {
     session.date = uploadValue(row, "date") || session.date || todayIso();
     session.startTime = uploadValue(row, "startTime") || session.startTime || "10:00";
     session.sessionName = uploadValue(row, "sessionName") || session.sessionName || "WOW x BALANCE 세션";
-    session.category = uploadValue(row, "category") || session.category || "wowTeam";
+    const catVal = uploadValue(row, "category") || "";
+    if (catVal.includes(":")) {
+      const parts = catVal.split(":");
+      session.track = parts[0];
+      session.step = Number(parts[1]) || 1;
+      session.stepName = trackSteps(session.track)[session.step - 1] || "";
+    } else if (catVal) {
+      session.category = catVal;
+    }
     session.teamId = getUnit(teamId) ? teamId : session.teamId || "";
     session.teamName = uploadValue(row, "teamName") || getUnit(session.teamId)?.name || session.teamName || "팀 미정";
     session.participants = Math.max(1, Number(uploadValue(row, "participants") || session.participants || 1));
@@ -4090,12 +4139,17 @@ document.addEventListener("submit", (event) => {
   if (event.target.id === "sessionForm") {
     event.preventDefault();
     const team = getUnit(document.getElementById("sessionTeamInput").value);
+    const track = document.getElementById("sessionTrackInput")?.value || "team";
+    const step = Number(document.getElementById("sessionStepInput")?.value || 1);
+    const stepName = trackSteps(track)[step - 1] || "";
     const session = {
       id: `session-${Date.now()}`,
       date: document.getElementById("sessionDateInput").value || state.selectedCalendarDate,
       startTime: document.getElementById("sessionTimeInput").value || "10:00",
-      sessionName: document.getElementById("sessionNameInput").value.trim() || "WOW x BALANCE 세션",
-      category: document.getElementById("sessionCategoryInput")?.value || "wowTeam",
+      track,
+      step,
+      stepName,
+      sessionName: `${(WOW_TRACKS[track] || {}).label || "세션"} ${step}. ${stepName}`,
       teamId: team?.id || "",
       teamName: team?.name || "팀 미정",
       participants: Math.max(1, Number(document.getElementById("sessionParticipantsInput").value || 1)),

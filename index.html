@@ -46,115 +46,113 @@
       </aside>
 
       <main class="workspace">
-    <section id="home" class="view">
-      <div class="dashTop">
-        <div class="dashIntro">
-          <div>
-            <div class="eyebrow">Culture Dashboard · 전체 현황판</div>
-            <h1>전사 조직문화 한눈에 보기</h1>
-            <p>Pulse Survey의 전사 신호와 본부 위험도, 취약 문항을 한 화면에서 읽고 바로 실행으로 연결합니다.</p>
-            <div class="heroChips" id="dashHeroChips"></div>
-          </div>
-          <div class="homeHeroActions">
-            <button class="primary" onclick="showView('pulse')">Pulse Survey 분석</button>
+        <section id="home" class="view">
+      <!-- A. 노스스타 / 임원 요약 -->
+      <div class="dash-hero">
+        <div class="hero-lead">
+          <div class="eyebrow">Culture Dashboard</div>
+          <h1>변화에 유연한 조직으로</h1>
+          <p id="dashNarrative" class="hero-narrative">조직문화 신호를 불러오는 중입니다…</p>
+          <div class="hero-chips" id="dashHeroChips"></div>
+          <div class="hero-actions">
+            <button class="primary" onclick="showView('pulse')">진단 자세히</button>
+            <button class="ghost" onclick="showView('people')">조직도</button>
             <button class="ghost" onclick="showView('session')">세션 설계</button>
-            <button class="ghost" onclick="showView('speech')">커뮤니케이션</button>
           </div>
         </div>
-        <div class="gaugeCard">
-          <div class="panelTitle"><div><h3>전사 조직문화 건강도<span class="info" tabindex="0" role="img" aria-label="용어 설명" data-tip="긍정 응답(Favorable): 5점 척도에서 4~5점(긍정)을 고른 비율. 부정 응답(Low): 1~2점(부정) 비율. 이 게이지는 전 직원 평균이며 높을수록 좋습니다.">i</span></h3><p class="sub" id="datasetName">데이터 로딩 중</p></div><span class="dashboardBadge" id="dashboardBadge">Status</span></div>
-          <div class="gaugeWrap">
-            <svg id="favGauge" class="gaugeSvg" viewBox="0 0 170 170"></svg>
-            <div class="gaugeLegend" id="gaugeLegend"></div>
+        <div class="agility-card">
+          <div class="panelTitle"><div><h3>변화 민첩성 지수<span class="info" tabindex="0" role="img" aria-label="용어 설명" data-tip="변화 수용도(40%) + 신뢰·로열티(35%) + 낮은 피로도(25%)를 합친 종합 지수입니다. 높을수록 변화에 유연한 조직에 가깝습니다.">i</span></h3><p class="sub">변화 수용도 · 신뢰 · 웰니스 종합</p></div><span class="dashboardBadge" id="dashboardBadge">상태</span></div>
+          <div class="agility-body">
+            <svg id="agilityGauge" class="agility-gauge" viewBox="0 0 170 170"></svg>
+            <div class="agility-meta" id="agilityMeta"></div>
           </div>
         </div>
       </div>
 
-      <div class="statStrip" id="statStrip"></div>
+      <!-- 3 핵심 동력 -->
+      <div class="pillar-row" id="pillarRow"></div>
 
-      <div class="dashGrid2">
+      <!-- 시각 요약: 추세 · 레이더 · 매트릭스 · 분포 -->
+      <div class="dashGrid3">
         <div class="dashCard">
-          <div class="panelTitle"><div><h3>연도별 긍정 응답 추세</h3><p class="sub">2024 → 2025 → 2026 전사 Favorable</p></div></div>
-          <svg id="trendChart" class="trendSvg" viewBox="0 0 440 200"></svg>
+          <div class="panelTitle"><div><h3>연도별 변화 민첩성 추세</h3><p class="sub">2024 → 2025 → 2026</p></div></div>
+          <svg id="agilityTrend" class="trendSvg" viewBox="0 0 440 200"></svg>
         </div>
         <div class="dashCard">
-          <div class="panelTitle"><div><h3>카테고리별 긍정 · 전년 대비<span class="info" tabindex="0" role="img" aria-label="용어 설명" data-tip="전년 대비: 작년(2025) 대비 올해(2026) 긍정 응답의 변화량. ‘+3p’는 3%포인트 상승, ‘-2p’는 2%포인트 하락을 뜻합니다 (p = 퍼센트포인트).">i</span></h3><p class="sub">진한 막대 2026 · 옅은 막대 2025</p></div><button class="ghost" onclick="showView('pulse')">자세히</button></div>
-          <div id="catCompare" class="catCompare"></div>
+          <div class="panelTitle"><div><h3>동력 밸런스</h3><p class="sub">변화 수용 · 신뢰 · 웰니스</p></div></div>
+          <svg id="pillarRadar" class="radar-svg" viewBox="0 0 220 200"></svg>
+        </div>
+        <div class="dashCard">
+          <div class="panelTitle"><div><h3>조직문화 확산 맵</h3><p class="sub">본부 · 변화수용 × 피로도 사분면</p></div></div>
+          <div id="dashCultureMap"></div>
         </div>
       </div>
-
       <div class="dashGrid2">
         <div class="dashCard">
-          <div class="panelTitle"><div><h3>본부 포지셔닝 매트릭스</h3><p class="sub">가로 평균 긍정 · 세로 평균 부정 · 보라 점선 = 전사 평균 · 점을 누르면 세부 분석</p></div></div>
-          <svg id="divScatter" class="scatterSvg" viewBox="0 0 480 308"></svg>
-          <div class="scatterLegend">
-            <span><i style="background:#10b981"></i>안정</span>
-            <span><i style="background:#f59e0b"></i>주의</span>
-            <span><i style="background:#ef4444"></i>위험</span>
-            <span><i style="background:#a78bfa"></i>신뢰도검토</span>
-          </div>
+          <div class="panelTitle"><div><h3>본부 포지셔닝 매트릭스</h3><p class="sub">가로 긍정 · 세로 부정 · 점을 누르면 상세</p></div></div>
+          <svg id="dashScatter" class="scatterSvg" viewBox="0 0 480 308"></svg>
+          <div class="scatterLegend"><span><i style="background:#10b981"></i>안정</span><span><i style="background:#f59e0b"></i>주의</span><span><i style="background:#ef4444"></i>위험</span><span><i style="background:#a78bfa"></i>검토</span></div>
         </div>
         <div class="dashCard">
           <div class="panelTitle"><div><h3>전사 응답 분포</h3><p class="sub">강한 긍정 → 강한 부정 (문항 평균)</p></div></div>
-          <div id="distStack" class="distStack"></div>
-          <div id="distLegend" class="distLegend"></div>
-          <div class="panelTitle" style="margin-top:20px"><div><h3>본부 위험 등급 분포<span class="info" tabindex="0" role="img" aria-label="용어 설명" data-tip="본부를 평균 긍정/부정 점수로 나눈 4등급입니다. 안정(양호) · 주의 · 위험(낮음), 그리고 신뢰도검토 = 점수가 비정상적으로 높아 데이터 신뢰성 확인이 필요한 본부.">i</span></h3><p class="sub">안정·주의·위험·검토</p></div></div>
-          <div class="tierWrap">
-            <svg id="tierDonut" class="tierDonut" viewBox="0 0 170 170"></svg>
-            <div class="tierLegend" id="tierLegend"></div>
-          </div>
+          <div id="dashDist" class="distStack"></div>
+          <div id="dashDistLegend" class="distLegend"></div>
         </div>
       </div>
 
-      <div class="dashGrid3">
+      <!-- B. 운영 루프 -->
+      <div class="dashCard loop-card">
+        <div class="panelTitle"><div><h3>조직문화 운영 루프</h3><p class="sub">진단 → 설계 → 전달 → 검증, 지금 어디까지 왔는지</p></div></div>
+        <div class="op-loop" id="opLoop"></div>
+      </div>
+
+      <!-- C. 운영 상세 -->
+      <div class="dashGrid2">
         <div class="dashCard">
-          <div class="panelTitle"><div><h3>우선 확인 문항</h3><p class="sub">긍정 응답이 낮은 순</p></div></div>
-          <div id="priorityList" class="priorityList"></div>
+          <div class="panelTitle"><div><h3>우선 지원 조직</h3><p class="sub">Pulse 기준 지원이 시급한 조직</p></div><button class="ghost" onclick="showView('people')">조직도 열기</button></div>
+          <div id="prioritySupport" class="home-list"></div>
         </div>
         <div class="dashCard">
-          <div class="panelTitle"><div><h3>하위 본부</h3><p class="sub">클릭하면 세부 분석으로 이동</p></div></div>
-          <div id="divLead" class="divLead"></div>
-        </div>
-        <div class="dashCard">
-          <div class="panelTitle"><div><h3>해석 메모</h3><p class="sub">GPT 분석 저장 시 전사 브리프로 갱신</p></div></div>
-          <div class="analysisBrief" id="savedAnalysisSummary">저장된 GPT 분석이 있으면 여기에 표시됩니다.</div>
+          <div class="panelTitle"><div><h3>WOW×BALANCE 세션 현황</h3><p class="sub">팀 세션(7단계) · 팀장 세션(4단계) 참여·완료·진행률</p></div><button class="ghost" onclick="showView('people');if(typeof state!=='undefined'){state.view='calendar';if(typeof render==='function')render();}">캘린더</button></div>
+          <div id="sessionOps"></div>
         </div>
       </div>
 
-      <div class="homeModulesV2 actionHub">
-        <div class="homeModule actionPulse" onclick="showView('pulse')">
-          <b>01</b>
-          <strong>Pulse Survey 분석</strong>
-          <span>전사·본부·문항별 신호를 비교하고, 바로 실행할 진단으로 전환합니다.</span>
-          <em>Open analytics</em>
+      <div class="dashGrid2">
+        <div class="dashCard">
+          <div class="panelTitle"><div><h3>이번 분기 우선순위 액션</h3><p class="sub">취약 동인·리스크 기반 Top 3</p></div></div>
+          <div id="priorityActions" class="home-actions"></div>
         </div>
-        <div class="homeModule actionSession" onclick="showView('session')">
-          <b>02</b>
-          <strong>조직문화 세션 만들기</strong>
-          <span>데이터를 세션 목적, 질문, 워크숍 구조로 연결합니다.</span>
-          <em>Build session</em>
-        </div>
-        <div class="homeModule actionSolution" onclick="showView('speech')">
-          <b>03</b>
-          <strong>커뮤니케이션 솔루션</strong>
-          <span>리더 메시지, 예상 Q&A, 실행 약속까지 커뮤니케이션 패키지로 만듭니다.</span>
-          <em>Design message</em>
+        <div class="dashCard">
+          <div class="panelTitle"><div><h3>변화 민첩성 동인</h3><p class="sub">지수를 끌어올리는·끌어내리는 문항</p></div></div>
+          <div id="driverBoard"></div>
         </div>
       </div>
+
+      <!-- D. 아직 수집 전 신호 (샘플) -->
+      <div class="panelTitle section-head"><div><h3>아직 수집 전인 신호</h3><p class="sub">데이터가 쌓이면 자동으로 채워집니다 — 아래는 입력 전 샘플 미리보기</p></div></div>
+      <div class="dashGrid3" id="emptySamples"></div>
     </section>
 
     <section id="pulse" class="view">
 	      <div class="toolbar">
-	        <div class="grow"><div class="eyebrow">Culture Intelligence</div><h2>Pulse Survey 분석</h2><p class="sub">핵심 인사이트를 먼저 보고, 아래로 내려갈수록 카테고리 · 문항 · 본부별 원인 가설까지 깊게 확인합니다.</p></div>
+	        <div class="grow"><div class="eyebrow">Culture Intelligence · 운영 루프 1단계 · 진단(Detect)</div><h2>Pulse Survey 분석</h2><p class="sub">변화에 유연한 조직을 위한 <b>진단</b>입니다. 신호를 읽고 아래에서 <b>설계 · 전달</b>로 바로 연결하세요.</p></div>
 	        <button class="ghost" onclick="downloadTemplate()">템플릿 다운로드</button>
 	        <button class="green" onclick="persistDataset('manual')">Firebase 저장</button>
 	      </div>
-	      <div class="pulseScopePanel">
+	      <div class="handoff-row">
+        <span class="handoff-lead">진단 결과 → 다음 단계로</span>
+        <button class="handoff-btn" onclick="showView('session')">세션 설계 →</button>
+        <button class="handoff-btn" onclick="showView('speech')">커뮤니케이션 →</button>
+        <button class="handoff-btn" onclick="showView('people')">조직도 · 타겟그룹 →</button>
+      </div>
+      <div class="pulseScopePanel">
 	        <label for="pulseScopeSelect">분석 대상 선택</label>
 	        <select id="pulseScopeSelect" onchange="onPulseScopeChange()"></select>
 	        <div id="pulseScopeHint" class="scopeHint">전사 전체 기준으로 핵심 인사이트와 문항별 추세를 먼저 보여줍니다.</div>
 	      </div>
-	      <div class="card ahaDeck">
+	      <div id="pulseDrivers" class="card pulse-drivers"></div>
+      <div class="card ahaDeck">
 	        <div class="panelTitle"><div><h3 id="ahaTitle">한눈에 보는 아하 인사이트</h3><p class="sub" id="ahaSubtitle">낮은 점수만 보지 않고, 서로 같이 움직여야 할 문항들이 어긋난 지점을 먼저 잡습니다.</p></div></div>
 	        <div id="pulseAhaInsights" class="ahaGrid"></div>
 	        <div id="categoryGlossary" class="termGlossary"></div>
@@ -204,6 +202,10 @@
           <div class="deepCard"><h4>조직문화 분석</h4><div id="deepOrgAnalysis"></div></div>
           <div class="deepCard"><h4>GPT 추가 인사이트 프롬프트</h4><textarea id="divisionDeepPrompt" class="deepPrompt" readonly></textarea></div>
         </div>
+      </div>
+      <div class="card sample-card" style="margin-top:14px">
+        <div class="panelTitle"><div><h3>정성 신호 결합 — FGD · 상담 노트</h3><p class="sub">정량(Pulse)에 정성 신호를 더하면 원인 해석이 깊어집니다 (데이터 사전상 Insight = Pulse + FGD + 상담 + 피드백)</p></div><span class="empty-badge">데이터 입력 전</span></div>
+        <div class="sample-body"><div class="smp-tags"><span>피로 누적</span><span>역할 모호</span><span>평가 공정성</span></div><p class="smp-quote">“변화 방향엔 동의하지만 회복할 에너지가 부족합니다.” — 리더 FGD</p><span class="sample-watermark">샘플</span></div>
       </div>
       <div class="grid2" style="margin-top:14px">
         <div class="card">

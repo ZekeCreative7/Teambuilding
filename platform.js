@@ -65,7 +65,7 @@ function crossSignalHTML(items,limit=4){
   return `<div class="crossSignalBoard">${list.map(x=>`<article class="crossSignalCard ${x.tone}"><div class="crossSignalHead"><span class="crossBadge">차이 ${Math.round(x.gap||0)}p</span></div><h5>${esc(x.title)}</h5><p>${esc(x.body)}</p><div class="crossEvidence">${esc(x.evidence)}</div><div class="crossPair"><div class="crossPairItem question"><b>확인 질문</b><span>${esc(x.ask)}</span></div><div class="crossPairItem action"><b>권장 액션</b><span>${esc(x.action)}</span></div></div></article>`).join('')}</div>`;
 }
 function tier(avgFav,hi90){if(hi90>=20)return'check';if(avgFav>=65)return'stable';if(avgFav>=55)return'watch';return'risk'}
-function showView(id,skipHash){$all('.view').forEach(v=>v.classList.toggle('active',v.id===id));$all('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(!skipHash&&location.hash!=='#'+id)history.replaceState(null,'','#'+id);window.scrollTo({top:0,behavior:'smooth'});if(id==='speech')buildSpeechPrompt();if(id==='people'&&typeof render==='function'){if(typeof state!=='undefined'){state.view='official';state.detailOpen=false;state.detailModal=null}render()}if(typeof closeMobileNav==='function')closeMobileNav()}
+function showView(id,skipHash){$all('.view').forEach(v=>v.classList.toggle('active',v.id===id));$all('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(!skipHash&&location.hash!=='#'+id)history.replaceState(null,'','#'+id);window.scrollTo({top:0,behavior:'smooth'});if(id==='speech')buildSpeechPrompt();if(id==='home'&&typeof renderHome==='function'&&typeof currentDataset!=='undefined'&&currentDataset){try{renderHome();}catch(e){}}if(id==='people'&&typeof render==='function'){if(typeof state!=='undefined'){state.view='official';state.detailOpen=false;state.detailModal=null}render()}if(typeof closeMobileNav==='function')closeMobileNav()}
 function goHome(){showView('home')}
 /* 사이드바 접기/펼치기 — 데스크톱은 아이콘 레일로 축소, 모바일은 오프캔버스 드로어 */
 function isMobileNav(){return window.matchMedia('(max-width:1180px)').matches}
@@ -386,58 +386,150 @@ function renderAll(){buildPulseByOrg();renderHome();fillSelects();renderPulse();
 function homeInsight(title,value,body,tone=''){
   return`<div class="insightItem ${tone}"><b>${esc(title)}</b><strong>${esc(value)}</strong><span>${esc(body)}</span></div>`;
 }
+// 전사 단위 동력 계산 (조직 카드와 동일한 CULTURE_METRIC_FORMULA 사용)
+function companyMetric(formula, year, invert){
+  let c=data().company;
+  let qs=(c.questions||[]).map(q=>({no:q.no, fav:num(q.fav?.[year]), low:num(q.low?.[year])}));
+  return weightedPulseScore(pulseQuestionMap({questions:qs}), formula, !!invert);
+}
+function homeDelta(now, prev, goodWhenUp){
+  if(now==null||prev==null) return '<span class="stTrend flat">— 비교 전</span>';
+  let r=Math.round(now-prev); let cls=r===0?'flat':((r>0)===goodWhenUp?'up':'down'); let a=r>0?'▲':(r<0?'▼':'—');
+  return `<span class="stTrend ${cls}">${a} ${r>0?'+':''}${r}p</span>`;
+}
 function renderHome(){
-  let d=data(), divs=sortedDivs();
-  let risks=d.divisions.filter(x=>x.tier==='risk'), watch=d.divisions.filter(x=>x.tier==='watch'), stable=d.divisions.filter(x=>x.tier==='stable'), checks=d.divisions.filter(x=>x.tier==='check');
-  let cats=d.company.cats.slice().sort((a,b)=>(num(b.fav?.['26'])||0)-(num(a.fav?.['26'])||0));
-  let strongestCat=cats[0], weakestCat=cats[cats.length-1];
-  let highLowCat=d.company.cats.slice().sort((a,b)=>(num(b.low?.['26'])||0)-(num(a.low?.['26'])||0))[0];
-  let fav=num(d.meta.companyFav26)||0, low=num(d.meta.companyLow26)||0, neutral=Math.max(0,Math.round((100-fav-low)*10)/10);
-  let fav25=num(d.meta.companyFav25), low25=avg(d.company.questions.map(q=>q.low?.['25']));
-  let yoy=plainDelta(fav,fav25);
-  let frame=fav>=65&&risks.length===0?'안정 관리 구간':fav>=55?'주의 관리 구간':'집중 개입 구간';
-  $('#datasetName').textContent=currentDataset.name+' · '+currentDataset.year+' · '+(currentDataset.source||'dataset');
-  $('#dashboardBadge').textContent=frame;
-  $('#dashHeroChips').innerHTML=['전사 긍정 '+pct(fav),'전년대비 '+yoy,'위험 본부 '+risks.length+'개','최강 '+(strongestCat?.name||'-'),'취약 '+(weakestCat?.name||'-')].map(t=>`<span>${esc(t)}</span>`).join('');
-  donutChart('favGauge',[{value:fav,color:'#10b981'},{value:neutral,color:'#e2e8f0'},{value:low,color:'#ef4444'}],pct(fav),'Favorable');
-  $('#gaugeLegend').innerHTML=[['#10b981','긍정 응답',pct(fav)],['#e2e8f0','중립',pct(neutral)],['#ef4444','부정 응답',pct(low)]].map(x=>`<div class="lg"><span class="dot" style="background:${x[0]}"></span>${x[1]}<b>${x[2]}</b></div>`).join('');
-  function chip(delta,goodWhenUp){if(delta==null)return '<span class="stTrend flat">— 비교불가</span>';let r=Math.round(delta);let cls=r===0?'flat':((r>0)===goodWhenUp?'up':'down');let arrow=r>0?'▲':(r<0?'▼':'—');return `<span class="stTrend ${cls}">${arrow} ${r>0?'+':''}${r}p</span>`;}
-  $('#statStrip').innerHTML=[
-    ['c1','전사 긍정',pct(fav),chip(fav25!=null?fav-fav25:null,true)],
-    ['c2','전사 부정',pct(low),chip(low25!=null?low-low25:null,false)],
-    ['c3','위험 · 주의 본부',risks.length+' · '+watch.length+'개','<span class="stTrend flat">검토 '+checks.length+'개</span>'],
-    ['c4','분석 범위',d.meta.divCount+'개 본부','<span class="stTrend flat">문항 '+d.meta.qCount+'개</span>']
-  ].map(x=>`<div class="statCard ${x[0]}"><span class="stLabel">${esc(x[1])}</span><b>${esc(x[2])}</b>${x[3]}</div>`).join('');
-  let trendSeries=[{year:'2024',value:avg(d.company.questions.map(q=>q.fav?.['24']))},{year:'2025',value:fav25},{year:'2026',value:fav}].filter(x=>num(x.value)!=null);
-  renderTrend('trendChart',trendSeries.length?trendSeries:[{year:'2026',value:fav}]);
-  $('#catCompare').innerHTML=d.company.cats.map(c=>{
-    let f26=num(c.fav?.['26'])||0, f25=num(c.fav?.['25']), delta=plainDelta(c.fav?.['26'],c.fav?.['25']);
-    let dcolor=(num(c.fav?.['26'])!=null&&f25!=null)?(f26-f25>=0?'#047857':'#b91c1c'):'#94a3b8';
-    return `<div class="ccRow"><div class="ccLabel">${termTip(c.name)}</div><div class="ccBars"><div class="ccBar ccFav"><i style="width:${f26}%"></i></div><div class="ccBar ccPrev"><i style="width:${f25!=null?f25:0}%"></i></div></div><div class="ccVal">${pct(c.fav?.['26'])}<div class="ccDelta" style="color:${dcolor}">${delta}</div></div></div>`;
-  }).join('');
-  scatterChart('divScatter',d.divisions);
+  let d=data(), F=CULTURE_METRIC_FORMULA;
+  let chg=companyMetric(F.changeAcceptance,'26').value||0, chg25=companyMetric(F.changeAcceptance,'25').value;
+  let trust=companyMetric(F.trust,'26').value||0, trust25=companyMetric(F.trust,'25').value;
+  let fatM=companyMetric(F.fatigue,'26',true), fat=fatM.value||0, fat25=companyMetric(F.fatigue,'25',true).value;
+  let agility=Math.round(0.4*chg+0.35*trust+0.25*(100-fat));
+  let ag25=(chg25!=null&&trust25!=null&&fat25!=null)?Math.round(0.4*chg25+0.35*trust25+0.25*(100-fat25)):null;
+  let agTone=agility>=70?'stable':agility>=55?'watch':'risk';
+  let agColor={stable:'#18b6aa',watch:'#f59e0b',risk:'#fb7185'}[agTone];
+  let fav=num(d.meta.companyFav26)||0;
+  let risks=d.divisions.filter(x=>x.tier==='risk');
+  $('#dashboardBadge').textContent=agility>=70?'유연 전환 중':agility>=55?'주의 관리':'집중 개입';
+  donutChart('agilityGauge',[{value:agility,color:'grad-'+agTone},{value:Math.max(0,100-agility),color:'#eef2f7'}],String(agility),'/ 100');
+  $('#agilityMeta').innerHTML=`<div class="ag-delta">${homeDelta(agility,ag25,true)}<span>전년 대비</span></div><div class="ag-note">변화 수용도·신뢰·웰니스를 합친 종합 지표입니다.</div>`;
+  $('#dashNarrative').innerHTML=`피로도가 가장 큰 과제입니다(피로도 <b>${fat}</b>). 웰니스 세션으로 피로도를 낮추고, 신뢰·로열티(<b>${trust}</b>)와 변화 수용도(<b>${chg}</b>)를 끌어올려 <b>변화에 유연한 조직</b>으로 전환합니다. 지금 지원이 시급한 조직은 <b>${risks.length}곳</b>입니다.`;
+  $('#dashHeroChips').innerHTML=[`변화 민첩성 ${agility}`,`전사 긍정 ${pct(fav)}`,`지원 시급 ${risks.length}곳`,`분석 ${d.meta.divCount}개 본부`].map(t=>`<span>${esc(t)}</span>`).join('');
+  // 3 핵심 동력
+  let pillars=[
+    {label:'피로도',sub:'웰니스로 낮추기 · 낮을수록 좋음',val:fat,prev:fat25,goodUp:false,tone:fat>=60?'risk':fat>=45?'watch':'stable'},
+    {label:'신뢰·로열티',sub:'경영진·조직 신뢰 · 높을수록 좋음',val:trust,prev:trust25,goodUp:true,tone:trust>=65?'stable':trust>=50?'watch':'risk'},
+    {label:'변화 수용도',sub:'변화에 유연한 정도 · 높을수록 좋음',val:chg,prev:chg25,goodUp:true,tone:chg>=65?'stable':chg>=50?'watch':'risk'},
+  ];
+  $('#pillarRow').innerHTML=pillars.map(p=>`<div class="pillar pillar-${p.tone}"><div class="pillar-top"><span>${esc(p.label)}</span>${homeDelta(p.val,p.prev,p.goodUp)}</div><div class="pillar-num">${p.val}<em>/100</em></div><div class="pillar-bar"><i style="width:${clamp(p.val,0,100)}%"></i></div><div class="pillar-sub">${esc(p.sub)}</div></div>`).join('');
+  // 시각 요약 그래프 (추세 · 레이더 · 매트릭스 · 분포)
+  let agY=(y)=>{let c=companyMetric(F.changeAcceptance,y).value,t=companyMetric(F.trust,y).value,fa=companyMetric(F.fatigue,y,true).value;return (c!=null&&t!=null&&fa!=null)?Math.round(0.4*c+0.35*t+0.25*(100-fa)):null;};
+  let agTrend=[['2024','24'],['2025','25'],['2026','26']].map(x=>({year:x[0],value:agY(x[1])})).filter(x=>x.value!=null);
+  renderTrend('agilityTrend',agTrend.length?agTrend:[{year:'2026',value:agility}]);
+  radarChart('pillarRadar',[{label:'변화 수용',value:chg},{label:'신뢰',value:trust},{label:'웰니스',value:Math.max(0,100-fat)}]);
+  if(typeof scatterChart==='function') scatterChart('dashScatter',d.divisions);
   let dk=['p5','p4','p3','p2','p1'];
   let dist=dk.map(k=>avg(d.company.questions.map(q=>q.dist26&&q.dist26[k]))||0);
   let dtot=dist.reduce((a,b)=>a+b,0)||1;
-  let dcolors=['#0f9f7f','#6cc4a1','#cbd5e1','#f59e0b','#dc2626'], dlabels=['매우 긍정','긍정','중립','부정','매우 부정'];
-  $('#distStack').innerHTML=dist.map((v,i)=>{let w=v/dtot*100;return `<div style="width:${w}%;background:${dcolors[i]}">${w>=8?Math.round(w)+'%':''}</div>`}).join('');
-  $('#distLegend').innerHTML=dist.map((v,i)=>`<span><i style="background:${dcolors[i]}"></i>${dlabels[i]} ${Math.round(v/dtot*100)}%</span>`).join('');
-  let tierSeg=[['stable','안정','#10b981',stable.length],['watch','주의','#f59e0b',watch.length],['risk','위험','#ef4444',risks.length],['check','검토','#a78bfa',checks.length]];
-  donutChart('tierDonut',tierSeg.map(t=>({value:t[3],color:t[2]})),String(d.meta.divCount),'개 본부');
-  $('#tierLegend').innerHTML=tierSeg.map(t=>`<div class="tl"><i style="background:${t[2]}"></i>${t[1]}<b>${t[3]}개</b></div>`).join('');
-  let bottomQs=d.company.questions.slice().sort((a,b)=>(num(a.fav?.['26'])??999)-(num(b.fav?.['26'])??999)).slice(0,5);
-  $('#priorityList').innerHTML=bottomQs.map(q=>`<div class="priorityItem"><b>Q${q.no}</b><div><strong>${esc(q.short)}</strong><span>${esc(q.text)}</span></div><em>${pct(q.fav?.['26'])}</em></div>`).join('');
-  let lowDivs=divs.slice().sort((a,b)=>a.avgFav-b.avgFav).slice(0,6);
-  $('#divLead').innerHTML=lowDivs.map(dv=>`<div class="divLeadRow" onclick="selectDivision('${escAttr(dv.name)}')"><div><strong>${esc(dv.name)}</strong><div class="divLeadTrack"><div class="divLeadFill" style="width:${num(dv.avgFav)||0}%;background:${favColor(dv.avgFav)}"></div></div></div><span class="lv" style="color:${favColor(dv.avgFav)}">${pct(dv.avgFav)}</span></div>`).join('');
-  let aha=relationshipInsights(null).slice(0,2).map((x,i)=>`${i+1}. ${x.title}: ${x.body}`).join('\n');
-  $('#savedAnalysisSummary').innerHTML=currentDataset.analysis.company?`<b>저장된 전사 GPT 분석</b>\n${esc(currentDataset.analysis.company)}`:`<b>먼저 읽을 신호</b>\n${esc(aha||`전사 긍정은 ${pct(fav)}이고, 가장 취약한 축은 ${weakestCat?.name||'-'}입니다.`)}\n\n<b>해석 방향</b>\n부정 응답이 높은 ${esc(highLowCat?.name||'-')} 영역은 리더 메시지와 후속 실행 과제로 연결하는 것이 좋습니다.`;
+  let dgrad=['linear-gradient(90deg,#10b981,#18b6aa)','linear-gradient(90deg,#6cc4a1,#34d399)','linear-gradient(90deg,#cbd5e1,#e2e8f0)','linear-gradient(90deg,#ffd166,#f59e0b)','linear-gradient(90deg,#fb7185,#dc2626)'], dlabels=['매우 긍정','긍정','중립','부정','매우 부정'];
+  $('#dashDist').innerHTML=dist.map((v,i)=>{let w=v/dtot*100;return `<div style="width:${w}%;background:${dgrad[i]}">${w>=8?Math.round(w)+'%':''}</div>`;}).join('');
+  $('#dashDistLegend').innerHTML=dist.map((v,i)=>`<span><i style="background:${dgrad[i]}"></i>${dlabels[i]} ${Math.round(v/dtot*100)}%</span>`).join('');
+  if(typeof renderMiniCultureMap==='function') renderMiniCultureMap();
+  // 운영 루프
+  let today=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);
+  let units=(typeof state!=='undefined'&&state.units)?state.units:[];
+  let sessions=(typeof state!=='undefined'&&state.sessions)?state.sessions:[];
+  let groups=(typeof state!=='undefined'&&state.groups)?state.groups:[];
+  let sessDone=sessions.filter(s=>s.date&&s.date<=today).length;
+  let comms=(currentDataset.speech&&typeof currentDataset.speech==='object')?Object.keys(currentDataset.speech).length:0;
+  let stages=[
+    {n:'1',t:'진단',e:'Detect',main:`${d.meta.divCount}개 본부 Pulse`,sub:`전사 긍정 ${pct(fav)}`,cls:'done'},
+    {n:'2',t:'설계',e:'Design',main:`세션 ${sessions.length}건 · 타겟그룹 ${groups.length}`,sub:sessions.length?'설계 진행 중':'설계 전',cls:sessions.length?'done':'todo'},
+    {n:'3',t:'전달',e:'Deliver',main:`세션 ${sessDone}건 완료`,sub:comms?`커뮤니케이션 ${comms}건`:'커뮤니케이션 기록 전',cls:sessDone?'done':'todo'},
+    {n:'4',t:'검증',e:'Verify',main:`세션 완료율 ${sessions.length?Math.round(sessDone/sessions.length*100):0}%`,sub:'다음 Pulse 대기 · 데이터 입력 전',cls:'pending'},
+  ];
+  $('#opLoop').innerHTML=stages.map((s,i)=>`<div class="loop-stage ${s.cls}"><div class="loop-badge">${s.n}</div><div class="loop-main"><b>${esc(s.t)} <em>${s.e}</em></b><strong>${esc(s.main)}</strong><span>${esc(s.sub)}</span></div></div>${i<3?'<div class="loop-arrow">→</div>':''}`).join('');
+  // 우선 지원 조직
+  let supportUnits=units.filter(u=>{let s=(typeof pulseStatusDef==='function')?pulseStatusDef(u):null;return s&&s.key==='support';}).sort((a,b)=>((pulseForUnit(a.id)||{}).fav||0)-((pulseForUnit(b.id)||{}).fav||0)).slice(0,5);
+  $('#prioritySupport').innerHTML=supportUnits.length?supportUnits.map(u=>{let p=pulseForUnit(u.id);return `<div class="hl-row" onclick="if(typeof showView==='function')showView('people')"><div><strong>${esc(u.name)}</strong><span>긍정 ${p?p.fav:'-'}% · 부정 ${p?p.low:'-'}%</span></div><span class="hl-tag risk">지원 시급</span></div>`;}).join(''):`<div class="recommend-card">지원이 시급한 조직이 없습니다 — 안정 구간입니다.</div>`;
+  // WOW×BALANCE 세션 현황판 (트랙별 참여·완료·진행률 + 단계 퍼널 + 팀별 진행)
+  function trackBoard(track){
+    if(typeof trackSummary!=='function'||typeof WOW_TRACKS==='undefined'||!WOW_TRACKS[track]) return '';
+    let S=trackSummary(track), label=WOW_TRACKS[track].label;
+    let funnel=S.steps.map((st,i)=>{let h=S.participating?Math.max(8,Math.round(S.stepCounts[i]/S.participating*100)):6;return `<div class="tf-step" title="${esc((i+1)+'. '+st)} · ${S.stepCounts[i]}팀 완료"><span class="tf-fill" style="height:${h}%"></span><em>${i+1}</em></div>`;}).join('');
+    let rows=S.teamRows.slice(0,4).map(r=>`<div class="tb-team"><span>${esc(r.name)}</span><div class="tb-dots">${Array.from({length:r.total},(_,i)=>`<i class="${i<r.done?'on':''}"></i>`).join('')}</div><b>${r.done}/${r.total}</b></div>`).join('');
+    return `<div class="track-board">
+      <div class="track-head"><b>${esc(label)}</b><span>${S.participating}팀 참여 · ${S.finished}팀 완료</span><strong>${S.overall}%</strong></div>
+      <div class="track-bar"><i style="width:${S.overall}%"></i></div>
+      <div class="track-funnel">${funnel}</div>
+      ${rows?`<div class="tb-list">${rows}</div>`:''}</div>`;
+  }
+  $('#sessionOps').innerHTML=trackBoard('team')+trackBoard('lead')+(sessions.length?'':'<div class="recommend-card" style="margin-top:10px">캘린더에서 <b>트랙(팀/팀장)</b>과 <b>단계</b>를 골라 세션 일정을 추가하면 참여·완료·진행률이 채워집니다.</div>');
+  // 우선순위 액션
+  let weak=(fatM.drivers||[]).slice().sort((a,b)=>a.positive-b.positive).slice(0,2);
+  let actions=[];
+  if(supportUnits[0]) actions.push({t:`${supportUnits[0].name} 우선 지원`,d:'리더 브리핑 + WOW×BALANCE 회복 세션 먼저 배치'});
+  weak.forEach(w=>actions.push({t:`${w.label} 보강`,d:`전사 취약 문항(${w.positive}점) — 세션·리더 메시지로 개선`}));
+  actions=actions.slice(0,3);
+  $('#priorityActions').innerHTML=actions.length?actions.map((a,i)=>`<div class="act-row"><span class="act-no">${i+1}</span><div><strong>${esc(a.t)}</strong><span>${esc(a.d)}</span></div></div>`).join(''):`<div class="recommend-card">데이터가 쌓이면 우선순위 액션을 자동 제안합니다.</div>`;
+  // 변화 동인
+  let allDrv=[].concat(companyMetric(F.changeAcceptance,'26').drivers||[],companyMetric(F.trust,'26').drivers||[]);
+  let up=allDrv.slice().sort((a,b)=>b.positive-a.positive).slice(0,3);
+  let down=allDrv.slice().sort((a,b)=>a.positive-b.positive).slice(0,3);
+  $('#driverBoard').innerHTML=`<div class="drv-cols"><div class="drv-col"><h5>끌어올리는 ▲</h5>${up.map(x=>`<div class="drv-row up"><span>${esc(x.label)}</span><b>${x.positive}</b></div>`).join('')}</div><div class="drv-col"><h5>끌어내리는 ▼</h5>${down.map(x=>`<div class="drv-row down"><span>${esc(x.label)}</span><b>${x.positive}</b></div>`).join('')}</div></div>`;
+  // 아직 수집 전 신호 (샘플)
+  $('#emptySamples').innerHTML=renderEmptySamples();
 }
+// 대시보드용 미니 조직문화 확산 맵 (본부 단위, 변화수용 x 피로도 사분면)
+function renderMiniCultureMap(){
+  let el=$('#dashCultureMap'); if(!el) return;
+  let cl=(v,lo,hi)=>Math.max(lo,Math.min(hi,(num(v)||0)));
+  // Pulse 매핑이 비어 있으면 한 번 더 시도 (데이터 로드 타이밍 보정)
+  if(typeof buildPulseByOrg==='function' && (!window.LINA_PULSE_BY_ORG || !Object.keys(window.LINA_PULSE_BY_ORG).length)){ try{buildPulseByOrg();}catch(e){} }
+  // 부문 + 본부를 모두 표시 (Pulse 있으면 pulse 신호, 없으면 조직 자체 신호)
+  let units=(typeof state!=='undefined'&&state.units)?state.units.filter(u=>u.level==='division'||u.level==='hq'):[];
+  let nodes=[];
+  units.forEach(u=>{
+    let x,y,tone;
+    try{
+      let sig=(typeof signalForUnit==='function')?signalForUnit(u):null;
+      if(sig&&sig.fatigue!=null){ x=sig.changeAcceptance!=null?sig.changeAcceptance:sig.readiness; y=sig.fatigue; tone=sig.risk==='high'?'risk':sig.risk==='medium'?'watch':'stable'; }
+    }catch(e){}
+    if(x==null||y==null){ x=u.readiness; y=u.fatigue; tone=u.risk==='high'?'risk':u.risk==='medium'?'watch':'stable'; }
+    if(x==null||y==null) return;
+    nodes.push({name:u.name,lvl:u.level,x:cl(x,4,96),y:cl(y,4,96),tone:tone||'stable'});
+  });
+  let dots=nodes.map(n=>`<span class="mini-dot lvl-${n.lvl} tone-${n.tone}" style="left:${n.x}%;top:${(100-n.y).toFixed(0)}%" title="${esc(n.name)} (${n.lvl==='division'?'부문':'본부'}) · 변화수용 ${Math.round(n.x)} · 피로도 ${Math.round(n.y)}"></span>`).join('');
+  el.innerHTML=`<div class="mini-map quad-tinted"><span class="mini-axis ax-x">변화 수용도 →</span><span class="mini-axis ax-y">↑ 피로도</span>${dots||'<span class="mini-empty">표시할 부문·본부가 없습니다</span>'}</div><div class="mini-legend"><span class="ml-stable">안정</span><span class="ml-watch">주의</span><span class="ml-risk">위험</span><span class="ml-div">부문(큰 점)</span><button class="ghost" onclick="if(typeof showView==='function')showView('people');if(typeof state!=='undefined'){state.view='network';if(typeof render==='function')render();}">확대 보기</button></div>`;
+}
+function renderEmptySamples(){
+  let samples=[
+    {t:'세션 피드백·만족도',sub:'WOW×BALANCE 세션 후 만족도',body:'<div class="smp-stat"><b>4.4</b><span>/5 평균</span></div><div class="smp-bars"><i style="width:88%"></i><i style="width:76%"></i><i style="width:64%"></i></div>'},
+    {t:'FGD · 상담 인사이트',sub:'포커스 그룹·상담 노트 요약',body:'<div class="smp-tags"><span>피로 누적</span><span>역할 모호</span><span>공정성</span></div><p class="smp-quote">“변화 방향엔 동의하지만 에너지가 부족합니다.”</p>'},
+    {t:'커뮤니케이션 효과',sub:'리더 메시지 열람·반응',body:'<div class="smp-stat"><b>72%</b><span>열람률</span></div><div class="smp-bars"><i style="width:72%"></i><i style="width:41%"></i></div>'},
+    {t:'다음 Pulse · You said-We did',sub:'조치 신뢰 회복 추적',body:'<div class="smp-line">2026 Q2 → Q3 긍정 <b>+5p</b> 목표</div><div class="smp-bars"><i style="width:55%"></i><i style="width:62%"></i></div>'},
+  ];
+  return samples.map(s=>`<div class="dashCard sample-card"><div class="panelTitle"><div><h3>${esc(s.t)}</h3><p class="sub">${esc(s.sub)}</p></div><span class="empty-badge">데이터 입력 전</span></div><div class="sample-body">${s.body}<span class="sample-watermark">샘플</span></div></div>`).join('');
+}
+const DONUT_GRADS={'grad-stable':['#10b981','#18b6aa'],'grad-watch':['#ffd166','#f59e0b'],'grad-risk':['#fb7185','#ef4444'],'grad-brand':['#5f6dee','#18b6aa']};
 function donutChart(svgId,segs,centerText,subText){
   let svg=$('#'+svgId); if(!svg) return;
   let total=segs.reduce((a,s)=>a+(num(s.value)||0),0)||1;
-  let r=58,cx=85,cy=85,c=2*Math.PI*r,off=0;
-  let arcs=segs.filter(s=>(num(s.value)||0)>0).map(s=>{let len=(num(s.value)/total)*c;let el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="22" stroke-dasharray="${len.toFixed(2)} ${(c-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"></circle>`;off+=len;return el;}).join('');
-  svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#eef2f7" stroke-width="22"></circle>${arcs}<text x="${cx}" y="${cy-1}" text-anchor="middle" class="gaugeCenter">${esc(centerText)}</text><text x="${cx}" y="${cy+19}" text-anchor="middle" class="gaugeSub">${esc(subText)}</text>`;
+  let r=58,cx=85,cy=85,c=2*Math.PI*r,off=0,used={};
+  let stroke=col=>{if(DONUT_GRADS[col]){used[col]=DONUT_GRADS[col];return `url(#${svgId}-${col})`;}return col;};
+  let arcs=segs.filter(s=>(num(s.value)||0)>0).map(s=>{let len=(num(s.value)/total)*c;let el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${stroke(s.color)}" stroke-width="22" stroke-linecap="round" stroke-dasharray="${len.toFixed(2)} ${(c-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"></circle>`;off+=len;return el;}).join('');
+  let defs=Object.keys(used).map(k=>`<linearGradient id="${svgId}-${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${used[k][0]}"/><stop offset="1" stop-color="${used[k][1]}"/></linearGradient>`).join('');
+  svg.innerHTML=`<defs>${defs}</defs><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#eef2f7" stroke-width="22"></circle>${arcs}<text x="${cx}" y="${cy-1}" text-anchor="middle" class="gaugeCenter">${esc(centerText)}</text><text x="${cx}" y="${cy+19}" text-anchor="middle" class="gaugeSub">${esc(subText)}</text>`;
+}
+function radarChart(svgId, axes){
+  let svg=$('#'+svgId); if(!svg||!axes.length) return;
+  let cx=110,cy=98,R=66,n=axes.length;
+  let cl=v=>Math.max(0,Math.min(100,num(v)||0));
+  let pt=(i,r)=>{let a=-Math.PI/2+i*2*Math.PI/n;return [cx+Math.cos(a)*r, cy+Math.sin(a)*r];};
+  let rings=[0.25,0.5,0.75,1].map(f=>`<polygon points="${axes.map((_,i)=>pt(i,R*f).map(v=>v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="#e7ecf4" stroke-width="1"/>`).join('');
+  let spokes=axes.map((_,i)=>{let p=pt(i,R);return `<line x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="#e7ecf4"/>`;}).join('');
+  let poly=axes.map((a,i)=>pt(i,R*cl(a.value)/100).map(v=>v.toFixed(1)).join(',')).join(' ');
+  let dots=axes.map((a,i)=>{let p=pt(i,R*cl(a.value)/100);return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="#5f6dee"/>`;}).join('');
+  let labels=axes.map((a,i)=>{let p=pt(i,R+17);return `<text x="${p[0].toFixed(1)}" y="${p[1].toFixed(1)}" text-anchor="middle" class="radar-label">${esc(a.label)}<tspan x="${p[0].toFixed(1)}" dy="13" class="radar-val">${cl(a.value)}</tspan></text>`;}).join('');
+  svg.innerHTML=`<defs><linearGradient id="${svgId}Fill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5f6dee" stop-opacity="0.34"/><stop offset="1" stop-color="#18b6aa" stop-opacity="0.3"/></linearGradient></defs>${rings}${spokes}<polygon points="${poly}" fill="url(#${svgId}Fill)" stroke="#5f6dee" stroke-width="2"/>${dots}${labels}`;
 }
 function renderTrend(svgId,series){
   let svg=$('#'+svgId); if(!svg) return;
@@ -449,7 +541,7 @@ function renderTrend(svgId,series){
   let pts=series.map((s,i)=>({x:X(i),y:Y(num(s.value)),v:num(s.value),year:s.year}));
   let line=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ');
   let area=line+` L ${pts[n-1].x.toFixed(1)} ${H-pb} L ${pts[0].x.toFixed(1)} ${H-pb} Z`;
-  svg.innerHTML=`<defs><linearGradient id="trGrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#5b5ce2" stop-opacity=".30"/><stop offset="100%" stop-color="#14b8a6" stop-opacity=".03"/></linearGradient></defs><path d="${area}" fill="url(#trGrad)"></path><path d="${line}" fill="none" stroke="#5b5ce2" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></path>`+pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5.5" fill="#fff" stroke="#5b5ce2" stroke-width="3"></circle><text x="${p.x.toFixed(1)}" y="${(p.y-12).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="800" fill="#0b1020">${p.v}%</text><text x="${p.x.toFixed(1)}" y="${H-9}" text-anchor="middle" font-size="13" font-weight="800" fill="#94a3b8">${esc(p.year)}</text>`).join('');
+  svg.innerHTML=`<defs><linearGradient id="${svgId}-area" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#5f6dee" stop-opacity=".32"/><stop offset="100%" stop-color="#18b6aa" stop-opacity=".03"/></linearGradient><linearGradient id="${svgId}-line" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#5f6dee"/><stop offset="1" stop-color="#18b6aa"/></linearGradient></defs><path d="${area}" fill="url(#${svgId}-area)"></path><path d="${line}" fill="none" stroke="url(#${svgId}-line)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></path>`+pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5.5" fill="#fff" stroke="#5f6dee" stroke-width="3"></circle><text x="${p.x.toFixed(1)}" y="${(p.y-12).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="800" fill="#0b1020">${p.v}%</text><text x="${p.x.toFixed(1)}" y="${H-9}" text-anchor="middle" font-size="13" font-weight="800" fill="#94a3b8">${esc(p.year)}</text>`).join('');
 }
 function scatterChart(svgId,divs){
   let svg=$('#'+svgId); if(!svg) return;
@@ -467,9 +559,11 @@ function scatterChart(svgId,divs){
   let avgLine=cf!=null?`<line x1="${X(cf).toFixed(1)}" y1="${pt}" x2="${X(cf).toFixed(1)}" y2="${H-pb}" stroke="#5b5ce2" stroke-width="1.5" stroke-dasharray="4 4"></line><text x="${X(cf).toFixed(1)}" y="${pt-3}" text-anchor="middle" font-size="11" font-weight="800" fill="#5b5ce2">전사 긍정 ${cf}%</text>`:'';
   let avgLineH=cl!=null?`<line x1="${pl}" y1="${Y(cl).toFixed(1)}" x2="${W-pr}" y2="${Y(cl).toFixed(1)}" stroke="#5b5ce2" stroke-width="1.5" stroke-dasharray="4 4"></line><text x="${W-pr-2}" y="${(Y(cl)-4).toFixed(1)}" text-anchor="end" font-size="11" font-weight="800" fill="#5b5ce2">전사 부정 ${Math.round(cl)}%</text>`:'';
   let quadLabels=(cf!=null&&cl!=null)?`<text x="${pl+7}" y="${pt+14}" font-size="10.5" font-weight="900" fill="#dc2626" fill-opacity=".9">위험·취약</text><text x="${W-pr-7}" y="${pt+14}" text-anchor="end" font-size="10.5" font-weight="900" fill="#b7791f" fill-opacity=".9">양극화</text><text x="${pl+7}" y="${H-pb-7}" font-size="10.5" font-weight="900" fill="#64748b" fill-opacity=".9">관망·중립</text><text x="${W-pr-7}" y="${H-pb-7}" text-anchor="end" font-size="10.5" font-weight="900" fill="#0f9f7f" fill-opacity=".9">강점·양호</text>`:'';
-  let dots=divs.map(dv=>`<circle cx="${X(dv.avgFav).toFixed(1)}" cy="${Y(dv.avgLow).toFixed(1)}" r="7" fill="${tcol[dv.tier]||'#94a3b8'}" fill-opacity=".82" stroke="#fff" stroke-width="1.5" style="cursor:pointer" onclick="selectDivision('${escAttr(dv.name)}')"><title>${esc(dv.name)} · 긍정 ${pct(dv.avgFav)} / 부정 ${pct(dv.avgLow)}</title></circle>`).join('');
+  let sgrad={stable:['#34d399','#0f9f7f'],watch:['#ffd166','#e08a0b'],risk:['#fb7185','#e11d48'],check:['#c4b5fd','#7c3aed']};
+  let sdefs='<defs>'+Object.keys(sgrad).map(k=>`<radialGradient id="${svgId}-${k}" cx="36%" cy="30%" r="78%"><stop offset="0" stop-color="${sgrad[k][0]}"/><stop offset="1" stop-color="${sgrad[k][1]}"/></radialGradient>`).join('')+'</defs>';
+  let dots=divs.map(dv=>`<circle cx="${X(dv.avgFav).toFixed(1)}" cy="${Y(dv.avgLow).toFixed(1)}" r="7.5" fill="url(#${svgId}-${dv.tier||'check'})" stroke="#fff" stroke-width="1.5" style="cursor:pointer" onclick="selectDivision('${escAttr(dv.name)}')"><title>${esc(dv.name)} · 긍정 ${pct(dv.avgFav)} / 부정 ${pct(dv.avgLow)}</title></circle>`).join('');
   let labels=`<text x="${((pl+W-pr)/2).toFixed(0)}" y="${H-1}" text-anchor="middle" font-size="11" font-weight="800" fill="#64748b">평균 긍정 →</text><text x="13" y="${pt+2}" font-size="11" font-weight="800" fill="#64748b">부정 ↑</text>`;
-  svg.innerHTML=quads+yticks+xticks+avgLine+avgLineH+quadLabels+dots+labels;
+  svg.innerHTML=sdefs+quads+yticks+xticks+avgLine+avgLineH+quadLabels+dots+labels;
 }
 function renderSparkline(id,labelsId,series){
   let svg=$('#'+id), labels=$('#'+labelsId); if(!svg)return;
@@ -566,8 +660,33 @@ function renderPulse(){
   if(scope!=='__company__'&&!getDiv(scope))scope='__company__';
   renderPulseScope(scope);
 }
+// 3대 동력(변화수용/신뢰/피로도) 분해 — 대시보드와 같은 산식으로 진단↔상세를 한 언어로 연결
+function pulseScopeDrivers(scope){
+  if(typeof CULTURE_METRIC_FORMULA==='undefined') return null;
+  let F=CULTURE_METRIC_FORMULA, qmap;
+  if(scope==='__company__'){
+    let qs=(data().company.questions||[]).map(q=>({no:q.no,fav:num(q.fav?.['26']),low:num(q.low?.['26'])}));
+    qmap=pulseQuestionMap({questions:qs});
+  }else{ let dv=getDiv(scope); if(!dv)return null; qmap=pulseQuestionMap({questions:dv.qs||[]}); }
+  return {chg:weightedPulseScore(qmap,F.changeAcceptance),trust:weightedPulseScore(qmap,F.trust),fat:weightedPulseScore(qmap,F.fatigue,true)};
+}
+function renderPulseDrivers(scope){
+  let el=$('#pulseDrivers'); if(!el) return;
+  let r=pulseScopeDrivers(scope); if(!r){el.innerHTML='';return;}
+  let chg=r.chg.value, trust=r.trust.value, fat=r.fat.value;
+  let agility=Math.round(0.4*(chg||0)+0.35*(trust||0)+0.25*(100-(fat||0)));
+  let scopeName=scope==='__company__'?'전사':scope;
+  let pillars=[
+    {label:'변화 수용도',val:chg,tone:chg>=65?'stable':chg>=50?'watch':'risk',drv:r.chg.drivers,good:true},
+    {label:'신뢰·로열티',val:trust,tone:trust>=65?'stable':trust>=50?'watch':'risk',drv:r.trust.drivers,good:true},
+    {label:'피로도',val:fat,tone:fat>=60?'risk':fat>=45?'watch':'stable',drv:r.fat.drivers,good:false},
+  ];
+  el.innerHTML=`<div class="panelTitle"><div><h3>3대 동력 분해 — ${esc(scopeName)}</h3><p class="sub">변화 민첩성 ${agility} · 대시보드와 같은 산식 (진단을 같은 언어로)</p></div></div>
+    <div class="pdrv-grid">${pillars.map(p=>{let weak=(p.drv||[]).slice().sort((a,b)=>a.positive-b.positive)[0];return `<div class="pdrv pillar-${p.tone}"><div class="pdrv-top"><span>${esc(p.label)}</span><b>${p.val==null?'-':p.val}</b></div><div class="pillar-bar"><i style="width:${clamp(p.val||0,0,100)}%"></i></div>${weak?`<div class="pdrv-weak">취약 문항: ${esc(weak.label)} <em>${weak.positive}</em></div>`:''}</div>`;}).join('')}</div>`;
+}
 function renderPulseScope(scope){
   if(scope!=='__company__'&&!getDiv(scope))scope='__company__';
+  renderPulseDrivers(scope);
   let isDiv=scope!=='__company__', dv=isDiv?getDiv(scope):null;
   let pulse=$('#pulse');if(pulse)pulse.classList.toggle('isDivisionScope',isDiv);
   setSelectValue('pulseScopeSelect',scope,'__company__');
