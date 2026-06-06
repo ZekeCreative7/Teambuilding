@@ -471,6 +471,7 @@ let pointerDrag = null;
 let suppressNextClick = false;
 let pendingUnitPhotoId = null;
 let pendingPersonPhotoId = null;
+let mobileDetailReturnContext = null;
 let organizationCloud = {
   db: null,
   uid: null,
@@ -789,6 +790,45 @@ function openDetailModal(mode = "overview") {
 
 function closeDetailModal() {
   state.detailModal = null;
+}
+
+function isStackedDetailLayout() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 1280px)").matches;
+}
+
+function captureMobileDetailReturn(unitId, sourceElement) {
+  if (!isStackedDetailLayout()) return;
+  if (mobileDetailReturnContext?.unitId === unitId) return;
+  const anchor = sourceElement?.closest?.("[data-unit-card]") || sourceElement;
+  mobileDetailReturnContext = {
+    unitId,
+    scrollY: Math.max(0, window.scrollY + (anchor?.getBoundingClientRect?.().top || 0) - 16),
+  };
+}
+
+function scrollToMobileDetailPanel() {
+  if (!isStackedDetailLayout()) return;
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const inspector = document.querySelector(".org-inspector");
+      if (!inspector) return;
+      inspector.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
+function restoreMobileDetailReturn() {
+  if (!isStackedDetailLayout() || !mobileDetailReturnContext) return;
+  const { unitId, scrollY } = mobileDetailReturnContext;
+  mobileDetailReturnContext = null;
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      const selector = `[data-unit-card="${cssEscapeSelector(unitId)}"]`;
+      const anchor = document.querySelector(selector);
+      if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "center" });
+      else window.scrollTo({ top: scrollY, behavior: "smooth" });
+    });
+  });
 }
 
 function canCreateUnder(level, parent) {
@@ -3611,8 +3651,10 @@ document.addEventListener("click", (event) => {
 
   const detailButton = event.target.closest("[data-open-detail]");
   if (detailButton) {
+    captureMobileDetailReturn(detailButton.dataset.openDetail, detailButton);
     openDetail(detailButton.dataset.openDetail);
     render();
+    scrollToMobileDetailPanel();
     return;
   }
 
@@ -3627,11 +3669,13 @@ document.addEventListener("click", (event) => {
   if (closeInspectorButton) {
     closeDetail();
     render();
+    restoreMobileDetailReturn();
     return;
   }
 
   const detailModalButton = event.target.closest("[data-open-detail-modal]");
   if (detailModalButton) {
+    captureMobileDetailReturn(state.selectedUnitId, detailModalButton);
     openDetailModal(detailModalButton.dataset.openDetailModal || "overview");
     render();
     return;
@@ -3779,6 +3823,7 @@ document.addEventListener("click", (event) => {
     if (state.detailModal) {
       closeDetailModal();
       render();
+      restoreMobileDetailReturn();
     } else {
       closeDrawer();
     }
@@ -3793,6 +3838,7 @@ document.addEventListener("click", (event) => {
   if (event.target.id === "closeDetailButton") {
     closeDetailModal();
     render();
+    restoreMobileDetailReturn();
     return;
   }
 
