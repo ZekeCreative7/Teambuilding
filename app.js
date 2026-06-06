@@ -462,6 +462,7 @@ const groupTemplates = [
 
 const leaderTitleOptions = ["이사", "상무", "전무", "부사장", "사장", "대표이사"];
 const leaderRoleOptions = ["대표이사", "부문장", "본부장", "실장", "센터장", "그룹장", "팀장", "파트장", "챕터리드"];
+const personTitleOptions = ["부장", "차장", "과장", "대리", "사원"];
 const ORG_CLOUD_DOC_ID = "default";
 const ORG_CLOUD_WRITER = `org_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 
@@ -1127,6 +1128,14 @@ function renderLeaderTitleDatalist() {
   return `
     <datalist id="leaderTitleOptions">
       ${leaderTitleOptions.map((title) => `<option value="${escapeHtml(title)}"></option>`).join("")}
+    </datalist>
+  `;
+}
+
+function renderPersonTitleDatalist() {
+  return `
+    <datalist id="personTitleOptions">
+      ${personTitleOptions.map((title) => `<option value="${escapeHtml(title)}"></option>`).join("")}
     </datalist>
   `;
 }
@@ -1960,8 +1969,11 @@ function renderOrgInspector(unit) {
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
   const directPeople = getPeopleForUnit(unit.id, false);
   const childUnits = getChildren(unit.id);
-  const visibleMembers = (directPeople.length ? directPeople : people).slice(0, 8);
+  const visibleMembers = directPeople.length ? directPeople : people.slice(0, 20);
   const memberScopeLabel = directPeople.length ? "직접 등록 팀원" : "하위 포함 팀원";
+  const memberCountLabel = directPeople.length || people.length <= visibleMembers.length
+    ? `${visibleMembers.length}명 표시`
+    : `${visibleMembers.length}/${people.length}명 표시`;
   const statusLabel = status?.label || formatRisk(signal.risk);
   const statusNote = `사분면 ${signal.quadrant} · X ${signal.mapX} · Y ${signal.mapY}`;
   const tone = status?.tone || signal.risk;
@@ -2036,7 +2048,7 @@ function renderOrgInspector(unit) {
       <section class="inspector-section">
         <div class="inspector-section-title-row">
           <h4>팀원</h4>
-          <span>${escapeHtml(memberScopeLabel)} · ${visibleMembers.length}명 표시</span>
+          <span>${escapeHtml(memberScopeLabel)} · ${escapeHtml(memberCountLabel)}</span>
         </div>
         ${
           visibleMembers.length
@@ -3530,6 +3542,7 @@ function renderSettingsModal(unit) {
           </label>
         </div>
         ${renderLeaderTitleDatalist()}
+        ${renderPersonTitleDatalist()}
         ${renderLeaderRoleDatalist()}
         <div class="slider-line">
           <label for="editReadiness">변화 수용도(Change Acceptance) <output id="editReadinessOutput">${signal.changeAcceptance}</output></label>
@@ -3567,10 +3580,10 @@ function renderSettingsModal(unit) {
       </div>
       <form class="add-person-form" id="addPersonForm">
         <input id="personNameInput" type="text" placeholder="구성원 이름" required />
-        <select id="personPositionSelect">
-          <option value="실무자">실무자</option>
-          <option value="팀장">팀장</option>
+        <select id="personTitleSelect" aria-label="구성원 직급">
+          ${personTitleOptions.map((title) => `<option value="${escapeHtml(title)}">${escapeHtml(title)}</option>`).join("")}
         </select>
+        <small class="field-hint">팀장 지정은 위의 ${escapeHtml(leaderRoleLabel(unit))} 설정에서 선택하세요.</small>
         <button class="small-button" type="submit">구성원 추가</button>
       </form>
     </section>
@@ -3604,7 +3617,7 @@ function renderPersonRow(person) {
       <div class="person-inline-controls">
         <label class="person-rank-control">
           직급
-          <input data-edit-person-title="${escapeHtml(person.id)}" type="text" list="leaderTitleOptions" value="${escapeHtml(person.title || "")}" placeholder="이사, 상무, 전무" />
+          <input data-edit-person-title="${escapeHtml(person.id)}" type="text" list="personTitleOptions" value="${escapeHtml(person.title || "")}" placeholder="부장, 차장, 과장" />
         </label>
         <label class="person-move-control">
           소속 이동
@@ -4196,25 +4209,23 @@ document.addEventListener("submit", (event) => {
     event.preventDefault();
     const unit = getUnit(state.selectedUnitId);
     const name = document.getElementById("personNameInput").value.trim();
-    const position = document.getElementById("personPositionSelect").value;
+    const title = document.getElementById("personTitleSelect")?.value || "사원";
     if (!unit || !name) return;
 
     const person = {
       id: `p-${Date.now()}`,
       name,
-      role: position === "팀장" ? `${unit.name} 팀장` : `${unit.name} 구성원`,
-      position,
+      title,
+      role: `${unit.name} 구성원`,
+      position: "구성원",
       generation: "30대",
       unitId: unit.id,
-      influence: position === "팀장" ? 70 : 55,
+      influence: 55,
       readiness: unit.readiness,
-      tags: position === "팀장" ? ["리더"] : ["신규 등록"],
+      tags: ["신규 등록"],
     };
 
     state.people.push(person);
-    if (unit.level === "team" && position === "팀장") {
-      setTeamLeader(unit.id, person.id);
-    }
     render();
   }
 });
