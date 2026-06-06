@@ -293,7 +293,8 @@ p {
 
 .metric-row {
   display: grid;
-  grid-template-columns: repeat(5, minmax(130px, 1fr));
+  /* auto-fit: 폭이 좁아지면 칸 수를 줄여 줄바꿈한다(고정 5칸은 좁은 화면에서 가로 오버플로를 일으킴). */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -402,6 +403,7 @@ input[type="checkbox"] {
 
 .segmented {
   display: flex;
+  flex-wrap: wrap; /* 좁은 화면에서 탭이 줄바꿈되도록 (가로 오버플로 방지) */
   gap: 5px;
   padding: 4px;
   border: 1px solid rgba(203, 213, 225, 0.75);
@@ -2142,7 +2144,7 @@ input[type="checkbox"] {
 
 .org-frame-summary {
   display: grid;
-  grid-template-columns: repeat(5, minmax(116px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
   gap: 8px;
   padding: 14px 24px 0;
 }
@@ -2607,6 +2609,11 @@ input[type="checkbox"] {
   .app-shell.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
   .workspace { padding: 70px 16px 40px; }
   .nav-toggle-ico { transform: none; }
+  /* 사이드바가 드로어로 바뀌는 폭부터는 제어 영역을 세로로 쌓아 가로 오버플로를 막는다.
+     (control-surface의 'auto' 트랙에 든 탭/필터가 넓어 좁은 화면에서 폭을 강제로 늘렸음) */
+  .control-surface { grid-template-columns: 1fr; align-items: stretch; }
+  .topbar { flex-wrap: wrap; }
+  .panel-header { flex-wrap: wrap; }
 }
 
 /* ====================================================================

@@ -585,14 +585,20 @@ function normalizeOrganizationState(parsed = {}) {
 }
 
 function loadState() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return normalizeOrganizationState(parsed);
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      return normalizeOrganizationState(JSON.parse(saved));
+    } catch (error) {
+      // 저장된 데이터를 못 읽었을 때(파싱/정규화 실패), 시드로 되돌려 그걸 덮어쓰면 사용자가 입력한
+      // 데이터가 영구 소실된다. 그래서 시드를 쓰기 전에 원본 문자열을 복구용 키에 그대로 보존한다.
+      console.error("저장된 조직 데이터를 불러오지 못했습니다. 원본을 복구용 키에 보존합니다.", error);
+      try {
+        localStorage.setItem(`${STORAGE_KEY}.corrupt.${Date.now()}`, saved);
+      } catch (backupError) {
+        console.warn("원본 보존에도 실패했습니다(용량 등).", backupError);
+      }
     }
-  } catch (error) {
-    console.warn("Could not load saved organization data.", error);
   }
 
   return defaultOrganizationState();
