@@ -249,7 +249,12 @@
           <button class="segment" data-view="calendar" type="button">캘린더</button>
           <button class="segment" data-view="groups" type="button">타겟그룹 설정</button>
         </div>
-        <div class="filter-strip" aria-label="Pulse 상태 필터">
+        <div class="filter-strip" aria-label="세션 · Pulse 필터">
+          <span class="flt-group">세션</span>
+          <label class="flt flt-session"><input type="checkbox" data-filter="sessionDone" /> 세션 완료</label>
+          <label class="flt flt-session-none"><input type="checkbox" data-filter="sessionNone" /> 세션 미완료</label>
+          <span class="flt-divider" aria-hidden="true"></span>
+          <span class="flt-group">Pulse</span>
           <label class="flt flt-stable"><input type="checkbox" data-filter="healthy" /> 긍정 안정</label>
           <label class="flt flt-watch"><input type="checkbox" data-filter="watch" /> 주의 관찰</label>
           <label class="flt flt-risk"><input type="checkbox" data-filter="support" /> 지원 시급</label>

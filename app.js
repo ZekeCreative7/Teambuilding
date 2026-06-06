@@ -471,7 +471,7 @@ let pendingUnitPhotoId = null;
 let pendingPersonPhotoId = null;
 
 function defaultFilters() {
-  return { healthy: false, watch: false, support: false, review: false };
+  return { sessionDone: false, sessionNone: false, healthy: false, watch: false, support: false, review: false };
 }
 
 function loadState() {
@@ -583,6 +583,8 @@ function getParentName(unit) {
 function hasActiveRefinement() {
   return Boolean(
     state.search.trim() ||
+      state.filters.sessionDone ||
+      state.filters.sessionNone ||
       state.filters.healthy ||
       state.filters.watch ||
       state.filters.support ||
@@ -907,19 +909,21 @@ function updatePersonTitle(personId, title) {
 function setTeamLeader(unitId, personId) {
   const unit = getUnit(unitId);
   const selected = state.people.find((item) => item.id === personId);
-  if (!unit || unit.level !== "team") return false;
+  if (!unit) return false;
+  // 직책: 팀=팀장, 본부=본부장, 부문=부문장, CEO=대표이사 …
+  const roleLabel = unit.leaderRole || defaultLeaderRole(unit.level);
 
   if (!personId) {
     state.people.forEach((person) => {
-      if (person.unitId === unit.id && person.position === "팀장") {
-        person.position = "실무자";
+      if (person.unitId === unit.id && (person.position === roleLabel || person.name === unit.leader)) {
+        person.position = "구성원";
         person.role = `${unit.name} 구성원`;
         person.tags = (person.tags || []).filter((tag) => tag !== "리더");
       }
     });
     unit.leader = unsetLeaderForUnit(unit);
     unit.leaderTitle = "";
-    unit.leaderRole = unit.leaderRole || defaultLeaderRole(unit.level);
+    unit.leaderRole = roleLabel;
     return true;
   }
 
@@ -928,21 +932,21 @@ function setTeamLeader(unitId, personId) {
   state.people.forEach((person) => {
     if (person.unitId !== unit.id) return;
     if (person.id === selected.id) {
-      person.position = "팀장";
-      person.role = `${unit.name} 팀장`;
+      person.position = roleLabel;
+      person.role = `${unit.name} ${roleLabel}`;
       person.tags = [...new Set([...(person.tags || []).filter((tag) => tag !== "신규 등록"), "리더"])];
       return;
     }
-    if (person.position === "팀장") {
-      person.position = "실무자";
-      person.role = person.role?.includes("팀장") ? `${unit.name} 구성원` : person.role;
+    if (person.position === roleLabel || person.name === unit.leader) {
+      person.position = "구성원";
+      person.role = `${unit.name} 구성원`;
       person.tags = (person.tags || []).filter((tag) => tag !== "리더");
     }
   });
 
   unit.leader = selected.name;
   unit.leaderTitle = selected.title || unit.leaderTitle || "";
-  unit.leaderRole = unit.leaderRole || defaultLeaderRole(unit.level);
+  unit.leaderRole = roleLabel;
   return true;
 }
 
@@ -977,7 +981,13 @@ function unitMatches(unit) {
   ].join(" ").toLowerCase();
 
   if (query && !text.includes(query)) return false;
-  // Pulse 분석으로 정의한 조직 상태 기준 필터 (선택된 상태 중 하나라도 일치하면 표시)
+  // 세션 여부 필터 (캘린더 기준): 완료 / 미완료
+  if (state.filters.sessionDone || state.filters.sessionNone) {
+    const done = unitSessionDone(unit.id);
+    const ok = (state.filters.sessionDone && done) || (state.filters.sessionNone && !done);
+    if (!ok) return false;
+  }
+  // Pulse 서베이 결과 기준 필터 (선택된 상태 중 하나라도 일치하면 표시)
   const activeStatus = ORG_STATUS_FILTERS.filter((f) => state.filters[f.key]).map((f) => f.key);
   if (activeStatus.length) {
     const def = pulseStatusDef(unit);
@@ -1095,9 +1105,9 @@ function renderOfficialView() {
           <button class="zoom-button" data-zoom-action="in" type="button" aria-label="확대">+</button>
           <button class="zoom-fit" data-zoom-action="fit" type="button">맞춤</button>
         </div>
-        <div class="segmented compact" aria-label="조직도 방향">
-          <button class="segment ${state.orgLayout === "horizontal" ? "active" : ""}" data-layout="horizontal" type="button">가로</button>
-          <button class="segment ${state.orgLayout === "vertical" ? "active" : ""}" data-layout="vertical" type="button">세로</button>
+        <div class="segmented compact" aria-label="조직도 보기 방식">
+          <button class="segment ${state.orgLayout === "folder" ? "" : "active"}" data-layout="horizontal" type="button">가로</button>
+          <button class="segment ${state.orgLayout === "folder" ? "active" : ""}" data-layout="folder" type="button">폴더</button>
         </div>
         <button class="ghost-button compact-action" id="downloadOrgTemplateButton" type="button">엑셀 템플릿</button>
         <button class="ghost-button compact-action" id="uploadOrgButton" type="button">엑셀 업로드</button>
@@ -1107,34 +1117,26 @@ function renderOfficialView() {
     <div class="org-frame-summary" aria-label="조직 주요 지표">
       ${renderCompactMetrics()}
     </div>
+    <div class="org-toolbelt" aria-label="조직도 드래그 도구">
+      <div class="drag-source" draggable="true" data-drag-create="division"><span>+</span><strong>새 부문</strong><small>CEO 카드에 드롭</small></div>
+      <div class="drag-source" draggable="true" data-drag-create="hq"><span>+</span><strong>새 본부</strong><small>CEO/부문 카드에 드롭</small></div>
+      <div class="drag-source" draggable="true" data-drag-create="team"><span>+</span><strong>새 팀</strong><small>부문/본부 카드에 드롭</small></div>
+      <p>드래그로 조직을 만들거나 소속을 이동합니다.</p>
+    </div>
     <div class="org-workbench ${selectedUnit ? "inspector-open" : ""}">
       <div class="org-board">
-        <div class="org-toolbelt" aria-label="조직도 드래그 도구">
-          <div class="drag-source" draggable="true" data-drag-create="division">
-            <span>+</span>
-            <strong>새 부문</strong>
-            <small>CEO 카드에 드롭</small>
-          </div>
-          <div class="drag-source" draggable="true" data-drag-create="hq">
-            <span>+</span>
-            <strong>새 본부</strong>
-            <small>CEO/부문 카드에 드롭</small>
-          </div>
-          <div class="drag-source" draggable="true" data-drag-create="team">
-            <span>+</span>
-            <strong>새 팀</strong>
-            <small>부문/본부 카드에 드롭</small>
-          </div>
-          <p>드래그로 조직을 만들거나 소속을 이동합니다.</p>
-        </div>
-        <div class="org-canvas" id="orgCanvas">
-          <div class="org-zoom-surface" id="orgZoomSurface" style="--org-zoom:${state.orgZoom}">
-            <svg class="connector-layer" id="connectorLayer" aria-hidden="true"></svg>
-            <div class="org-tree ${escapeHtml(state.orgLayout)}">
-              ${roots.map((unit) => renderTreeNode(unit)).join("")}
-            </div>
-          </div>
-        </div>
+        ${
+          state.orgLayout === "folder"
+            ? `<div class="org-folder" id="orgFolder">${roots.map((unit) => renderFolderRow(unit, 0)).join("")}</div>`
+            : `<div class="org-canvas" id="orgCanvas">
+                <div class="org-zoom-surface" id="orgZoomSurface" style="--org-zoom:${state.orgZoom}">
+                  <svg class="connector-layer" id="connectorLayer" aria-hidden="true"></svg>
+                  <div class="org-tree ${escapeHtml(state.orgLayout)}">
+                    ${roots.map((unit) => renderTreeNode(unit)).join("")}
+                  </div>
+                </div>
+              </div>`
+        }
       </div>
       ${selectedUnit ? renderOrgInspector(selectedUnit) : ""}
     </div>
@@ -1166,6 +1168,53 @@ function renderTreeNode(unit) {
       }
     </div>
   `;
+}
+
+// 폴더(파일탐색기) 형식 조직도 — 트리보다 공간 효율이 높고 한 화면에 더 많이 보인다.
+function renderFolderRow(unit, depth = 0) {
+  const activeRefinement = hasActiveRefinement();
+  const children = getChildren(unit.id).filter(
+    (child) => !activeRefinement || unitMatches(child) || hasVisibleDescendant(child.id),
+  );
+  if (activeRefinement && !unitMatches(unit) && !hasVisibleDescendant(unit.id) && unit.parentId) return "";
+  const expanded = isExpanded(unit.id);
+  const selected = unit.id === state.selectedUnitId ? "selected" : "";
+  const status = pulseStatusDef(unit);
+  const tone = status ? `tone-${status.tone}` : "";
+  const hasLeader = unit.leader && unit.leader !== "미정" && unit.leader !== "리더 미정";
+  const seed = hasLeader ? unit.leader : unit.name;
+  const initial = unitInitial(seed) || (unit.name || "·").charAt(0);
+  const avatar = unit.photo
+    ? `<span class="folder-avatar has-photo"><img src="${escapeHtml(unit.photo)}" alt="" /></span>`
+    : `<span class="folder-avatar" style="--av:${avatarColor(seed)}">${escapeHtml(initial)}</span>`;
+  const headcount = getPeopleForUnit(unit.id, unit.level !== "team").length || unit.members;
+  const titleTxt = unit.leaderTitle ? leaderTitleLabel(unit.leaderTitle) : "";
+  // 조직장 이름은 볼드(진하게), 나머지(유형·인원·직급·직무)는 회색 톤
+  const leaderTxt = hasLeader
+    ? `<b class="fm-leader">${escapeHtml(unit.leader)}</b> ${[titleTxt, unit.leaderRole].filter(Boolean).map(escapeHtml).join(" · ")}`
+    : `${escapeHtml(unit.leaderRole || "책임자")} 미정`;
+  const hasChildren = children.length > 0;
+  return `
+    <div class="folder-branch">
+      <div class="folder-row ${selected} ${tone}" style="--depth:${depth}" data-unit-card="${escapeHtml(unit.id)}" draggable="${unit.level !== "company"}" data-drag-unit-id="${escapeHtml(unit.id)}" data-drop-unit-id="${escapeHtml(unit.id)}">
+        <button class="folder-main" type="button" ${hasChildren ? `data-toggle-unit="${escapeHtml(unit.id)}"` : `data-open-detail="${escapeHtml(unit.id)}"`} aria-label="${escapeHtml(unit.name)} ${hasChildren ? (expanded ? "하위 접기" : "하위 조직 펼치기") : "상세 보기"}">
+          <span class="folder-twist ${hasChildren ? (expanded ? "open" : "") : "empty"}">▸</span>
+          ${avatar}
+          <span class="folder-text">
+            <span class="folder-name">${escapeHtml(unit.name)}</span>
+            <span class="folder-meta">${escapeHtml(displayOrgType(unit))} · ${headcount}명 · ${leaderTxt}</span>
+          </span>
+        </button>
+        <span class="folder-sessions">${renderStatusChips(unit, { mini: true, sessionsOnly: true })}</span>
+        ${status ? `<span class="folder-status pulse-${status.tone}">${escapeHtml(status.label)}</span>` : ""}
+        <button class="folder-detail-btn" type="button" data-open-detail="${escapeHtml(unit.id)}" aria-label="${escapeHtml(unit.name)} 상세 보기" title="상세 보기">→</button>
+      </div>
+      ${
+        expanded && hasChildren
+          ? `<div class="folder-children">${children.map((c) => renderFolderRow(c, depth + 1)).join("")}</div>`
+          : ""
+      }
+    </div>`;
 }
 
 function pulseForUnit(unitId) {
@@ -1278,12 +1327,53 @@ function readImageDownscaled(file, max = 160) {
 }
 // 카드 열기 시 표시하는 진행 현황 칩 (pulseSurvey는 Pulse 데이터로 자동 판정)
 const ORG_STATUS_CHIPS = [
-  { key: "townhall", label: "타운홀", toggle: true },
-  { key: "pulseSurvey", label: "Pulse", toggle: false },
-  { key: "wowTeam", label: "WOW·팀", toggle: true },
-  { key: "wowLead", label: "WOW·팀장", toggle: true },
-  { key: "teamSurvey", label: "팀 설문", toggle: true },
+  { key: "townhall", label: "타운홀", short: "타운홀", session: true },
+  { key: "pulseSurvey", label: "Pulse", short: "Pulse", session: false },
+  { key: "wowTeam", label: "WOW·팀", short: "W·팀", session: true },
+  { key: "wowLead", label: "WOW·팀장", short: "W·팀장", session: true },
+  { key: "teamSurvey", label: "팀 설문", short: "설문", session: true },
 ];
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// 캘린더에 등록한 세션 일정의 날짜가 오늘 이전(과거 포함)이면 완료로 간주.
+// 과거 날짜를 넣으면 즉시 완료, 미래 날짜는 그 날이 지나면 자동 완료된다.
+function sessionDoneForUnit(unitId, category) {
+  const today = todayISO();
+  return (state.sessions || []).some(
+    (s) => s.teamId === unitId && s.category === category && s.date && s.date <= today,
+  );
+}
+
+// 조직에 (유형 무관) 완료된 세션 일정이 하나라도 있는지 — 필터용
+function unitSessionDone(unitId) {
+  const today = todayISO();
+  return (state.sessions || []).some((s) => s.teamId === unitId && s.date && s.date <= today);
+}
+
+// 진행 현황 칩(읽기 전용): 카드/폴더/상세 공용. Pulse는 데이터, 세션류는 캘린더 기준.
+function chipOn(unit, key) {
+  if (key === "pulseSurvey") return Boolean(pulseForUnit(unit.id)) || Boolean(unit.pulseSurvey);
+  return sessionDoneForUnit(unit.id, key) || Boolean(unit[key]);
+}
+function renderStatusChips(unit, opts = {}) {
+  const cls = "schip" + (opts.mini ? " mini" : "");
+  const list = opts.sessionsOnly ? ORG_STATUS_CHIPS.filter((c) => c.session) : ORG_STATUS_CHIPS;
+  return list
+    .map((c) => {
+      const on = chipOn(unit, c.key);
+      const text = opts.mini ? c.short : c.label;
+      const hint =
+        c.key === "pulseSurvey"
+          ? `${c.label} ${on ? "완료" : "미연동"}`
+          : `${c.label} ${on ? "완료 · 캘린더 일정 반영됨" : "미완료 · 캘린더 일정 등록 시 자동"}`;
+      return `<span class="${cls} ${on ? "on" : ""}" title="${escapeHtml(hint)}">${escapeHtml(text)}</span>`;
+    })
+    .join("");
+}
 
 function renderUnitCard(unit, childCount = 0) {
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
@@ -1314,11 +1404,7 @@ function renderUnitCard(unit, childCount = 0) {
   const avatar = unit.photo
     ? `<span class="unit-avatar has-photo photo-trigger" data-upload-unit-photo="${escapeHtml(unit.id)}" title="사진 변경"><img src="${escapeHtml(unit.photo)}" alt="${escapeHtml(leaderNameLabel(unit))}" /></span>`
     : `<span class="unit-avatar photo-trigger" data-upload-unit-photo="${escapeHtml(unit.id)}" style="--av:${avatarColor(avSeed)}" title="사진 업로드">${escapeHtml(initial)}</span>`;
-  const chips = ORG_STATUS_CHIPS.map((c) => {
-    const on = c.key === "pulseSurvey" ? Boolean(pulse) || Boolean(unit.pulseSurvey) : Boolean(unit[c.key]);
-    const attrs = c.toggle ? `data-toggle-status="${c.key}" data-unit="${escapeHtml(unit.id)}"` : "disabled";
-    return `<button type="button" class="schip ${on ? "on" : ""}" ${attrs} title="${escapeHtml(c.label)} ${on ? "완료" : "미완료"}">${escapeHtml(c.label)}</button>`;
-  }).join("");
+  const chips = renderStatusChips(unit);
   const keywords = (signal.tags || []).filter(Boolean);
   return `
     <article class="unit-card ${cardTone} risk-${signal.risk} ${selected} ${inPath} ${open ? "card-open" : ""}" draggable="${unit.level !== "company"}" data-unit-card="${escapeHtml(unit.id)}" data-drag-unit-id="${escapeHtml(unit.id)}" data-drop-unit-id="${escapeHtml(unit.id)}">
@@ -1407,6 +1493,14 @@ function renderOrgInspector(unit) {
         <article><span>${escapeHtml(riskLabel)}</span><strong>${escapeHtml(riskText)}</strong></article>
         <article><span>범위</span><strong>${people.length || unit.members}명</strong></article>
       </div>
+
+      <section class="inspector-section">
+        <div class="inspector-section-title-row">
+          <h4>진행 현황</h4>
+          <span>캘린더 일정 기준 자동</span>
+        </div>
+        <div class="status-chips inspector-chips">${renderStatusChips(unit)}</div>
+      </section>
 
       <section class="inspector-section">
         <h4>${escapeHtml(leaderRoleLabel(unit))}</h4>
@@ -1606,7 +1700,13 @@ function renderNetworkView() {
         <strong>${units.filter((unit) => signalForUnit(unit).risk === "high").length}</strong>
       </article>
     </div>
-    <div class="network-canvas">
+    <div class="quad-legend" aria-label="사분면 안내">
+      <span class="ql ql-risk"><i></i>좌상 위험</span>
+      <span class="ql ql-watch"><i></i>우상 주의</span>
+      <span class="ql ql-calm"><i></i>좌하 관망</span>
+      <span class="ql ql-stable"><i></i>우하 안정</span>
+    </div>
+    <div class="network-canvas quad-tinted">
       <div class="axis-line horizontal"></div>
       <div class="axis-line vertical"></div>
       <span class="axis-label axis-x">변화 수용도 →</span>
@@ -1829,6 +1929,14 @@ function renderCalendarView() {
           <label>날짜<input id="sessionDateInput" type="date" value="${escapeHtml(state.selectedCalendarDate)}" required /></label>
           <label>시간<input id="sessionTimeInput" type="time" value="10:00" required /></label>
           <label>세션 명<input id="sessionNameInput" type="text" value="WOW x BALANCE 세션" required /></label>
+          <label>유형
+            <select id="sessionCategoryInput">
+              <option value="wowTeam">WOW×BALANCE · 팀</option>
+              <option value="wowLead">WOW×BALANCE · 팀장</option>
+              <option value="townhall">타운홀</option>
+              <option value="teamSurvey">팀 설문</option>
+            </select>
+          </label>
           <label>팀 이름
             <select id="sessionTeamInput" required>
               ${teams.map((team) => `<option value="${escapeHtml(team.id)}" ${team.id === selectedTeam ? "selected" : ""}>${escapeHtml(team.name)}</option>`).join("")}
@@ -2432,30 +2540,34 @@ function renderSettingsModal(unit) {
       <h3>${escapeHtml(unit.name)} 설정</h3>
       <p class="detail-sub">조직명, 책임자 호칭, 직급, 문화 신호와 구성원 소속을 수정합니다.</p>
     </div>
-    ${
-      unit.level === "team"
-        ? `<section class="detail-section team-leader-picker">
-            <h4>팀장 설정</h4>
+    ${(() => {
+      const roleLabel = unit.leaderRole || defaultLeaderRole(unit.level);
+      const picker = `<section class="detail-section team-leader-picker">
+            <h4>${escapeHtml(roleLabel)} 설정</h4>
             ${
               directPeople.length
                 ? `<label>
-                    팀원 중 팀장 선택
+                    구성원 중 ${escapeHtml(roleLabel)} 선택
                     <select id="teamLeaderSelect">
-                      <option value="">팀장 미정</option>
+                      <option value="">${escapeHtml(roleLabel)} 미정</option>
                       ${directPeople
-                        .map((person) => `<option value="${escapeHtml(person.id)}" ${person.position === "팀장" ? "selected" : ""}>${escapeHtml(person.name)} · ${escapeHtml(leaderTitleLabel(person.title))}</option>`)
+                        .map((person) => `<option value="${escapeHtml(person.id)}" ${person.name === unit.leader ? "selected" : ""}>${escapeHtml(person.name)} · ${escapeHtml(leaderTitleLabel(person.title))}</option>`)
                         .join("")}
                     </select>
                   </label>
-                  <p class="field-hint">선택한 팀원이 카드와 조직도 지표의 팀장으로 반영됩니다.</p>`
-                : `<div class="recommend-card">먼저 구성원을 추가한 뒤 팀장을 선택할 수 있습니다.</div>`
+                  <p class="field-hint">선택한 구성원이 카드와 조직도의 ${escapeHtml(roleLabel)}으로 반영됩니다.</p>`
+                : `<div class="recommend-card">먼저 구성원을 추가한 뒤 ${escapeHtml(roleLabel)}을 선택할 수 있습니다.</div>`
             }
-          </section>`
-        : `<section class="detail-section auto-signal-note">
+          </section>`;
+      const pulseNote =
+        unit.level !== "team"
+          ? `<section class="detail-section auto-signal-note">
             <h4>Pulse Survey 자동 반영</h4>
             <div class="recommend-card">본부 이상 조직은 Pulse Survey 기준으로 변화 수용도, 신뢰, 피로도, 리스크와 키워드를 자동 보정합니다.</div>
           </section>`
-    }
+          : "";
+      return picker + pulseNote;
+    })()}
     <section class="detail-section">
       <h4>조직 값 편집</h4>
       <form class="edit-form" id="editUnitForm">
@@ -2974,6 +3086,13 @@ document.addEventListener("input", (event) => {
 });
 
 document.addEventListener("change", (event) => {
+  const filterToggle = event.target.closest("[data-filter]");
+  if (filterToggle) {
+    state.filters[filterToggle.dataset.filter] = filterToggle.checked;
+    render();
+    return;
+  }
+
   if (event.target.id === "unitPhotoInput" && event.target.files && event.target.files[0]) {
     const unitId = pendingUnitPhotoId;
     readImageDownscaled(event.target.files[0], 180)
@@ -3093,6 +3212,7 @@ document.addEventListener("submit", (event) => {
       date: document.getElementById("sessionDateInput").value || state.selectedCalendarDate,
       startTime: document.getElementById("sessionTimeInput").value || "10:00",
       sessionName: document.getElementById("sessionNameInput").value.trim() || "WOW x BALANCE 세션",
+      category: document.getElementById("sessionCategoryInput")?.value || "wowTeam",
       teamId: team?.id || "",
       teamName: team?.name || "팀 미정",
       participants: Math.max(1, Number(document.getElementById("sessionParticipantsInput").value || 1)),
