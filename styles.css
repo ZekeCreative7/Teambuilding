@@ -3309,5 +3309,183 @@ select:focus {
 .folder-sessions { display: inline-flex; flex: 0 0 auto; gap: 4px; flex-wrap: nowrap; }
 @media (max-width: 760px) { .folder-sessions { display: none; } }
 
+/* ====================================================================
+   Mobile viewport containment — dashboard and app shell
+   ==================================================================== */
+@media (max-width: 760px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .app-shell,
+  .app-shell.nav-collapsed {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .workspace {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    overflow: hidden;
+    padding: calc(env(safe-area-inset-top, 0px) + 72px) 12px 36px !important;
+  }
+
+  .view,
+  .view.active,
+  #home {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dashTop,
+  .dashGrid2,
+  .dashGrid3,
+  .statStrip,
+  .grid2,
+  .grid3,
+  .grid4 {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px;
+  }
+
+  .dashIntro,
+  .gaugeCard,
+  .dashCard,
+  .card,
+  .deepSelectPanel,
+  .deepCard {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dashIntro {
+    min-height: 0;
+    padding: 22px 20px;
+    border-radius: 24px;
+  }
+
+  .dashIntro .eyebrow {
+    max-width: 100%;
+    font-size: 10px;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .dashIntro h1 {
+    max-width: 100%;
+    font-size: clamp(30px, 10vw, 38px);
+    line-height: 1.08;
+    letter-spacing: 0;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  .dashIntro p {
+    max-width: 100%;
+    font-size: 13px;
+    line-height: 1.62;
+    word-break: keep-all;
+  }
+
+  .dashIntro .heroChips {
+    gap: 7px;
+  }
+
+  .dashIntro .heroChips span {
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  .dashIntro .homeHeroActions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  #home button.primary,
+  #home button.ghost,
+  .homeHeroActions button {
+    width: 100%;
+    min-height: 52px;
+    white-space: normal;
+    justify-content: center;
+  }
+
+  .gaugeWrap,
+  .tierWrap {
+    grid-template-columns: minmax(0, 1fr) !important;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .panelTitle {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .panelTitle h3 {
+    font-size: 20px;
+    line-height: 1.22;
+    word-break: keep-all;
+  }
+
+  .panelTitle .sub {
+    max-width: 100%;
+  }
+
+  .trendSvg,
+  .scatterSvg,
+  .gaugeSvg,
+  .tierDonut {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .trendSvg,
+  .scatterSvg {
+    min-width: 0;
+  }
+
+  .tableWrap,
+  .calendar-grid,
+  .calendar-weekdays,
+  .network-canvas,
+  .org-canvas {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .workspace {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .dashIntro,
+  .gaugeCard,
+  .dashCard,
+  .card {
+    border-radius: 20px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
 /* 인스펙터 진행현황 */
 .inspector-chips { display: flex; flex-wrap: wrap; gap: 6px; }
