@@ -462,7 +462,7 @@ const groupTemplates = [
 
 const leaderTitleOptions = ["이사", "상무", "전무", "부사장", "사장", "대표이사"];
 const leaderRoleOptions = ["대표이사", "부문장", "본부장", "실장", "센터장", "그룹장", "팀장", "파트장", "챕터리드"];
-const personTitleOptions = ["부장", "차장", "과장", "대리", "사원"];
+const personTitleOptions = ["사장", "부사장", "전무", "상무", "이사", "부장", "차장", "과장", "대리", "사원"];
 const ORG_CLOUD_DOC_ID = "default";
 const ORG_CLOUD_WRITER = `org_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 
@@ -3581,7 +3581,7 @@ function renderSettingsModal(unit) {
       <form class="add-person-form" id="addPersonForm">
         <input id="personNameInput" type="text" placeholder="구성원 이름" required />
         <select id="personTitleSelect" aria-label="구성원 직급">
-          ${personTitleOptions.map((title) => `<option value="${escapeHtml(title)}">${escapeHtml(title)}</option>`).join("")}
+          ${personTitleOptions.map((title) => `<option value="${escapeHtml(title)}" ${title === "사원" ? "selected" : ""}>${escapeHtml(title)}</option>`).join("")}
         </select>
         <small class="field-hint">팀장 지정은 위의 ${escapeHtml(leaderRoleLabel(unit))} 설정에서 선택하세요.</small>
         <button class="small-button" type="submit">구성원 추가</button>
@@ -3617,7 +3617,7 @@ function renderPersonRow(person) {
       <div class="person-inline-controls">
         <label class="person-rank-control">
           직급
-          <input data-edit-person-title="${escapeHtml(person.id)}" type="text" list="personTitleOptions" value="${escapeHtml(person.title || "")}" placeholder="부장, 차장, 과장" />
+          <input data-edit-person-title="${escapeHtml(person.id)}" type="text" list="personTitleOptions" value="${escapeHtml(person.title || "")}" placeholder="사장부터 사원까지" />
         </label>
         <label class="person-move-control">
           소속 이동

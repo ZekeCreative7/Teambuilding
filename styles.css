@@ -2097,6 +2097,7 @@ input[type="checkbox"] {
 }
 
 .org-workbench {
+  --org-inspector-width: clamp(360px, 24vw, 410px);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
@@ -2104,7 +2105,7 @@ input[type="checkbox"] {
 }
 
 .org-workbench.inspector-open {
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) var(--org-inspector-width);
   align-items: start;
 }
 
@@ -2134,6 +2135,22 @@ input[type="checkbox"] {
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.9));
   box-shadow: 0 20px 54px rgba(15, 23, 42, 0.12), var(--inner-glow);
+}
+
+@media (min-width: 1281px) {
+  #people .main-panel {
+    overflow: visible;
+  }
+
+  .org-workbench.inspector-open .org-inspector {
+    position: fixed;
+    top: 112px;
+    right: 32px;
+    width: var(--org-inspector-width);
+    max-height: calc(100vh - 136px);
+    margin-top: 0;
+    z-index: 35;
+  }
 }
 
 .inspector-head {
@@ -3201,6 +3218,12 @@ select:focus {
 
 .org-workbench.inspector-open .org-inspector {
   margin-top: 30px;
+}
+
+@media (min-width: 1281px) {
+  .org-workbench.inspector-open .org-inspector {
+    margin-top: 0;
+  }
 }
 
 .network-canvas,
