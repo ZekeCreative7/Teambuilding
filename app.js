@@ -3350,54 +3350,220 @@ function renderTeamSessionList(team) {
     .join("");
 }
 
+const WOW_INTERIM_QUESTIONS = [
+  "지금까지 WOW x BALANCE 세션에서 가장 좋았던 점은?",
+  "진행하면서 아쉬웠거나 개선이 필요한 점은?",
+  "남은 세션에서 다뤘으면 하는 것 / 운영진에게 바라는 점은?",
+];
+const WOW_FINAL_QUANT_KEYS = Array.from({ length: 10 }, (_, i) => `WQ${i + 1}`);
+
+function wowInterimRowsForTeam(unit) {
+  return (state.wowInterimRows || []).filter((row) => rowBelongsToTeam(row, unit));
+}
+
+function selectedSessionTeam() {
+  const teams = sessionTeamUnits();
+  const sel = getUnit(state.selectedSessionAnalysisTeamId);
+  if (sel && sel.level === "team") return sel;
+  return teams[0] || null;
+}
+
+function surveyCsvEscape(v) {
+  const t = String(v == null ? "" : v);
+  return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+}
+function surveyToCsv(headers, rows) {
+  const head = headers.map(surveyCsvEscape).join(",");
+  const body = rows.map((r) => headers.map((h) => surveyCsvEscape(r[h])).join(",")).join("\n");
+  return "﻿" + head + "\n" + body + "\n";
+}
+function surveyParseCsv(text) {
+  const out = [];
+  let row = [], field = "", inQ = false;
+  const t = String(text || "").replace(/^﻿/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  for (let i = 0; i < t.length; i += 1) {
+    const c = t[i];
+    if (inQ) {
+      if (c === '"') { if (t[i + 1] === '"') { field += '"'; i += 1; } else inQ = false; }
+      else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n") { row.push(field); out.push(row); row = []; field = ""; }
+    else field += c;
+  }
+  if (field.length || row.length) { row.push(field); out.push(row); }
+  if (!out.length) return [];
+  const headers = out[0].map((h) => h.trim());
+  return out.slice(1)
+    .filter((r) => r.some((c) => String(c).trim() !== ""))
+    .map((r) => { const o = {}; headers.forEach((h, idx) => { o[h] = (r[idx] == null ? "" : String(r[idx])).trim(); }); return o; });
+}
+
+function surveyTemplateCsv(type, team) {
+  const tn = team ? team.name : "팀명";
+  if (type === "interim") {
+    const headers = ["teamName", "respondentNo", ...WOW_INTERIM_QUESTIONS];
+    const sample = { teamName: tn, respondentNo: 1 };
+    WOW_INTERIM_QUESTIONS.forEach((q) => { sample[q] = ""; });
+    return surveyToCsv(headers, [sample]);
+  }
+  const headers = ["teamName", "respondentNo", ...WOW_FINAL_QUANT_KEYS, "goodBadText", "moodText", "messageText"];
+  const sample = { teamName: tn, respondentNo: 1, goodBadText: "", moodText: "", messageText: "" };
+  WOW_FINAL_QUANT_KEYS.forEach((k) => { sample[k] = ""; });
+  return surveyToCsv(headers, [sample]);
+}
+
+function downloadSurveyTemplate(type) {
+  const team = selectedSessionTeam();
+  const name = type === "interim" ? "WOW_중간서베이_템플릿.csv" : "WOW_최종서베이_템플릿.csv";
+  if (typeof download === "function") download(name, surveyTemplateCsv(type, team), "text/csv;charset=utf-8");
+  else notifyOrganization("다운로드를 지원하지 않는 환경입니다.");
+}
+
+// 업로드된 행을 선택 팀 데이터로 반영(같은 팀 기존 응답은 교체)
+function applySurveyUpload(type, team, parsedRows) {
+  if (!team || !parsedRows || !parsedRows.length) return 0;
+  if (type === "interim") {
+    const rows = parsedRows.map((r, idx) => {
+      const o = { teamId: team.id, teamName: r.teamName || team.name, respondentNo: r.respondentNo || idx + 1 };
+      WOW_INTERIM_QUESTIONS.forEach((q, i) => { o["q" + (i + 1)] = r[q] || r["q" + (i + 1)] || r["문항" + (i + 1)] || ""; });
+      return o;
+    });
+    state.wowInterimRows = [...(state.wowInterimRows || []).filter((x) => x.teamId !== team.id), ...rows];
+    return rows.length;
+  }
+  const quant = [], text = [];
+  parsedRows.forEach((r, idx) => {
+    const base = { teamId: team.id, teamName: r.teamName || team.name, respondentNo: r.respondentNo || idx + 1 };
+    const q = { ...base };
+    WOW_FINAL_QUANT_KEYS.forEach((k) => { q[k] = r[k] != null && r[k] !== "" ? r[k] : (r[k.toLowerCase()] || ""); });
+    quant.push(q);
+    text.push({ ...base, goodBadText: r.goodBadText || "", moodText: r.moodText || "", messageText: r.messageText || "" });
+  });
+  state.wowQuantRows = [...(state.wowQuantRows || []).filter((x) => x.teamId !== team.id), ...quant];
+  state.wowTextRows = [...(state.wowTextRows || []).filter((x) => x.teamId !== team.id), ...text];
+  return parsedRows.length;
+}
+
+function triggerSurveyUpload(type) {
+  const team = selectedSessionTeam();
+  if (!team) { notifyOrganization("먼저 팀을 선택하세요."); return; }
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".csv,text/csv";
+  input.addEventListener("change", () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const rows = surveyParseCsv(String(reader.result || ""));
+        const n = applySurveyUpload(type, team, rows);
+        persist();
+        renderWowSessionWorkspace();
+        notifyOrganization(`${team.name} ${type === "interim" ? "중간" : "최종"} 서베이 ${n}건 반영됨`);
+      } catch (error) {
+        console.warn("survey upload failed", error);
+        notifyOrganization("업로드 파싱 실패 · CSV 형식을 확인하세요");
+      }
+    };
+    reader.readAsText(file, "utf-8");
+  });
+  input.click();
+}
+
 function renderWowExecutionView() {
   const teams = sessionTeamUnits();
   if (!teams.length) {
-    return `<div class="empty-state"><strong>팀 조직이 없습니다</strong><span>People & Organization에서 팀을 먼저 등록하면 WOW x BALANCE 수행 현황이 팀 기준으로 정리됩니다.</span></div>`;
+    return `<div class="empty-state"><strong>팀 조직이 없습니다</strong><span>People &amp; Organization에서 팀을 먼저 등록하세요.</span></div>`;
   }
+  const team = selectedSessionTeam();
+  state.selectedSessionAnalysisTeamId = team.id;
+  const summary = teamProgramSummary(team);
+  const interim = wowInterimRowsForTeam(team);
+  const finalQuant = wowQuantRowsForTeam(team);
+  const finalText = wowTextRowsForTeam(team);
+  const quantScores = calculateWowQuantScores(finalQuant);
+  const prompt = buildTeamSessionAnalysisPrompt(team.id);
+  const saved = sessionAnalysisForUnit(team);
+
+  const interimBody = interim.length
+    ? `<div class="survey-resp-list">${interim
+        .slice(0, 30)
+        .map((r) => `
+          <div class="survey-resp">
+            <b>#${escapeHtml(String(r.respondentNo || ""))}</b>
+            <span>${WOW_INTERIM_QUESTIONS.map((q, i) => `<em>${escapeHtml(q)}</em> ${escapeHtml(r["q" + (i + 1)] || "-")}`).join("<br>")}</span>
+          </div>`)
+        .join("")}</div>`
+    : `<div class="survey-empty">중간 서베이 데이터가 없습니다. 템플릿을 받아 작성 후 업로드하세요.</div>`;
+
+  const finalBody = finalQuant.length || finalText.length
+    ? `<div class="survey-quant-grid">${WOW_FINAL_QUANT_KEYS.map((k) => `<span><b>${k}</b>${quantScores.qMeans[k] == null ? "-" : Math.round(quantScores.qMeans[k])}</span>`).join("")}</div>
+       <p class="survey-note">객관식 응답 ${finalQuant.length}명 · 주관식 ${finalText.length}명 (점수=100점 환산 평균)</p>`
+    : `<div class="survey-empty">최종 서베이 데이터가 없습니다. 템플릿을 받아 작성 후 업로드하세요.</div>`;
+
   return `
-    <div class="wow-team-board">
-      ${teams
-        .map((team) => {
-          const summary = teamProgramSummary(team);
-          const signal = signalForUnit(team);
-          return `
-            <article class="wow-team-card">
-              <header>
-                <div>
-                  <p>${escapeHtml(getParentName(team))}</p>
-                  <h3>${escapeHtml(team.name)}</h3>
-                  <span>${escapeHtml(leaderRoleLabel(team))} ${escapeHtml(leaderNameLabel(team))} · ${participantCountForTeam(team.id)}명 기준</span>
-                </div>
-                <div class="wow-team-score">
-                  <strong>${summary.completionRate}%</strong>
-                  <span>수행률</span>
-                </div>
-              </header>
-              <div class="wow-team-metrics">
-                <span><b>${summary.doneSteps}/${summary.totalSteps}</b> 완료 단계</span>
-                <span><b>${summary.participationRate}%</b> 참여율</span>
-                <span><b>${signal.changeAcceptance}%</b> 변화 수용도</span>
-                <span><b>${summary.sessions.length}</b> 등록 일정</span>
-              </div>
-              <div class="program-track-grid">
-                <section>
-                  <h4>팀 프로그램 수행 날짜</h4>
-                  ${renderProgramDateChips(team, "team")}
-                </section>
-                <section>
-                  <h4>팀장 프로그램 수행 날짜</h4>
-                  ${renderProgramDateChips(team, "lead")}
-                </section>
-              </div>
-              <div class="team-session-list">
-                <h4>일정별 빠진 사람</h4>
-                ${renderTeamSessionList(team)}
-              </div>
-            </article>
-          `;
-        })
-        .join("")}
+    <div class="wow-exec">
+      <div class="wow-exec-pick">
+        <label>팀 선택
+          <select id="wowTeamSelect" data-wow-team-select>
+            ${teams.map((t) => `<option value="${escapeHtml(t.id)}" ${t.id === team.id ? "selected" : ""}>${escapeHtml(t.name)}</option>`).join("")}
+          </select>
+        </label>
+        <div class="wow-exec-meta">
+          <span><b>${escapeHtml(getParentName(team))}</b></span>
+          <span>${escapeHtml(leaderRoleLabel(team))} ${escapeHtml(leaderNameLabel(team))}</span>
+          <span>${participantCountForTeam(team.id)}명 · 수행 ${summary.completionRate}% · 참여 ${summary.participationRate}%</span>
+        </div>
+      </div>
+
+      <section class="wow-exec-card">
+        <h3>세션 일정 · 불참자</h3>
+        <p class="survey-note">세션별로 빠진 사람을 선택하면 참여율에 반영됩니다 (조직도 인원 기준).</p>
+        ${renderTeamSessionList(team)}
+      </section>
+
+      <div class="wow-survey-pair">
+        <section class="wow-exec-card">
+          <div class="wow-card-head">
+            <h3>중간 서베이 <small>주관식 3문항 · ${interim.length}명</small></h3>
+            <div class="wow-card-actions">
+              <button class="ghost-button" type="button" data-survey-template="interim">템플릿</button>
+              <button class="primary-button" type="button" data-survey-upload="interim">업로드</button>
+            </div>
+          </div>
+          ${interimBody}
+        </section>
+
+        <section class="wow-exec-card">
+          <div class="wow-card-head">
+            <h3>최종 서베이 <small>객관식 + 주관식</small></h3>
+            <div class="wow-card-actions">
+              <button class="ghost-button" type="button" data-survey-template="final">템플릿</button>
+              <button class="primary-button" type="button" data-survey-upload="final">업로드</button>
+            </div>
+          </div>
+          ${finalBody}
+        </section>
+      </div>
+
+      <section class="wow-exec-card analysis-card">
+        <div class="wow-card-head">
+          <h3>주관식 GPT 분석 <small>→ 포뮬라 반영</small></h3>
+          ${renderSessionAnalysisStatus(team)}
+        </div>
+        <p class="survey-note">주관식은 자동 분석이 완벽치 않으므로, 아래 프롬프트를 GPT에 넣고 결과(JSON)를 붙여넣어 저장하면 팀 신호(피로·신뢰·협업 등)에 반영됩니다.</p>
+        <label>분석 프롬프트(중간·최종 주관식 포함)
+          <textarea id="sessionAnalysisPrompt" readonly rows="8">${escapeHtml(prompt)}</textarea>
+        </label>
+        <button class="ghost-button" type="button" data-copy-session-prompt>프롬프트 복사</button>
+        <label>GPT 결과 붙여넣기 (JSON)
+          <textarea id="sessionAnalysisResultInput" rows="7" placeholder='{"summary":"...","fatigueTextRisk":40,"trustTextRisk":35,...}'>${escapeHtml(saved?.rawText || "")}</textarea>
+        </label>
+        <button class="primary-button wide" type="button" data-save-session-analysis>분석 저장 · 팀 신호 반영</button>
+        ${saved ? `<div class="analysis-saved-note"><strong>${escapeHtml(saved.summary || "저장된 분석")}</strong><span>${(saved.keywords || []).map(escapeHtml).join(" · ")}</span></div>` : ""}
+      </section>
     </div>
   `;
 }
@@ -3423,6 +3589,12 @@ function buildTeamSessionAnalysisPrompt(teamId) {
       moodText: row.moodText || "",
       messageText: row.messageText || "",
     }));
+  const interimSamples = wowInterimRowsForTeam(team)
+    .slice(0, 20)
+    .map((row, index) => ({
+      no: row.respondentNo || index + 1,
+      답변: WOW_INTERIM_QUESTIONS.map((q, i) => row["q" + (i + 1)] || "").filter(Boolean),
+    }));
   return `당신은 조직문화 진단 전문가입니다. 아래 WOW x BALANCE 세션 데이터와 주관식 응답을 읽고 팀 단위 보정 신호를 JSON만으로 반환하세요.
 
 팀: ${team.name}
@@ -3434,8 +3606,11 @@ function buildTeamSessionAnalysisPrompt(teamId) {
 정량 설문 응답 수: ${quant.responseCount}
 정량 요약: ${JSON.stringify(quant.qMeans)}
 
-주관식 응답:
+최종 서베이 주관식 응답:
 ${JSON.stringify(textSamples, null, 2)}
+
+중간 서베이 주관식 응답(3문항):
+${JSON.stringify(interimSamples, null, 2)}
 
 반환 형식:
 {
@@ -5173,6 +5348,18 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const surveyTplBtn = event.target.closest("[data-survey-template]");
+  if (surveyTplBtn) {
+    downloadSurveyTemplate(surveyTplBtn.dataset.surveyTemplate);
+    return;
+  }
+
+  const surveyUpBtn = event.target.closest("[data-survey-upload]");
+  if (surveyUpBtn) {
+    triggerSurveyUpload(surveyUpBtn.dataset.surveyUpload);
+    return;
+  }
+
   const filterInput = event.target.closest("[data-filter]");
   if (filterInput) {
     state.filters[filterInput.dataset.filter] = filterInput.checked;
@@ -5410,7 +5597,7 @@ document.addEventListener("change", (event) => {
     return;
   }
 
-  if (event.target.id === "sessionAnalysisTeamSelect") {
+  if (event.target.id === "sessionAnalysisTeamSelect" || event.target.closest("[data-wow-team-select]")) {
     state.selectedSessionAnalysisTeamId = event.target.value;
     renderWowSessionWorkspace();
     persist();

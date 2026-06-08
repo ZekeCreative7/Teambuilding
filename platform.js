@@ -912,14 +912,14 @@ function toast(t){
   el.textContent=t;el.style.display='block';
   toastTimer=setTimeout(()=>{el.style.display='none'},1800);
 }
-function renderSessionContext(){let scope=$('#sessionScope').value||'__company__', pack=scope==='__company__'?companyPack():divisionPack(scope);$('#sessionContext').textContent=pack;$('#sessionContextHidden').value=pack}
+function renderSessionContext(){const sel=$('#sessionScope');if(!sel)return;let scope=sel.value||'__company__', pack=scope==='__company__'?companyPack():divisionPack(scope);const c=$('#sessionContext');if(c)c.textContent=pack;const h=$('#sessionContextHidden');if(h)h.value=pack}
 function contextPayload(scope){
   let name=scope==='__company__'?'전사 전체':scope;
   return{id:'pulse_ctx_'+Date.now(),scope,targetName:name,summary:scope==='__company__'?companyPack():divisionPack(scope),evidence:(scope==='__company__'?companyPack():divisionPack(scope)),createdAt:new Date().toISOString()};
 }
 function createSessionFromSelection(){let scope=$('#sessionScope').value||$('#divisionSelect').value||'__company__';localStorage.setItem('linaPulseContext',JSON.stringify(contextPayload(scope)));openSessionDesigner()}
 function openSessionDesigner(){window.location.href='session-designer.html?pulseContext=1'}
-function renderSpeechContext(){let scope=$('#speechScope').value||'__company__';$('#speechContext').textContent=scope==='__company__'?companyPack():divisionPack(scope)}
+function renderSpeechContext(){const sel=$('#speechScope');if(!sel)return;let scope=sel.value||'__company__';const c=$('#speechContext');if(c)c.textContent=scope==='__company__'?companyPack():divisionPack(scope)}
 const COMM_LABEL={speech:'리더 스피치',company:'전사 공지문',division:'본부 공지문'};
 function onCommTypeChange(){renderSpeechContext();buildSpeechPrompt()}
 function buildSpeechPrompt(){
