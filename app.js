@@ -473,6 +473,7 @@ let pointerDrag = null;
 let calendarPrefillTeamId = null;
 let wowGoalEditOpen = false;
 let wowAttentionExpanded = false;
+let wowUpcomingWeekOffset = 0;
 let suppressNextClick = false;
 let pendingUnitPhotoId = null;
 let pendingPersonPhotoId = null;
@@ -1346,6 +1347,31 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+const CULTURE_METRIC_DESCRIPTIONS = {
+  changeAcceptance: "새로운 방향, 제도, 일하는 방식의 변화를 받아들이고 실행으로 옮길 준비 정도입니다. 높을수록 변화 추진 여력이 큽니다.",
+  trust: "리더십, 회사 방향, 조직 의사결정에 대한 신뢰 신호입니다. 높을수록 메시지 수용과 협업 기반이 안정적입니다.",
+  fatigue: "업무 부담, 정서적 소진, 지원 필요 가능성을 함께 보는 신호입니다. 높을수록 회복과 리더 지원을 먼저 챙겨야 합니다.",
+  riskScore: "불신, 사일로, 변화 저항, 커뮤니케이션 단절 등 문화 운영상 주의가 필요한 정도입니다. 높을수록 선제 개입이 필요합니다.",
+};
+
+function cultureMetricKeyFromLabel(label) {
+  const text = String(label || "");
+  if (text.includes("변화 수용")) return "changeAcceptance";
+  if (text.includes("신뢰")) return "trust";
+  if (text.includes("피로")) return "fatigue";
+  if (text.includes("리스크") || text.includes("위험")) return "riskScore";
+  return "";
+}
+
+function cultureMetricLabel(label, key = "") {
+  const metricKey = key || cultureMetricKeyFromLabel(label);
+  const description = CULTURE_METRIC_DESCRIPTIONS[metricKey];
+  if (!description) return escapeHtml(label);
+  const safeLabel = escapeHtml(label);
+  const safeDescription = escapeHtml(description);
+  return `<span class="metric-tip" tabindex="0" title="${safeDescription}" data-tip="${safeDescription}" aria-label="${safeLabel} 설명: ${safeDescription}"><span class="metric-tip-text">${safeLabel}</span><i aria-hidden="true">i</i></span>`;
+}
+
 function cssEscapeSelector(value) {
   if (window.CSS && typeof window.CSS.escape === "function") {
     return window.CSS.escape(value);
@@ -1667,7 +1693,7 @@ function renderCompactMetrics() {
   return getOrgMetrics()
     .map((metric) => `
       <article class="org-mini-metric">
-        <span>${escapeHtml(metric.label)}</span>
+        <span>${cultureMetricLabel(metric.label)}</span>
         <strong>${escapeHtml(metric.value)}</strong>
         <em>${escapeHtml(metric.note)}</em>
       </article>
@@ -2675,10 +2701,10 @@ function renderOrgInspector(unit) {
       </section>
 
 	      <div class="inspector-metrics">
-	        <article><span>변화 수용도</span><strong>${signal.changeAcceptance}%</strong></article>
-	        <article><span>신뢰도</span><strong>${signal.trust}%</strong></article>
-	        <article><span>피로도 / 지원 필요</span><strong>${signal.fatigue}%</strong></article>
-	        <article><span>문화 리스크</span><strong>${signal.riskScore}%</strong></article>
+	        <article><span>${cultureMetricLabel("변화 수용도", "changeAcceptance")}</span><strong>${signal.changeAcceptance}%</strong></article>
+	        <article><span>${cultureMetricLabel("신뢰도", "trust")}</span><strong>${signal.trust}%</strong></article>
+	        <article><span>${cultureMetricLabel("피로도 / 지원 필요", "fatigue")}</span><strong>${signal.fatigue}%</strong></article>
+	        <article><span>${cultureMetricLabel("문화 리스크", "riskScore")}</span><strong>${signal.riskScore}%</strong></article>
 	        <article><span>범위</span><strong>${people.length || unit.members}명</strong></article>
 	      </div>
 		      ${renderFormulaV2Breakdown(signal)}
@@ -2771,7 +2797,7 @@ function renderInspectorMemberRow(person) {
 function renderBar(label, value, className) {
   return `
     <div class="bar-row">
-      <span>${escapeHtml(label)}</span>
+      <span>${cultureMetricLabel(label)}</span>
       <div class="bar-track"><div class="bar-fill ${escapeHtml(className)}" style="width:${clamp(value, 0, 100)}%"></div></div>
       <span>${value}</span>
     </div>
@@ -2935,10 +2961,10 @@ function renderNetworkView() {
         <strong>${indexScore}</strong>
         <em>수용·신뢰 + 낮은 피로·리스크 종합 (100=건강)</em>
       </article>
-      <article><span>평균 변화 수용도</span><strong>${avg("changeAcceptance")}%</strong></article>
-      <article><span>평균 신뢰도</span><strong>${avg("trust")}%</strong></article>
-      <article><span>평균 피로도</span><strong>${avg("fatigue")}%</strong></article>
-      <article><span>평균 리스크 / 지원</span><strong>${avg("riskScore")}% · ${supportCount}</strong></article>
+      <article><span>${cultureMetricLabel("평균 변화 수용도", "changeAcceptance")}</span><strong>${avg("changeAcceptance")}%</strong></article>
+      <article><span>${cultureMetricLabel("평균 신뢰도", "trust")}</span><strong>${avg("trust")}%</strong></article>
+      <article><span>${cultureMetricLabel("평균 피로도", "fatigue")}</span><strong>${avg("fatigue")}%</strong></article>
+      <article><span>${cultureMetricLabel("평균 리스크 / 지원", "riskScore")}</span><strong>${avg("riskScore")}% · ${supportCount}</strong></article>
     </div>
     <div class="culture-map-pair">
       ${renderCultureMapPanel(sigs, mapA)}
@@ -3897,7 +3923,16 @@ function renderWowDashboardView() {
     return `<div class="program-empty">아직 등록된 팀이 없습니다. People &amp; Organization에서 팀을 만든 뒤 캘린더에서 세션을 추가하세요.</div>`;
   }
   const today = todayISO();
-  const weekEnd = toIsoDate((() => { const d = new Date(); d.setDate(d.getDate() + 7); return d; })());
+  const baseWeekStart = parseIsoDate(today);
+  baseWeekStart.setDate(baseWeekStart.getDate() - ((baseWeekStart.getDay() + 6) % 7));
+  const rangeStartDate = new Date(baseWeekStart);
+  rangeStartDate.setDate(baseWeekStart.getDate() + wowUpcomingWeekOffset * 7);
+  const rangeEndDate = new Date(rangeStartDate);
+  rangeEndDate.setDate(rangeStartDate.getDate() + 6);
+  let upcomingStart = toIsoDate(rangeStartDate);
+  const upcomingEnd = toIsoDate(rangeEndDate);
+  if (wowUpcomingWeekOffset === 0 && upcomingStart < today) upcomingStart = today;
+  const upcomingWindowLabel = wowUpcomingWeekOffset ? "다음 주 예정 세션" : "이번 주 예정 세션";
 
   const items = teams.map((team) => ({
     team,
@@ -3915,19 +3950,24 @@ function renderWowDashboardView() {
   const inProgress = started.filter((it) => it.summary.completionRate < 100);
   const lowParticipation = started.filter((it) => it.summary.participationRate < 80);
 
-  // 연간 목표 · 달성률
+  // 전체 기준 진행률
   const goals = state.programGoals || defaultProgramGoals();
   const tbDone = completed.length;
   const tbGoalPct = goals.teamBuilding ? Math.round((tbDone / goals.teamBuilding) * 100) : 0;
   const leadRounds = leadershipRounds();
   const leadDone = leadRounds.filter(leadershipRoundDone).length;
-  const leadGoalPct = goals.leadership ? Math.round((leadDone / goals.leadership) * 100) : 0;
-  const distinctLeaders = new Set();
-  leadRounds.forEach((r) => (r.leaderIds || []).forEach((id) => distinctLeaders.add(id)));
   const leaderTarget = goals.leadership * goals.leadershipPerSession;
+  const participatingLeaders = new Set();
+  leadRounds.forEach((round) => {
+    const absent = new Set(round.absentPersonIds || []);
+    (round.leaderIds || []).forEach((id) => {
+      if (!absent.has(id)) participatingLeaders.add(id);
+    });
+  });
+  const leadGoalPct = goals.leadership ? Math.round((leadDone / goals.leadership) * 100) : 0;
 
   const teamTrack = trackSummary("team");
-  const overallPct = teamTrack.overall;
+  const overallPct = totalTeams ? Math.round((tbDone / totalTeams) * 100) : 0;
   const avgParticipation = started.length
     ? Math.round(started.reduce((sum, it) => sum + it.summary.participationRate, 0) / started.length)
     : 0;
@@ -3950,7 +3990,7 @@ function renderWowDashboardView() {
   const activeAttention = attention.filter((it) => it.followup.status !== "done");
 
   const upcomingTeam = (state.sessions || [])
-    .filter((s) => s.date && s.date >= today && s.date <= weekEnd)
+    .filter((s) => s.date && s.date >= upcomingStart && s.date <= upcomingEnd)
     .map((s) => ({
       kind: "team",
       id: s.id,
@@ -3961,7 +4001,7 @@ function renderWowDashboardView() {
       cap: participantCountForTeam(s.teamId),
     }));
   const upcomingLead = (state.leadershipSessions || [])
-    .filter((r) => r.date && r.date >= today && r.date <= weekEnd)
+    .filter((r) => r.date && r.date >= upcomingStart && r.date <= upcomingEnd)
     .map((r) => ({
       kind: "lead",
       id: r.id,
@@ -3975,20 +4015,26 @@ function renderWowDashboardView() {
     .sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`))
     .slice(0, 6);
 
-  // 본부(상위 조직)별 도달률 + 미착수 팀
-  const divisionMap = new Map();
+  // 본부별 도달률: 부문은 제외하고 level === "hq" 본부만 집계한다.
+  const hqMap = new Map();
   items.forEach((it) => {
     const parent = getUnit(it.team.parentId);
-    const key = parent ? parent.id : "__none__";
-    const entry = divisionMap.get(key) || { name: parent ? parent.name : "상위 조직 없음", total: 0, operating: 0 };
+    const hq = parent?.level === "hq" ? parent : null;
+    if (!hq) return;
+    const hqSignal = signalForUnit(hq);
+    const pulseRiskRank =
+      Number(hqSignal.riskScore || 0) +
+      Number(hqSignal.fatigue || 0) +
+      (100 - Number(hqSignal.trust || 0)) +
+      (100 - Number(hqSignal.changeAcceptance || 0));
+    const entry = hqMap.get(hq.id) || { id: hq.id, name: hq.name, total: 0, operating: 0, pulseRiskRank, signal: hqSignal };
     entry.total += 1;
     if (it.summary.sessions.length > 0) entry.operating += 1;
-    divisionMap.set(key, entry);
+    hqMap.set(hq.id, entry);
   });
-  const divisionCoverage = Array.from(divisionMap.values())
+  const hqCoverage = Array.from(hqMap.values())
     .map((d) => ({ ...d, pct: d.total ? Math.round((d.operating / d.total) * 100) : 0 }))
-    .sort((a, b) => a.pct - b.pct || b.total - a.total);
-  const notStartedTeams = notStarted.slice().sort((a, b) => a.team.name.localeCompare(b.team.name, "ko"));
+    .sort((a, b) => b.pulseRiskRank - a.pulseRiskRank || a.pct - b.pct || b.total - a.total);
 
   // 프로그램 효과 신호 (GPT 주관식 분석이 저장된 팀 평균)
   const analyzed = items.filter((it) => it.analysis);
@@ -4028,7 +4074,7 @@ function renderWowDashboardView() {
   const attTone = activeAttention.length === 0 ? "good" : activeAttention[0].reasons[0].sev >= 4 ? "low" : "mid";
   const kpis = [
     { label: "조직 도달률", value: `${coverage}%`, tone: coverage >= 80 ? "good" : coverage >= 40 ? "mid" : "low", note: `운영 ${operating.length}/${totalTeams}팀 · ${reachedHeadcount}/${totalHeadcount}명 참여 대상` },
-    { label: "프로그램 완료율", value: `${overallPct}%`, tone: overallPct >= 80 ? "good" : overallPct >= 40 ? "mid" : "low", note: `완료 ${teamTrack.finished}팀 · 팀 세션 7단계 기준` },
+    { label: "프로그램 완료율", value: `${overallPct}%`, tone: overallPct >= 80 ? "good" : overallPct >= 40 ? "mid" : "low", note: `완료 ${tbDone}/${totalTeams}팀 · 전체 팀 기준` },
     { label: "평균 참여율", value: `${avgParticipation}%`, tone: partTone, note: lowParticipation.length ? `${lowParticipation.length}팀 80% 미만 · 점검 필요` : "전 운영 팀 80% 이상 · 양호" },
     { label: "주의 필요 팀", value: `${activeAttention.length}`, tone: attTone, note: activeAttention.length ? `미조치 ${activeAttention.length} · 조치완료 ${resolvedCount}` : (resolvedCount ? `전건 조치 완료 (${resolvedCount})` : "위험 신호 없음 · 안정") },
   ];
@@ -4056,7 +4102,7 @@ function renderWowDashboardView() {
       <section class="wow-goals">
         <div class="wow-goals-head">
           <div>
-            <div class="eyebrow">${goals.year} 연간 목표 달성률</div>
+            <div class="eyebrow">${goals.year} 목표 수치 대비</div>
             <h3>목표 대비 어디까지 왔나</h3>
           </div>
           <div class="wow-goals-actions">
@@ -4068,12 +4114,12 @@ function renderWowDashboardView() {
           <article class="wow-goal-card tb">
             <div class="wow-goal-top"><span>Team Building</span><b>${tbGoalPct}%</b></div>
             <div class="wow-goal-bar"><i style="width:${Math.min(100, tbGoalPct)}%"></i></div>
-            <div class="wow-goal-meta">완료 <b>${tbDone}</b> / 목표 <b>${goals.teamBuilding}</b>팀 · 진행 ${inProgress.length}팀</div>
+            <div class="wow-goal-meta">완료 <b>${tbDone}</b> / ${goals.year} 목표 <b>${goals.teamBuilding}</b>팀 · 진행 ${inProgress.length}팀</div>
           </article>
           <article class="wow-goal-card lead">
             <div class="wow-goal-top"><span>Leadership · 팀장 세션</span><b>${leadGoalPct}%</b></div>
             <div class="wow-goal-bar lead"><i style="width:${Math.min(100, leadGoalPct)}%"></i></div>
-            <div class="wow-goal-meta">완료 <b>${leadDone}</b> / 목표 <b>${goals.leadership}</b>회 · 참여 팀장 ${distinctLeaders.size}/${leaderTarget}명</div>
+            <div class="wow-goal-meta">완료 <b>${leadDone}</b> / ${goals.year} 목표 <b>${goals.leadership}</b>회 · 참가 팀장 ${participatingLeaders.size}/${leaderTarget}명</div>
           </article>
         </div>
         <div class="wow-goal-edit" id="wowGoalEdit" ${wowGoalEditOpen ? "" : "hidden"}>
@@ -4096,74 +4142,109 @@ function renderWowDashboardView() {
       </section>
 
       <section class="wow-insight-grid">
-        <div class="wow-panel wow-panel-attention">
+        <div class="wow-panel">
           <div class="wow-panel-head">
-            <div>
-              <h3>지금 챙겨야 할 팀</h3>
-              <span class="wow-panel-count">${attention.length > attentionPreviewLimit && !wowAttentionExpanded ? `우선순위 ${visibleAttention.length}개만 표시` : `미조치 ${activeAttention.length} / 전체 ${attention.length}건`}</span>
-            </div>
-            ${
-              attention.length > attentionPreviewLimit
-                ? `<button class="ghost-button wow-att-toggle" type="button" data-toggle-attention-list>${wowAttentionExpanded ? "접기" : `전체 ${attention.length}개 보기`}</button>`
-                : ""
-            }
+            <h3>본부별 도달률</h3>
+            <span class="wow-panel-count">Pulse 위험 순 · ${hqCoverage.length}개 본부</span>
           </div>
           ${
-            attention.length
-              ? visibleAttention
-                  .map((it) => {
-                    const top = it.reasons[0];
-                    const fu = it.followup;
-                    const sevClass = fu.status === "done" ? "resolved" : top.sev >= 4 ? "urgent" : top.sev >= 3 ? "warn" : "info";
-                    const statusLabel = FOLLOWUP_STATUS[fu.status] || "조치 전";
-                    const due = fu.due || "";
-                    const overdue = due && fu.status !== "done" && due < today;
+            hqCoverage.length
+              ? `<div class="wow-funnel">${hqCoverage
+                  .map((d) => {
+                    const tone = d.pct >= 80 ? "good" : d.pct >= 40 ? "mid" : "low";
                     return `
-                      <div class="wow-att ${sevClass}">
-                        <div class="wow-att-top">
-                          <div class="wow-att-team"><b>${escapeHtml(it.team.name)}</b><small>${escapeHtml(getParentName(it.team))} · ${participantCountForTeam(it.team.id)}명 · 수행 ${it.summary.completionRate}%</small></div>
-                          <div class="wow-att-tags">${it.reasons.map((r) => `<span class="wow-att-tag s${r.sev}">${escapeHtml(r.tag)}</span>`).join("")}</div>
-                        </div>
-                        <div class="wow-att-reason">${escapeHtml(top.text)}</div>
-                        <div class="wow-att-action">→ ${escapeHtml(top.action)}</div>
-                        <div class="wow-att-loop">
-                          <button type="button" class="wow-att-status s-${fu.status}" data-followup-cycle="${escapeHtml(it.team.id)}" title="상태 전환: 조치 전 → 조치 중 → 완료">${escapeHtml(statusLabel)}</button>
-                          <input type="text" class="wow-att-owner" data-followup-owner="${escapeHtml(it.team.id)}" value="${escapeHtml(fu.owner)}" placeholder="담당자" aria-label="담당자">
-                          <input type="date" class="wow-att-due ${overdue ? "overdue" : ""}" data-followup-due="${escapeHtml(it.team.id)}" value="${escapeHtml(due)}" aria-label="마감일">
-                          <button type="button" class="wow-att-go" data-wow-att-go="${escapeHtml(it.team.id)}">열기</button>
-                        </div>
+                      <div class="wow-funnel-row">
+                        <span class="wow-funnel-name">${escapeHtml(d.name)}</span>
+                        <span class="wow-funnel-bar"><i class="cov-${tone}" style="width:${d.pct}%"></i></span>
+                        <span class="wow-funnel-val">${d.operating}<em>/${d.total}</em></span>
                       </div>`;
                   })
-                  .join("") +
-                (hiddenAttentionCount
-                  ? `<div class="wow-att-more"><b>${hiddenAttentionCount}개 팀은 접어두었습니다.</b><span>위험도와 진행률 기준으로 우선순위가 낮은 항목입니다.</span></div>`
-                  : "")
-              : `<div class="wow-panel-empty good"><b>모든 팀이 정상 운영 중입니다.</b><span>참여율·진행·신호 모두 기준 이내입니다. 다가오는 세션 준비에 집중하세요.</span></div>`
+                  .join("")}</div>
+                 <p class="wow-effect-note">부문은 제외하고 본부(level: hq)만 집계합니다. 정렬은 Pulse Survey 기반 리스크·피로가 높고 신뢰·변화수용이 낮은 순입니다.</p>`
+              : `<div class="wow-panel-empty"><b>표시할 본부가 없습니다.</b><span>본부 아래에 소속된 팀이 있을 때 도달률이 표시됩니다.</span></div>`
           }
         </div>
 
         <div class="wow-insight-side">
           <div class="wow-panel">
             <div class="wow-panel-head">
-              <h3>이번 주 예정 세션</h3>
-              <button class="ghost-button" type="button" onclick="openWowSessionTab('calendar')">캘린더</button>
+              <h3>${upcomingWindowLabel}</h3>
+              <div class="wow-panel-actions">
+                <div class="wow-week-toggle" role="group" aria-label="예정 세션 기간">
+                  <button class="${wowUpcomingWeekOffset === 0 ? "active" : ""}" type="button" data-upcoming-week="0">이번주</button>
+                  <button class="${wowUpcomingWeekOffset === 1 ? "active" : ""}" type="button" data-upcoming-week="1">다음주</button>
+                </div>
+                <button class="ghost-button" type="button" onclick="openWowSessionTab('calendar')">캘린더</button>
+              </div>
             </div>
             ${
               upcoming.length
                 ? `<div class="wow-upcoming">${upcoming
                     .map((s) => {
                       const md = String(s.date || "").slice(5).replace("-", "/");
+                      const [year, month, day] = String(s.date || "").split("-").map(Number);
+                      const weekday = year && month && day ? ["일", "월", "화", "수", "목", "금", "토"][new Date(year, month - 1, day).getDay()] : "";
                       return `
                         <div class="wow-up-row">
-                          <span class="wow-up-date">${escapeHtml(md)}<em>${escapeHtml(s.startTime || "")}</em></span>
+                          <span class="wow-up-date">${escapeHtml(md)}<em>${escapeHtml(`${weekday}${s.startTime ? ` · ${s.startTime}` : ""}`)}</em></span>
                           <span class="wow-up-main"><b>${escapeHtml(s.name)}${s.kind === "lead" ? ` <span class="wow-up-tag">팀장</span>` : ""}</b><small>${escapeHtml(s.detail)}</small></span>
                           <span class="wow-up-cap">${s.cap}명</span>
                         </div>`;
                     })
                     .join("")}</div>`
-                : `<div class="wow-panel-empty"><b>이번 주 예정 세션이 없습니다.</b><span>캘린더에서 다음 세션을 등록하면 여기에 표시됩니다.</span></div>`
+                : `<div class="wow-panel-empty"><b>${upcomingWindowLabel}이 없습니다.</b><span>캘린더에서 다음 세션을 등록하면 여기에 표시됩니다.</span></div>`
             }
           </div>
+
+          <section class="wow-panel wow-dash-list">
+            <div class="wow-table-head">
+              <h3>완료 · 진행중 팀</h3>
+              <span class="wow-dash-count">${listed.length}팀</span>
+            </div>
+            ${
+              listed
+                .map((it) => {
+                  const { team, summary } = it;
+                  const done = summary.completionRate >= 100;
+                  const atRisk = it.reasons.length ? (it.reasons[0].sev >= 4 ? "risk" : "warn") : "";
+                  const sessions = summary.sessions
+                    .slice()
+                    .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+                  const sessionRows = sessions.length
+                    ? sessions
+                        .map((session) => {
+                          const cap = participantCountForTeam(session.teamId);
+                          const act = sessionActualParticipants(session);
+                          const rate = cap ? Math.round((act / cap) * 100) : 0;
+                          return `
+                            <div class="wow-dash-session ${isSessionDone(session) ? "done" : "planned"}">
+                              <span class="wds-name">${escapeHtml(session.sessionName || "WOW x BALANCE 세션")}</span>
+                              <span class="wds-date">${escapeHtml(session.date || "날짜 미정")}${session.startTime ? " " + escapeHtml(session.startTime) : ""}</span>
+                              <span class="wds-rate">${act}/${cap}명 · 참여 ${rate}%</span>
+                            </div>`;
+                        })
+                        .join("")
+                    : `<div class="wow-dash-session empty">등록된 세션이 없습니다.</div>`;
+                  return `
+                    <details class="wow-dash-team">
+                      <summary>
+                        <span class="wow-dash-team-name">
+                          <b>${atRisk ? `<span class="wow-risk-dot ${atRisk}" title="주의 필요"></span>` : ""}${escapeHtml(team.name)}</b>
+                          <small>${escapeHtml(getParentName(team))} · ${participantCountForTeam(team.id)}명 · 참여 ${summary.participationRate}%</small>
+                        </span>
+                        <span class="wow-dash-status ${done ? "done" : "ing"}">${done ? "완료" : "진행중"}</span>
+                        <span class="wow-dash-progress">
+                          <span class="wow-dash-bar"><i style="width:${summary.completionRate}%"></i></span>
+                          <b>${summary.completionRate}%</b>
+                        </span>
+                      </summary>
+                      <div class="wow-dash-sessions">${sessionRows}</div>
+                    </details>`;
+                })
+                .join("") ||
+              `<div class="program-empty">아직 수행을 시작한 팀이 없습니다. 캘린더에서 팀 세션 일정을 추가하세요.</div>`
+            }
+          </section>
 
           <div class="wow-panel">
             <div class="wow-panel-head">
@@ -4242,97 +4323,50 @@ function renderWowDashboardView() {
         }
       </section>
 
-      <section class="wow-insight-grid">
-        <div class="wow-panel">
+      <section class="wow-panel wow-panel-attention">
           <div class="wow-panel-head">
-            <h3>본부별 도달률</h3>
-            <span class="wow-panel-count">${divisionCoverage.length}개 조직</span>
+            <div>
+              <h3>지금 챙겨야 할 팀</h3>
+              <span class="wow-panel-count">${attention.length > attentionPreviewLimit && !wowAttentionExpanded ? `우선순위 ${visibleAttention.length}개만 표시` : `미조치 ${activeAttention.length} / 전체 ${attention.length}건`}</span>
+            </div>
+            ${
+              attention.length > attentionPreviewLimit
+                ? `<button class="ghost-button wow-att-toggle" type="button" data-toggle-attention-list>${wowAttentionExpanded ? "접기" : `전체 ${attention.length}개 보기`}</button>`
+                : ""
+            }
           </div>
           ${
-            divisionCoverage.length
-              ? `<div class="wow-funnel">${divisionCoverage
-                  .map((d) => {
-                    const tone = d.pct >= 80 ? "good" : d.pct >= 40 ? "mid" : "low";
+            attention.length
+              ? visibleAttention
+                  .map((it) => {
+                    const top = it.reasons[0];
+                    const fu = it.followup;
+                    const sevClass = fu.status === "done" ? "resolved" : top.sev >= 4 ? "urgent" : top.sev >= 3 ? "warn" : "info";
+                    const statusLabel = FOLLOWUP_STATUS[fu.status] || "조치 전";
+                    const due = fu.due || "";
+                    const overdue = due && fu.status !== "done" && due < today;
                     return `
-                      <div class="wow-funnel-row">
-                        <span class="wow-funnel-name">${escapeHtml(d.name)}</span>
-                        <span class="wow-funnel-bar"><i class="cov-${tone}" style="width:${d.pct}%"></i></span>
-                        <span class="wow-funnel-val">${d.operating}<em>/${d.total}</em></span>
+                      <div class="wow-att ${sevClass}">
+                        <div class="wow-att-top">
+                          <div class="wow-att-team"><b>${escapeHtml(it.team.name)}</b><small>${escapeHtml(getParentName(it.team))} · ${participantCountForTeam(it.team.id)}명 · 수행 ${it.summary.completionRate}%</small></div>
+                          <div class="wow-att-tags">${it.reasons.map((r) => `<span class="wow-att-tag s${r.sev}">${escapeHtml(r.tag)}</span>`).join("")}</div>
+                        </div>
+                        <div class="wow-att-reason">${escapeHtml(top.text)}</div>
+                        <div class="wow-att-action">→ ${escapeHtml(top.action)}</div>
+                        <div class="wow-att-loop">
+                          <button type="button" class="wow-att-status s-${fu.status}" data-followup-cycle="${escapeHtml(it.team.id)}" title="상태 전환: 조치 전 → 조치 중 → 완료">${escapeHtml(statusLabel)}</button>
+                          <input type="text" class="wow-att-owner" data-followup-owner="${escapeHtml(it.team.id)}" value="${escapeHtml(fu.owner)}" placeholder="담당자" aria-label="담당자">
+                          <input type="date" class="wow-att-due ${overdue ? "overdue" : ""}" data-followup-due="${escapeHtml(it.team.id)}" value="${escapeHtml(due)}" aria-label="마감일">
+                          <button type="button" class="wow-att-go" data-wow-att-go="${escapeHtml(it.team.id)}">열기</button>
+                        </div>
                       </div>`;
                   })
-                  .join("")}</div>
-                 <p class="wow-effect-note">상위 조직(본부/실) 기준, 소속 팀 중 프로그램을 운영 중인 비율입니다. 낮은 조직부터 챙기면 도달 형평성이 올라갑니다.</p>`
-              : `<div class="wow-panel-empty"><b>표시할 조직이 없습니다.</b></div>`
+                  .join("") +
+                (hiddenAttentionCount
+                  ? `<div class="wow-att-more"><b>${hiddenAttentionCount}개 팀은 접어두었습니다.</b><span>위험도와 진행률 기준으로 우선순위가 낮은 항목입니다.</span></div>`
+                  : "")
+              : `<div class="wow-panel-empty good"><b>모든 팀이 정상 운영 중입니다.</b><span>참여율·진행·신호 모두 기준 이내입니다. 다가오는 세션 준비에 집중하세요.</span></div>`
           }
-        </div>
-
-        <div class="wow-panel">
-          <div class="wow-panel-head">
-            <h3>미착수 팀</h3>
-            <span class="wow-panel-count">${notStartedTeams.length}팀</span>
-          </div>
-          ${
-            notStartedTeams.length
-              ? `<div class="wow-notstarted">${notStartedTeams
-                  .map((it) => `
-                    <div class="wow-ns-row">
-                      <span class="wow-ns-main"><b>${escapeHtml(it.team.name)}</b><small>${escapeHtml(getParentName(it.team))} · ${participantCountForTeam(it.team.id)}명</small></span>
-                      <button type="button" class="wow-ns-go" data-schedule-team="${escapeHtml(it.team.id)}">일정 잡기</button>
-                    </div>`)
-                  .join("")}</div>`
-              : `<div class="wow-panel-empty good"><b>모든 팀이 프로그램을 시작했습니다.</b><span>미착수 팀이 없습니다. 진행·참여 관리에 집중하세요.</span></div>`
-          }
-        </div>
-      </section>
-
-      <section class="wow-dash-list">
-        <div class="wow-table-head">
-          <h3>완료 · 진행중 팀</h3>
-          <span class="wow-dash-count">${listed.length}팀</span>
-        </div>
-        ${
-          listed
-            .map((it) => {
-              const { team, summary } = it;
-              const done = summary.completionRate >= 100;
-              const atRisk = it.reasons.length ? (it.reasons[0].sev >= 4 ? "risk" : "warn") : "";
-              const sessions = summary.sessions
-                .slice()
-                .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-              const sessionRows = sessions.length
-                ? sessions
-                    .map((session) => {
-                      const cap = participantCountForTeam(session.teamId);
-                      const act = sessionActualParticipants(session);
-                      const rate = cap ? Math.round((act / cap) * 100) : 0;
-                      return `
-                        <div class="wow-dash-session ${isSessionDone(session) ? "done" : "planned"}">
-                          <span class="wds-name">${escapeHtml(session.sessionName || "WOW x BALANCE 세션")}</span>
-                          <span class="wds-date">${escapeHtml(session.date || "날짜 미정")}${session.startTime ? " " + escapeHtml(session.startTime) : ""}</span>
-                          <span class="wds-rate">${act}/${cap}명 · 참여 ${rate}%</span>
-                        </div>`;
-                    })
-                    .join("")
-                : `<div class="wow-dash-session empty">등록된 세션이 없습니다.</div>`;
-              return `
-                <details class="wow-dash-team">
-                  <summary>
-                    <span class="wow-dash-team-name">
-                      <b>${atRisk ? `<span class="wow-risk-dot ${atRisk}" title="주의 필요"></span>` : ""}${escapeHtml(team.name)}</b>
-                      <small>${escapeHtml(getParentName(team))} · ${participantCountForTeam(team.id)}명 · 참여 ${summary.participationRate}%</small>
-                    </span>
-                    <span class="wow-dash-status ${done ? "done" : "ing"}">${done ? "완료" : "진행중"}</span>
-                    <span class="wow-dash-progress">
-                      <span class="wow-dash-bar"><i style="width:${summary.completionRate}%"></i></span>
-                      <b>${summary.completionRate}%</b>
-                    </span>
-                  </summary>
-                  <div class="wow-dash-sessions">${sessionRows}</div>
-                </details>`;
-            })
-            .join("") ||
-          `<div class="program-empty">아직 수행을 시작한 팀이 없습니다. 캘린더에서 팀 세션 일정을 추가하세요.</div>`
-        }
       </section>
     </div>
   `;
@@ -6448,6 +6482,13 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const upcomingWeekBtn = event.target.closest("[data-upcoming-week]");
+  if (upcomingWeekBtn) {
+    wowUpcomingWeekOffset = Number(upcomingWeekBtn.dataset.upcomingWeek) === 1 ? 1 : 0;
+    renderWowSessionWorkspace();
+    return;
+  }
+
   if (event.target.closest("[data-toggle-goal-edit]")) {
     wowGoalEditOpen = !wowGoalEditOpen;
     renderWowSessionWorkspace();
@@ -6695,6 +6736,26 @@ document.addEventListener("click", (event) => {
   }
 
   // "샘플 복원" 기능 제거됨: 시드로 리셋 후 클라우드까지 시드로 덮어써 데이터가 사라지는 사고를 막기 위해 삭제.
+});
+
+document.addEventListener("mouseover", (event) => {
+  const tip = event.target.closest?.(".metric-tip");
+  if (tip) tip.classList.add("is-open");
+});
+
+document.addEventListener("mouseout", (event) => {
+  const tip = event.target.closest?.(".metric-tip");
+  if (tip && !tip.contains(event.relatedTarget)) tip.classList.remove("is-open");
+});
+
+document.addEventListener("focusin", (event) => {
+  const tip = event.target.closest?.(".metric-tip");
+  if (tip) tip.classList.add("is-open");
+});
+
+document.addEventListener("focusout", (event) => {
+  const tip = event.target.closest?.(".metric-tip");
+  if (tip) tip.classList.remove("is-open");
 });
 
 document.addEventListener("input", (event) => {

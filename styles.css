@@ -1094,12 +1094,109 @@ input[type="checkbox"] {
 
 .bar-row {
   display: grid;
-  grid-template-columns: 74px 1fr 32px;
+  grid-template-columns: minmax(96px, 118px) 1fr 32px;
   align-items: center;
   gap: 7px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
+}
+
+.metric-tip {
+  position: relative;
+  z-index: 3;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
+  max-width: 100%;
+  color: inherit;
+  vertical-align: middle;
+  cursor: help;
+  outline: none;
+}
+
+.metric-tip-text {
+  display: inline;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric-tip i {
+  width: 14px;
+  height: 14px;
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(99, 102, 241, 0.34);
+  border-radius: 999px;
+  background: rgba(238, 242, 255, 0.92);
+  color: #4f46e5;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: none;
+}
+
+.metric-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 9px);
+  width: min(292px, 72vw);
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.94);
+  color: #fff;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.metric-tip::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  bottom: calc(100% + 4px);
+  border: 5px solid transparent;
+  border-top-color: rgba(15, 23, 42, 0.94);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+
+.metric-tip:hover::after,
+.metric-tip:focus::after,
+.metric-tip:focus-visible::after,
+.metric-tip.is-open::after,
+.metric-tip:hover::before,
+.metric-tip:focus::before,
+.metric-tip:focus-visible::before,
+.metric-tip.is-open::before {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.culture-index-row article:last-child .metric-tip::after {
+  right: 0;
+  left: auto;
+}
+
+.culture-index-row article:last-child .metric-tip::before {
+  right: 18px;
+  left: auto;
 }
 
 .bar-track {
@@ -2014,6 +2111,10 @@ input[type="checkbox"] {
 .wow-panel-head h3 { margin: 0; font-size: 15px; font-weight: 950; color: var(--ink-strong, #0b1020); }
 .wow-panel-count { color: var(--muted); font-size: 12px; font-weight: 900; }
 .wow-panel-head .ghost-button { padding: 6px 12px; font-size: 12px; }
+.wow-panel-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
+.wow-week-toggle { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid rgba(203, 213, 225, 0.86); border-radius: 12px; background: rgba(248, 250, 252, 0.9); }
+.wow-week-toggle button { height: 28px; padding: 0 9px; border: 0; border-radius: 9px; background: transparent; color: #64748b; font-size: 11.5px; font-weight: 950; cursor: pointer; white-space: nowrap; }
+.wow-week-toggle button.active { background: #fff; color: #4338ca; box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08); }
 .wow-panel-empty { display: grid; gap: 4px; padding: 18px; border-radius: 14px; background: rgba(248, 250, 252, 0.9); border: 1px dashed rgba(148, 163, 184, 0.45); }
 .wow-panel-empty b { font-size: 13.5px; color: var(--ink-strong, #0b1020); }
 .wow-panel-empty span { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
@@ -2065,7 +2166,7 @@ input[type="checkbox"] {
 
 /* 이번 주 예정 세션 */
 .wow-upcoming { display: grid; gap: 6px; }
-.wow-up-row { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 11px; border-radius: 11px; background: rgba(248, 250, 252, 0.85); }
+.wow-up-row { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 11px; border-radius: 11px; background: rgba(248, 250, 252, 0.85); }
 .wow-up-date { font-size: 13px; font-weight: 950; color: var(--violet, #5f6dee); display: grid; line-height: 1.15; }
 .wow-up-date em { font-style: normal; font-size: 10.5px; font-weight: 800; color: var(--muted); }
 .wow-up-main { min-width: 0; display: grid; gap: 1px; }
