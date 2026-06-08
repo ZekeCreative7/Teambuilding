@@ -798,7 +798,22 @@ async function connectOrganizationCloud(db, uid) {
   try {
     const snap = await ref.get();
     if (snap.exists && snap.data()?.state) {
-      state = normalizeOrganizationState(snap.data().state);
+      const cloudState = normalizeOrganizationState(snap.data().state);
+      // 낡은(또는 시드) 클라우드가 더 풍부한 로컬 데이터를 덮어써 작업물이 사라지는 것을 막는다.
+      // 로컬의 조직+인원+세션 수가 더 많으면, 클라우드를 불러오지 않고 로컬을 클라우드로 올린다.
+      const countOf = (s) => (s?.units?.length || 0) + (s?.people?.length || 0) + (s?.sessions?.length || 0);
+      if (countOf(state) > countOf(cloudState)) {
+        setOrganizationCloudStatus("로컬 데이터가 더 많아 클라우드로 업로드합니다");
+        organizationCloud.loading = false;
+        try {
+          await saveOrganizationCloudNow();
+        } catch (saveError) {
+          console.warn("Could not push richer local org data to cloud.", saveError);
+          setOrganizationCloudError("저장", saveError);
+        }
+        return;
+      }
+      state = cloudState;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       setOrganizationCloudStatus(`Firebase 불러옴 · ${formatOrgSyncTime(snap.data().updatedAt)}`);
       organizationCloud.suppressPersist = true;
@@ -5473,11 +5488,7 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  if (event.target.id === "resetDataButton") {
-    createOrganizationBackup("reset");
-    state = defaultOrganizationState();
-    render();
-  }
+  // "샘플 복원" 기능 제거됨: 시드로 리셋 후 클라우드까지 시드로 덮어써 데이터가 사라지는 사고를 막기 위해 삭제.
 });
 
 document.addEventListener("input", (event) => {
