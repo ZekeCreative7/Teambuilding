@@ -65,7 +65,7 @@ function crossSignalHTML(items,limit=4){
   return `<div class="crossSignalBoard">${list.map(x=>`<article class="crossSignalCard ${x.tone}"><div class="crossSignalHead"><span class="crossBadge">차이 ${Math.round(x.gap||0)}p</span></div><h5>${esc(x.title)}</h5><p>${esc(x.body)}</p><div class="crossEvidence">${esc(x.evidence)}</div><div class="crossPair"><div class="crossPairItem question"><b>확인 질문</b><span>${esc(x.ask)}</span></div><div class="crossPairItem action"><b>권장 액션</b><span>${esc(x.action)}</span></div></div></article>`).join('')}</div>`;
 }
 function tier(avgFav,hi90){if(hi90>=20)return'check';if(avgFav>=65)return'stable';if(avgFav>=55)return'watch';return'risk'}
-function showView(id,skipHash){$all('.view').forEach(v=>v.classList.toggle('active',v.id===id));$all('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(!skipHash&&location.hash!=='#'+id)history.replaceState(null,'','#'+id);window.scrollTo({top:0,behavior:'smooth'});if(id==='speech')buildSpeechPrompt();if(id==='home'&&typeof renderHome==='function'&&typeof currentDataset!=='undefined'&&currentDataset){try{renderHome();}catch(e){}}if(id==='people'&&typeof render==='function'){if(typeof state!=='undefined'){state.view='official';state.detailOpen=false;state.detailModal=null}render()}if(typeof closeMobileNav==='function')closeMobileNav()}
+function showView(id,skipHash){$all('.view').forEach(v=>v.classList.toggle('active',v.id===id));$all('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(!skipHash&&location.hash!=='#'+id)history.replaceState(null,'','#'+id);window.scrollTo({top:0,behavior:'smooth'});if(id==='speech')buildSpeechPrompt();if(id==='home'&&typeof renderHome==='function'&&typeof currentDataset!=='undefined'&&currentDataset){try{renderHome();}catch(e){}}if(id==='people'&&typeof render==='function'){if(typeof state!=='undefined'){state.view='official';state.detailOpen=false;state.detailModal=null}render()}if(id==='session'&&typeof renderWowSessionWorkspace==='function'){try{renderWowSessionWorkspace()}catch(e){}}if(typeof closeMobileNav==='function')closeMobileNav()}
 function goHome(){showView('home')}
 /* 사이드바 접기/펼치기 — 데스크톱은 아이콘 레일로 축소, 모바일은 오프캔버스 드로어 */
 function isMobileNav(){return window.matchMedia('(max-width:1180px)').matches}
@@ -160,15 +160,17 @@ function initFirebase(){
         enterCloudMode();
         setGateMode('checking');
         setAuthMsg('로그인 확인 중입니다. 승인 상태를 확인하고 있습니다.','info');
-        let approved=await isApprovedUser(user);
-        if(!approved)await registerPendingUser(user);
-        if(!approved){showPendingGate(user);return}
-        await loadLatestCloudDataset();
-        if(!currentDataset)await loadSeedData(true);
-        renderAll();
-        showInitialView();
+        let approved=false;
+        try{approved=await isApprovedUser(user);}catch(e){console.warn('승인 확인 실패',e);}
+        if(!approved){try{await registerPendingUser(user);}catch(e){}showPendingGate(user);return}
+        // 승인된 사용자: 데이터 로드나 렌더가 실패해도 앱 화면은 반드시 띄운다.
+        // (예전엔 renderAll이 예외를 던지면 showPlatform까지 못 가서 "로그인 중"에 영구히 갇혔음)
+        try{await loadLatestCloudDataset();}catch(e){console.warn('클라우드 데이터셋 로드 실패',e);}
+        try{if(!currentDataset)await loadSeedData(true);}catch(e){console.warn('시드 데이터 로드 실패',e);}
+        try{renderAll();}catch(e){console.error('초기 렌더 실패(앱은 계속 진행):',e);}
+        try{showInitialView();}catch(e){console.warn('초기 화면 표시 실패',e);}
         showPlatform(user);
-        if(typeof connectOrganizationCloud==='function') connectOrganizationCloud(fbDb,uid);
+        try{if(typeof connectOrganizationCloud==='function') connectOrganizationCloud(fbDb,uid);}catch(e){console.warn('조직 동기화 연결 실패',e);}
         setAccountStatus('Firebase 연결됨');
       }else{
         uid=null;
@@ -395,7 +397,25 @@ function buildPulseByOrg(){
   window.LINA_PULSE_BY_ORG=map;
   return map;
 }
-function renderAll(){buildPulseByOrg();renderHome();fillSelects();renderPulse();renderDivisionDetail();renderPrompt();renderSessionContext();renderSpeechContext();loadSavedAnalysis();renderComms();renderDatasetCatalog();if(typeof render==='function'){try{render()}catch(e){}}}
+function renderAll(){
+  // 각 렌더를 독립적으로 보호한다: 한 화면(예: 홈 대시보드)이 데이터 문제로 죽어도
+  // 나머지(조직도/펄스 등)는 정상 렌더되고, 무엇보다 renderAll이 예외를 위로 던지지 않아
+  // 로그인 직후 "로그인 중"에 갇히지 않는다.
+  const safe=(fn,name)=>{try{if(typeof fn==='function')fn();}catch(e){console.warn('렌더 실패: '+name,e);}};
+  safe(buildPulseByOrg,'buildPulseByOrg');
+  safe(renderHome,'renderHome');
+  safe(fillSelects,'fillSelects');
+  safe(renderPulse,'renderPulse');
+  safe(renderDivisionDetail,'renderDivisionDetail');
+  safe(renderPrompt,'renderPrompt');
+  safe(renderSessionContext,'renderSessionContext');
+  safe(renderSpeechContext,'renderSpeechContext');
+  safe(loadSavedAnalysis,'loadSavedAnalysis');
+  safe(renderComms,'renderComms');
+  safe(renderDatasetCatalog,'renderDatasetCatalog');
+  safe(typeof render==='function'?render:null,'render');
+  safe(typeof renderWowSessionWorkspace==='function'?renderWowSessionWorkspace:null,'renderWowSessionWorkspace');
+}
 function homeInsight(title,value,body,tone=''){
   return`<div class="insightItem ${tone}"><b>${esc(title)}</b><strong>${esc(value)}</strong><span>${esc(body)}</span></div>`;
 }

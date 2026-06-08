@@ -496,6 +496,7 @@ function defaultOrganizationState() {
     sessions: clone(seedSessions),
     wowQuantRows: [],
     wowTextRows: [],
+    wowInterimRows: [],
     sessionAnalysisResults: {},
     selectedUnitId: getDefaultSelectedUnitId(),
     view: "official",
@@ -576,6 +577,7 @@ function normalizeOrganizationState(parsed = {}) {
     sessions: Array.isArray(parsed.sessions) ? parsed.sessions : base.sessions,
     wowQuantRows: Array.isArray(parsed.wowQuantRows) ? parsed.wowQuantRows : base.wowQuantRows,
     wowTextRows: Array.isArray(parsed.wowTextRows) ? parsed.wowTextRows : base.wowTextRows,
+    wowInterimRows: Array.isArray(parsed.wowInterimRows) ? parsed.wowInterimRows : base.wowInterimRows,
     sessionAnalysisResults: parsed.sessionAnalysisResults && typeof parsed.sessionAnalysisResults === "object" ? parsed.sessionAnalysisResults : base.sessionAnalysisResults,
     selectedUnitId: unitIds.has(parsed.selectedUnitId) ? parsed.selectedUnitId : rootId,
     view: "official",
@@ -624,6 +626,7 @@ function organizationSnapshot() {
     sessions: state.sessions,
     wowQuantRows: state.wowQuantRows || [],
     wowTextRows: state.wowTextRows || [],
+    wowInterimRows: state.wowInterimRows || [],
     sessionAnalysisResults: state.sessionAnalysisResults || {},
     selectedUnitId: state.selectedUnitId,
     view: "official",
@@ -2238,6 +2241,16 @@ function recommendationFromCultureSignal(signal, fallback) {
   return fallback || "안정 구간입니다. 현재 신뢰 자산을 유지하면서 앰버서더와 성공 사례를 확산하세요.";
 }
 
+// 분포 캘리브레이션: 긍정 응답(수용·신뢰)이 과대평가되는 경향을 보정해 낮추고, 피로는 상향한다.
+// (요청: 변화수용도가 관대 → 대부분 2·3분면으로, 피로도 ↑, 신뢰도 함께 보정. 값만 보정하고 맵 공식은 유지.)
+const CULTURE_CALIBRATION = { positiveDrop: 24, fatigueLift: 12 };
+function calibratePositive(score) {
+  return score == null ? score : clamp(Math.round(Number(score) - CULTURE_CALIBRATION.positiveDrop), 0, 100);
+}
+function calibrateFatigue(score) {
+  return score == null ? score : clamp(Math.round(Number(score) + CULTURE_CALIBRATION.fatigueLift), 0, 100);
+}
+
 function signalFromPulse(unit, context = pulseContextForUnit(unit)) {
   const pulse = context?.pulse;
   if (!pulse) return null;
@@ -2247,9 +2260,9 @@ function signalFromPulse(unit, context = pulseContextForUnit(unit)) {
   const trustMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.trust);
   const fatigueMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.fatigue, true);
   const riskMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.risk, true);
-  const changeAcceptance = changeMetric.value ?? clamp(Math.round(pulse.fav - 0.68 * (pulse.low || 0)), 0, 100);
-  const trust = trustMetric.value ?? clamp(Math.round(pulse.fav * 0.72 + Math.max(0, 100 - pulse.low) * 0.28), 0, 100);
-  const fatigue = fatigueMetric.value ?? clamp(Math.round(pulse.low * 1.18 + (pulse.tier === "risk" ? 15 : pulse.tier === "watch" ? 8 : 0)), 0, 100);
+  const changeAcceptance = calibratePositive(changeMetric.value ?? clamp(Math.round(pulse.fav - 0.68 * (pulse.low || 0)), 0, 100));
+  const trust = calibratePositive(trustMetric.value ?? clamp(Math.round(pulse.fav * 0.72 + Math.max(0, 100 - pulse.low) * 0.28), 0, 100));
+  const fatigue = calibrateFatigue(fatigueMetric.value ?? clamp(Math.round(pulse.low * 1.18 + (pulse.tier === "risk" ? 15 : pulse.tier === "watch" ? 8 : 0)), 0, 100));
   const riskScore = riskMetric.value ?? (pulse.tier === "risk" ? 72 : pulse.tier === "watch" || pulse.reliab ? 52 : 28);
   const risk = riskLevelFromScore(riskScore);
   const coords = cultureMapCoordinates({ changeAcceptance, trust, fatigue, riskScore, risk });
@@ -2292,10 +2305,10 @@ function signalFromPulse(unit, context = pulseContextForUnit(unit)) {
 
 function manualSignalForUnit(unit) {
   const fallback = {
-    readiness: unit.readiness,
-    changeAcceptance: unit.readiness,
-    trust: unit.trust,
-    fatigue: unit.fatigue,
+    readiness: calibratePositive(unit.readiness),
+    changeAcceptance: calibratePositive(unit.readiness),
+    trust: calibratePositive(unit.trust),
+    fatigue: calibrateFatigue(unit.fatigue),
     risk: unit.risk,
     riskScore: unit.risk === "high" ? 72 : unit.risk === "medium" ? 52 : 28,
     tags: unit.tags || [],
@@ -2778,6 +2791,55 @@ function drawOrgConnections() {
   `;
 }
 
+function cultureIndex(signal) {
+  // 전체 문화 인덱스: 수용·신뢰(긍정)와 낮은 피로·낮은 리스크를 종합한 건강도 (0-100, 높을수록 건강)
+  return clamp(Math.round(0.3 * signal.changeAcceptance + 0.3 * signal.trust + 0.2 * (100 - signal.fatigue) + 0.2 * (100 - signal.riskScore)), 0, 100);
+}
+
+// x=높을수록 좋음(수용/신뢰), y=높을수록 주의(피로/리스크)
+function mapQuadrantTone(xVal, yVal) {
+  if (xVal < 50 && yVal >= 50) return "risk";
+  if (xVal >= 50 && yVal >= 50) return "support";
+  if (xVal >= 50 && yVal < 50) return "stable";
+  return "watch";
+}
+
+function renderMapNode(unit, signal, xVal, yVal, index, meta) {
+  const jx = ((index % 3) - 1) * 2.2;
+  const jy = ((Math.floor(index / 3) % 3) - 1) * 2.0;
+  const left = clamp(xVal + jx, 6, 94);
+  const top = clamp(100 - yVal + jy, 6, 94);
+  const tone = mapQuadrantTone(xVal, yVal);
+  const selected = unit.id === state.selectedUnitId ? "selected" : "";
+  return `
+    <article class="network-node ${tone} ${selected}" style="--x:${left}%; --y:${top}%">
+      <button type="button" data-open-detail="${escapeHtml(unit.id)}" aria-label="${escapeHtml(unit.name)} 상세 정보 열기">
+        <span class="network-dot"></span>
+        <strong>${escapeHtml(unit.name)}</strong>
+        <small>${escapeHtml(meta.xLabel)} ${xVal} · ${escapeHtml(meta.yLabel)} ${yVal}</small>
+      </button>
+    </article>
+  `;
+}
+
+function renderCultureMapPanel(sigs, meta) {
+  return `
+    <div class="culture-map-panel">
+      <div class="cmp-head"><h4>${escapeHtml(meta.title)}</h4><span>${escapeHtml(meta.sub)}</span></div>
+      <div class="quad-legend mini" aria-label="사분면 안내">
+        ${meta.legend.map((l) => `<span class="ql ql-${l.tone}"><i></i>${escapeHtml(l.label)}</span>`).join("")}
+      </div>
+      <div class="network-canvas quad-tinted">
+        <div class="axis-line horizontal"></div>
+        <div class="axis-line vertical"></div>
+        <span class="axis-label axis-x">${escapeHtml(meta.xLabel)} →</span>
+        <span class="axis-label axis-y">↑ ${escapeHtml(meta.yLabel)}</span>
+        ${sigs.length ? sigs.map((s, i) => renderMapNode(s.unit, s.signal, s.signal[meta.xKey], s.signal[meta.yKey], i, meta)).join("") : `<div class="empty-state"><strong>표시할 조직이 없습니다</strong><span>검색이나 필터를 조정해보세요.</span></div>`}
+      </div>
+    </div>
+  `;
+}
+
 function renderNetworkView() {
   const levels = [
     { id: "company", label: "전사" },
@@ -2786,62 +2848,40 @@ function renderNetworkView() {
     { id: "team", label: "팀" },
   ];
   const units = getVisibleUnits().filter((unit) => unit.level === state.networkLevel);
-  const average = units.length
-    ? {
-        readiness: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).changeAcceptance, 0) / units.length),
-        trust: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).trust, 0) / units.length),
-        fatigue: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).fatigue, 0) / units.length),
-        risk: Math.round(units.reduce((sum, unit) => sum + signalForUnit(unit).riskScore, 0) / units.length),
-      }
-    : { readiness: 0, trust: 0, fatigue: 0, risk: 0 };
-  const supportCount = units.filter((unit) => signalForUnit(unit).supportNeeded).length;
-
+  const sigs = units.map((unit) => ({ unit, signal: signalForUnit(unit) }));
+  const avg = (key) => (sigs.length ? Math.round(sigs.reduce((sum, s) => sum + (Number(s.signal[key]) || 0), 0) / sigs.length) : 0);
+  const indexScore = sigs.length ? Math.round(sigs.reduce((sum, s) => sum + cultureIndex(s.signal), 0) / sigs.length) : 0;
+  const supportCount = sigs.filter((s) => s.signal.supportNeeded).length;
+  const mapA = { title: "변화 동력", sub: "수용도 × 피로도", xKey: "changeAcceptance", yKey: "fatigue", xLabel: "변화 수용도", yLabel: "피로도", legend: [{ tone: "stable", label: "주도·안정" }, { tone: "support", label: "의욕·소진위험" }, { tone: "risk", label: "저항·소진" }, { tone: "watch", label: "관망·정체" }] };
+  const mapB = { title: "관계 건강", sub: "신뢰도 × 리스크", xKey: "trust", yKey: "riskScore", xLabel: "신뢰도", yLabel: "문화 리스크", legend: [{ tone: "stable", label: "건강" }, { tone: "support", label: "신뢰有·리스크" }, { tone: "risk", label: "위험" }, { tone: "watch", label: "관망" }] };
   document.getElementById("viewRoot").innerHTML = `
     <div class="panel-header">
       <div>
         <p class="eyebrow">Culture Propagation Map</p>
         <h3>조직문화 확산 맵</h3>
-	        <p>Pulse Base를 유지하고, 팀 단위 WOW x BALANCE 정량·주관식 신호를 보정값으로 반영해 분포를 읽습니다.</p>
+        <p>수용도×피로도, 신뢰도×리스크 두 지도로 나눠 봅니다. 합산이 아닌 원지표라 위치 해석이 명확합니다.</p>
       </div>
       <div class="panel-actions">
         <div class="segmented compact" aria-label="문화지도 레벨">
-          ${levels
-            .map((level) => `<button class="segment ${state.networkLevel === level.id ? "active" : ""}" data-network-level="${level.id}" type="button">${level.label}</button>`)
-            .join("")}
+          ${levels.map((level) => `<button class="segment ${state.networkLevel === level.id ? "active" : ""}" data-network-level="${level.id}" type="button">${level.label}</button>`).join("")}
         </div>
         <span class="status-pill">${units.length}개 표시</span>
       </div>
     </div>
-    <div class="network-summary">
-      <article>
-        <span>평균 변화 수용도</span>
-        <strong>${average.readiness}%</strong>
+    <div class="culture-index-row">
+      <article class="culture-index-card">
+        <span>전체 문화 인덱스</span>
+        <strong>${indexScore}</strong>
+        <em>수용·신뢰 + 낮은 피로·리스크 종합 (100=건강)</em>
       </article>
-      <article>
-        <span>평균 신뢰도</span>
-        <strong>${average.trust}%</strong>
-      </article>
-      <article>
-        <span>평균 피로도 / 지원 필요</span>
-        <strong>${average.fatigue}%</strong>
-      </article>
-      <article>
-        <span>문화 리스크 / 지원 조직</span>
-        <strong>${average.risk}% · ${supportCount}</strong>
-      </article>
+      <article><span>평균 변화 수용도</span><strong>${avg("changeAcceptance")}%</strong></article>
+      <article><span>평균 신뢰도</span><strong>${avg("trust")}%</strong></article>
+      <article><span>평균 피로도</span><strong>${avg("fatigue")}%</strong></article>
+      <article><span>평균 리스크 / 지원</span><strong>${avg("riskScore")}% · ${supportCount}</strong></article>
     </div>
-    <div class="quad-legend" aria-label="사분면 안내">
-      <span class="ql ql-risk"><i></i>좌상 위험</span>
-      <span class="ql ql-watch"><i></i>우상 피로도/지원 필요</span>
-      <span class="ql ql-calm"><i></i>좌하 관망</span>
-      <span class="ql ql-stable"><i></i>우하 안정</span>
-    </div>
-    <div class="network-canvas quad-tinted">
-      <div class="axis-line horizontal"></div>
-      <div class="axis-line vertical"></div>
-      <span class="axis-label axis-x">X: 변화 수용도 + 신뢰도 − 리스크 →</span>
-      <span class="axis-label axis-y">↑ 피로도 / 지원 필요</span>
-      ${units.length ? units.map(renderNetworkNode).join("") : `<div class="empty-state"><strong>표시할 조직이 없습니다</strong><span>검색이나 필터를 조정해보세요.</span></div>`}
+    <div class="culture-map-pair">
+      ${renderCultureMapPanel(sigs, mapA)}
+      ${renderCultureMapPanel(sigs, mapB)}
     </div>
   `;
 }
@@ -3458,65 +3498,72 @@ function copySessionAnalysisPrompt() {
 
 function renderWowDashboardView() {
   const teams = sessionTeamUnits();
-  const summaries = teams.map((team) => ({ team, summary: teamProgramSummary(team), signal: signalForUnit(team) }));
-  const avgCompletion = summaries.length ? Math.round(summaries.reduce((sum, item) => sum + item.summary.completionRate, 0) / summaries.length) : 0;
-  const avgParticipation = summaries.length ? Math.round(summaries.reduce((sum, item) => sum + item.summary.participationRate, 0) / summaries.length) : 0;
-  const selectedTeamId = getUnit(state.selectedSessionAnalysisTeamId)?.id || teams[0]?.id || "";
-  state.selectedSessionAnalysisTeamId = selectedTeamId;
-  const selectedTeam = getUnit(selectedTeamId);
-  const prompt = selectedTeam ? buildTeamSessionAnalysisPrompt(selectedTeam.id) : "";
-  const saved = selectedTeam ? sessionAnalysisForUnit(selectedTeam) : null;
+  const summaries = teams.map((team) => ({ team, summary: teamProgramSummary(team) }));
+  const started = summaries.filter((item) => item.summary.doneSteps > 0);
+  const completed = started.filter((item) => item.summary.completionRate >= 100);
+  const inProgress = started.filter((item) => item.summary.completionRate < 100);
+  const avgParticipation = started.length
+    ? Math.round(started.reduce((sum, item) => sum + item.summary.participationRate, 0) / started.length)
+    : 0;
+  // 완료 → 진행률 높은 순으로 정렬해 나열
+  const listed = started
+    .slice()
+    .sort((a, b) => b.summary.completionRate - a.summary.completionRate);
   return `
     <div class="wow-dashboard">
       <section class="wow-kpi-row">
-        <article><span>운영 팀</span><strong>${teams.length}</strong><em>조직도 팀 기준</em></article>
-        <article><span>평균 수행률</span><strong>${avgCompletion}%</strong><em>11개 프로그램 기준</em></article>
-        <article><span>평균 참여율</span><strong>${avgParticipation}%</strong><em>불참자 반영</em></article>
-        <article><span>설문 응답</span><strong>${(state.wowQuantRows || []).length}/${(state.wowTextRows || []).length}</strong><em>정량 / 주관식</em></article>
+        <article><span>총 운영 팀</span><strong>${teams.length}</strong><em>조직도 팀 기준</em></article>
+        <article><span>수행 완료</span><strong>${completed.length}</strong><em>전 단계 완료</em></article>
+        <article><span>진행 중</span><strong>${inProgress.length}</strong><em>일부 단계 진행</em></article>
+        <article><span>평균 참여율</span><strong>${avgParticipation}%</strong><em>불참자 반영 · 수행 팀 기준</em></article>
       </section>
 
-      <section class="wow-dashboard-grid">
-        <div class="wow-dashboard-table">
-          <div class="wow-table-head">
-            <h3>팀별 수행 대시보드</h3>
-            <button class="ghost-button" type="button" data-session-survey-upload>세션 설문 업로드</button>
-          </div>
-          ${summaries
-            .map(({ team, summary, signal }) => `
-              <article class="wow-dashboard-row">
-                <div>
-                  <strong>${escapeHtml(team.name)}</strong>
-                  <span>${escapeHtml(getParentName(team))} · ${participantCountForTeam(team.id)}명</span>
-                  ${renderSessionAnalysisStatus(team)}
-                </div>
-                <b>${summary.completionRate}% 수행</b>
-                <b>${summary.participationRate}% 참여</b>
-                <b>${signal.changeAcceptance}% 수용</b>
-              </article>
-            `)
-            .join("") || `<div class="program-empty">표시할 팀이 없습니다.</div>`}
+      <section class="wow-dash-list">
+        <div class="wow-table-head">
+          <h3>완료 · 진행중 팀</h3>
+          <span class="wow-dash-count">${listed.length}팀</span>
         </div>
-
-        <aside class="analysis-workbench">
-          <div class="wow-table-head">
-            <h3>GPT 분석 연결</h3>
-            <button class="ghost-button" type="button" data-refresh-session-prompt>프롬프트 갱신</button>
-          </div>
-          <label>분석 대상 팀
-            <select id="sessionAnalysisTeamSelect">
-              ${teams.map((team) => `<option value="${escapeHtml(team.id)}" ${team.id === selectedTeamId ? "selected" : ""}>${escapeHtml(team.name)}</option>`).join("")}
-            </select>
-          </label>
-          <label>분석 프롬프트
-            <textarea id="sessionAnalysisPrompt" readonly rows="12">${escapeHtml(prompt)}</textarea>
-          </label>
-          <button class="primary-button wide" type="button" data-copy-session-prompt>프롬프트 복사</button>
-          <label>GPT 분석 결과 붙여넣기
-            <textarea id="sessionAnalysisResultInput" rows="9" placeholder='{"summary":"...","fatigueTextRisk":40,"trustTextRisk":35,...}'>${escapeHtml(saved?.rawText || "")}</textarea>
-          </label>
-          <button class="primary-button wide" type="button" data-save-session-analysis>분석 결과 저장 · 팀 신호 반영</button>
-          ${saved ? `<div class="analysis-saved-note"><strong>${escapeHtml(saved.summary || "저장된 분석")}</strong><span>${(saved.keywords || []).map(escapeHtml).join(" · ")}</span></div>` : ""}
-        </aside>
+        ${
+          listed
+            .map(({ team, summary }) => {
+              const done = summary.completionRate >= 100;
+              const sessions = summary.sessions
+                .slice()
+                .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+              const sessionRows = sessions.length
+                ? sessions
+                    .map((session) => {
+                      const cap = participantCountForTeam(session.teamId);
+                      const act = sessionActualParticipants(session);
+                      const rate = cap ? Math.round((act / cap) * 100) : 0;
+                      return `
+                        <div class="wow-dash-session ${isSessionDone(session) ? "done" : "planned"}">
+                          <span class="wds-name">${escapeHtml(session.sessionName || "WOW x BALANCE 세션")}</span>
+                          <span class="wds-date">${escapeHtml(session.date || "날짜 미정")}${session.startTime ? " " + escapeHtml(session.startTime) : ""}</span>
+                          <span class="wds-rate">${act}/${cap}명 · 참여 ${rate}%</span>
+                        </div>`;
+                    })
+                    .join("")
+                : `<div class="wow-dash-session empty">등록된 세션이 없습니다.</div>`;
+              return `
+                <details class="wow-dash-team">
+                  <summary>
+                    <span class="wow-dash-team-name">
+                      <b>${escapeHtml(team.name)}</b>
+                      <small>${escapeHtml(getParentName(team))} · ${participantCountForTeam(team.id)}명 · 참여 ${summary.participationRate}%</small>
+                    </span>
+                    <span class="wow-dash-status ${done ? "done" : "ing"}">${done ? "완료" : "진행중"}</span>
+                    <span class="wow-dash-progress">
+                      <span class="wow-dash-bar"><i style="width:${summary.completionRate}%"></i></span>
+                      <b>${summary.completionRate}%</b>
+                    </span>
+                  </summary>
+                  <div class="wow-dash-sessions">${sessionRows}</div>
+                </details>`;
+            })
+            .join("") ||
+          `<div class="program-empty">아직 수행을 시작한 팀이 없습니다. 캘린더에서 팀 세션 일정을 추가하세요.</div>`
+        }
       </section>
     </div>
   `;
@@ -3525,7 +3572,7 @@ function renderWowDashboardView() {
 function renderWowSessionWorkspace() {
   const root = document.getElementById("wowSessionRoot");
   if (!root) return;
-  if (!["execution", "calendar", "dashboard"].includes(state.sessionView)) state.sessionView = "execution";
+  if (!["execution", "calendar", "dashboard"].includes(state.sessionView)) state.sessionView = "dashboard";
   const teams = sessionTeamUnits();
   const sessions = state.sessions || [];
   root.innerHTML = `
@@ -3537,9 +3584,9 @@ function renderWowSessionWorkspace() {
           <p class="sub">팀별 프로그램 수행, 일정, 참여율, 설문 분석을 한 곳에서 운영합니다.</p>
         </div>
         <div class="wow-session-tabs" role="tablist" aria-label="WOW x BALANCE 운영 보기">
-          <button class="${state.sessionView === "execution" ? "active" : ""}" type="button" data-wow-session-tab="execution">팀별 프로그램 수행</button>
+          <button class="${state.sessionView === "dashboard" ? "active" : ""}" type="button" data-wow-session-tab="dashboard">대시보드</button>
           <button class="${state.sessionView === "calendar" ? "active" : ""}" type="button" data-wow-session-tab="calendar">캘린더</button>
-          <button class="${state.sessionView === "dashboard" ? "active" : ""}" type="button" data-wow-session-tab="dashboard">수행 대시보드</button>
+          <button class="${state.sessionView === "execution" ? "active" : ""}" type="button" data-wow-session-tab="execution">팀별수행</button>
         </div>
       </div>
       <div class="wow-session-summary">
