@@ -3280,8 +3280,9 @@ function isSessionDone(session) {
 
 function teamProgramSummary(team) {
   const sessions = teamSessions(team.id);
-  const totalSteps = Object.keys(WOW_TRACKS).reduce((sum, track) => sum + trackSteps(track).length, 0);
-  const doneSteps = Object.keys(WOW_TRACKS).reduce((sum, track) => sum + teamTrackDoneSteps(team.id, track).size, 0);
+  // 수행률은 팀 세션(team 트랙) 단계만으로 계산한다. 팀장 세션(lead 트랙)은 완료율에서 제외(별도 관리).
+  const totalSteps = trackSteps("team").length;
+  const doneSteps = teamTrackDoneSteps(team.id, "team").size;
   const scheduledSteps = new Set(sessions.filter((session) => session.track && session.step).map((session) => `${session.track}:${session.step}`)).size;
   const completionRate = totalSteps ? Math.round((doneSteps / totalSteps) * 100) : 0;
   const participationRate = sessions.length
@@ -3326,18 +3327,20 @@ function renderAbsentSelect(session) {
     return `<p class="program-muted">조직도에 등록된 팀원이 없어 결석자를 선택할 수 없습니다.</p>`;
   }
   return `
-    <label class="absent-select">
-      <span>빠진 사람</span>
-      <select multiple data-session-absentees="${escapeHtml(session.id)}" size="${Math.min(5, Math.max(2, people.length))}">
+    <div class="absent-picker" data-session-absentees="${escapeHtml(session.id)}">
+      <div class="absent-picker-head">
+        <span>빠진 사람 (탭하여 복수 선택)</span>
+        <strong>불참 ${selected.size} / ${people.length}명</strong>
+      </div>
+      <div class="absent-chips">
         ${people
           .map((person) => `
-            <option value="${escapeHtml(person.id)}" ${selected.has(person.id) ? "selected" : ""}>
-              ${escapeHtml(person.name)} · ${escapeHtml(leaderTitleLabel(person.title))}${person.isSyntheticLeader ? " · 조직장" : ""}
-            </option>
-          `)
+            <button type="button" class="absent-chip ${selected.has(person.id) ? "on" : ""}" data-absent-toggle="${escapeHtml(person.id)}" aria-pressed="${selected.has(person.id) ? "true" : "false"}" title="${escapeHtml(person.name)}${person.isSyntheticLeader ? " · 조직장" : ""}">
+              <span class="absent-chip-mark" aria-hidden="true"></span>${escapeHtml(person.name)}
+            </button>`)
           .join("")}
-      </select>
-    </label>
+      </div>
+    </div>
   `;
 }
 
@@ -5375,6 +5378,23 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const absentToggle = event.target.closest("[data-absent-toggle]");
+  if (absentToggle) {
+    const container = absentToggle.closest("[data-session-absentees]");
+    const session = (state.sessions || []).find((s) => s.id === container?.dataset.sessionAbsentees);
+    if (session) {
+      const pid = absentToggle.dataset.absentToggle;
+      const set = new Set(sessionAbsentIds(session));
+      if (set.has(pid)) set.delete(pid);
+      else set.add(pid);
+      session.absentPersonIds = Array.from(set);
+      session.participants = sessionActualParticipants(session);
+      persist();
+      renderWowSessionWorkspace();
+    }
+    return;
+  }
+
   const filterInput = event.target.closest("[data-filter]");
   if (filterInput) {
     state.filters[filterInput.dataset.filter] = filterInput.checked;
@@ -5612,17 +5632,6 @@ document.addEventListener("change", (event) => {
     state.selectedSessionAnalysisTeamId = event.target.value;
     renderWowSessionWorkspace();
     persist();
-    return;
-  }
-
-  const absentSelect = event.target.closest("[data-session-absentees]");
-  if (absentSelect) {
-    const session = (state.sessions || []).find((item) => item.id === absentSelect.dataset.sessionAbsentees);
-    if (session) {
-      session.absentPersonIds = Array.from(absentSelect.selectedOptions || []).map((option) => option.value);
-      session.participants = sessionActualParticipants(session);
-      render();
-    }
     return;
   }
 
