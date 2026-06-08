@@ -2614,6 +2614,12 @@ input[type="checkbox"] {
   .control-surface { grid-template-columns: 1fr; align-items: stretch; }
   .topbar { flex-wrap: wrap; }
   .panel-header { flex-wrap: wrap; }
+  /* 안전망: 좁은 폭(가로↔세로 회전·개발자도구)에서 어떤 요소가 넘쳐도 가로 스크롤로
+     전체 레이아웃이 밀려 깨지지 않게 막는다. 모바일에선 사이드바가 fixed라 sticky 충돌 없음,
+     조직도 캔버스(.org-canvas)는 자체 overflow:auto 스크롤을 그대로 유지한다. */
+  html, body { overflow-x: hidden; }
+  .app-shell { overflow-x: clip; max-width: 100%; }
+  .workspace, .view, .main-panel, #viewRoot { min-width: 0; max-width: 100%; }
 }
 
 /* ====================================================================
