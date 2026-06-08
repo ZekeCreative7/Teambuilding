@@ -1942,6 +1942,199 @@ input[type="checkbox"] {
   .wow-dash-session .wds-rate { grid-column: 2; }
 }
 
+/* WOW 운영 — 대시보드 v2: 인사이트 중심 현황판 (히어로 / KPI / 주의 팀 / 예정 / 퍼널 / 효과) */
+.wow-hero {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+  padding: 22px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(95, 109, 238, 0.16), transparent 42%),
+    radial-gradient(circle at 100% 120%, rgba(24, 182, 170, 0.16), transparent 46%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(244, 247, 253, 0.92));
+  box-shadow: var(--shadow);
+}
+.wow-hero-ring { display: grid; place-items: center; }
+.wow-donut { width: 156px; height: 156px; }
+.wow-donut-track { fill: none; stroke: rgba(148, 163, 184, 0.22); stroke-width: 13; }
+.wow-donut-fill { fill: none; stroke-width: 13; stroke-linecap: round; stroke: #5f6dee; transition: stroke-dasharray 0.5s ease; }
+.wow-donut.good .wow-donut-fill { stroke: #10b981; }
+.wow-donut.mid .wow-donut-fill { stroke: #5f6dee; }
+.wow-donut.low .wow-donut-fill { stroke: #fb7185; }
+.wow-donut-num { fill: var(--ink-strong, #0b1020); font-size: 34px; font-weight: 950; text-anchor: middle; }
+.wow-donut-pct { font-size: 16px; font-weight: 900; fill: var(--muted); }
+.wow-donut-cap { fill: var(--muted); font-size: 11px; font-weight: 800; text-anchor: middle; }
+.wow-hero-body { min-width: 0; display: grid; gap: 10px; }
+.wow-hero-narrative { margin: 0; font-size: 16px; line-height: 1.6; color: #1f2937; font-weight: 650; }
+.wow-hero-narrative b { color: var(--ink-strong, #0b1020); font-weight: 950; }
+.warnInk { color: #e11d48; }
+.wow-hero-pills { display: flex; flex-wrap: wrap; gap: 7px; }
+.wow-pill { padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 950; border: 1px solid transparent; }
+.wow-pill.done { background: rgba(16, 185, 129, 0.14); color: #0f766e; border-color: rgba(16, 185, 129, 0.28); }
+.wow-pill.ing { background: rgba(95, 109, 238, 0.14); color: #4338ca; border-color: rgba(95, 109, 238, 0.28); }
+.wow-pill.wait { background: rgba(148, 163, 184, 0.16); color: #475569; border-color: rgba(148, 163, 184, 0.32); }
+.wow-pill.cover { background: rgba(24, 182, 170, 0.14); color: #0e7490; border-color: rgba(24, 182, 170, 0.28); }
+.wow-alert { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 13px; font-size: 13px; font-weight: 900; width: fit-content; max-width: 100%; }
+.wow-alert i { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.wow-alert.urgent { background: rgba(244, 63, 94, 0.1); color: #be123c; border: 1px solid rgba(244, 63, 94, 0.3); }
+.wow-alert.urgent i { background: #f43f5e; box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.18); animation: wowPulse 1.8s ease-in-out infinite; }
+.wow-alert.calm { background: rgba(16, 185, 129, 0.1); color: #0f766e; border: 1px solid rgba(16, 185, 129, 0.28); }
+.wow-alert.calm i { background: #10b981; }
+@keyframes wowPulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.18); } 50% { box-shadow: 0 0 0 7px rgba(244, 63, 94, 0.05); } }
+
+/* KPI 카드 — 톤별 색상 액센트 */
+.wow-kpi { position: relative; overflow: hidden; }
+.wow-kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 4px; background: var(--muted-2, #94a3b8); }
+.wow-kpi.good::before { background: linear-gradient(180deg, #10b981, #0f9f7f); }
+.wow-kpi.mid::before { background: linear-gradient(180deg, #5f6dee, #2563eb); }
+.wow-kpi.low::before { background: linear-gradient(180deg, #fb7185, #e11d48); }
+.wow-kpi.good strong { color: #0f766e; }
+.wow-kpi.low strong { color: #be123c; }
+
+/* 인사이트 그리드: 좌(주의 팀) + 우(예정/퍼널) */
+.wow-insight-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.wow-insight-side { display: grid; gap: 14px; }
+.wow-panel { border: 1px solid rgba(226, 232, 240, 0.92); border-radius: 18px; background: rgba(255, 255, 255, 0.94); padding: 16px 18px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); }
+.wow-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.wow-panel-head h3 { margin: 0; font-size: 15px; font-weight: 950; color: var(--ink-strong, #0b1020); }
+.wow-panel-count { color: var(--muted); font-size: 12px; font-weight: 900; }
+.wow-panel-head .ghost-button { padding: 6px 12px; font-size: 12px; }
+.wow-panel-empty { display: grid; gap: 4px; padding: 18px; border-radius: 14px; background: rgba(248, 250, 252, 0.9); border: 1px dashed rgba(148, 163, 184, 0.45); }
+.wow-panel-empty b { font-size: 13.5px; color: var(--ink-strong, #0b1020); }
+.wow-panel-empty span { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+.wow-panel-empty.good { background: rgba(16, 185, 129, 0.07); border-color: rgba(16, 185, 129, 0.3); border-style: solid; }
+
+/* 주의 팀 카드 */
+.wow-panel-attention { display: grid; gap: 10px; align-content: start; }
+.wow-att { border: 1px solid rgba(226, 232, 240, 0.95); border-left: 4px solid var(--muted-2, #94a3b8); border-radius: 14px; padding: 12px 14px; background: #fff; display: grid; gap: 8px; }
+.wow-att.urgent { border-left-color: #f43f5e; background: linear-gradient(135deg, rgba(244, 63, 94, 0.05), #fff 60%); }
+.wow-att.warn { border-left-color: #f59e0b; background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), #fff 60%); }
+.wow-att.info { border-left-color: #5f6dee; }
+.wow-att-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.wow-att-team { min-width: 0; display: grid; gap: 2px; }
+.wow-att-team b { font-size: 14.5px; font-weight: 950; color: var(--ink-strong, #0b1020); }
+.wow-att-team small { font-size: 12px; color: var(--muted); }
+.wow-att-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.wow-att-tag { padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 950; }
+.wow-att-tag.s4 { background: rgba(244, 63, 94, 0.14); color: #be123c; }
+.wow-att-tag.s3 { background: rgba(245, 158, 11, 0.16); color: #9a3412; }
+.wow-att-tag.s2 { background: rgba(95, 109, 238, 0.14); color: #4338ca; }
+.wow-att-tag.s1 { background: rgba(148, 163, 184, 0.18); color: #475569; }
+.wow-att-reason { font-size: 13px; font-weight: 800; color: #334155; }
+.wow-att-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.wow-att-action { font-size: 12.5px; font-weight: 850; color: #0f766e; }
+.wow-att-go { padding: 7px 13px; border: 0; border-radius: 10px; background: var(--ink-strong, #0b1020); color: #fff; font-size: 12px; font-weight: 900; cursor: pointer; white-space: nowrap; }
+.wow-att-go:hover { background: #1f2937; }
+
+/* 이번 주 예정 세션 */
+.wow-upcoming { display: grid; gap: 6px; }
+.wow-up-row { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 11px; border-radius: 11px; background: rgba(248, 250, 252, 0.85); }
+.wow-up-date { font-size: 13px; font-weight: 950; color: var(--violet, #5f6dee); display: grid; line-height: 1.15; }
+.wow-up-date em { font-style: normal; font-size: 10.5px; font-weight: 800; color: var(--muted); }
+.wow-up-main { min-width: 0; display: grid; gap: 1px; }
+.wow-up-main b { font-size: 13px; font-weight: 900; color: var(--ink-strong, #0b1020); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wow-up-main small { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wow-up-cap { font-size: 12px; font-weight: 900; color: #475569; white-space: nowrap; }
+
+/* 단계별 진행 퍼널 */
+.wow-funnel { display: grid; gap: 7px; }
+.wow-funnel-row { display: grid; grid-template-columns: minmax(0, 1fr) 96px 44px; gap: 10px; align-items: center; }
+.wow-funnel-name { font-size: 12px; font-weight: 850; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wow-funnel-bar { height: 9px; border-radius: 999px; background: #eef2f7; overflow: hidden; }
+.wow-funnel-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--violet, #5f6dee), var(--cyan, #18b6aa)); transition: width 0.4s ease; }
+.wow-funnel-val { font-size: 12.5px; font-weight: 950; color: var(--ink-strong, #0b1020); text-align: right; }
+.wow-funnel-val em { font-style: normal; font-weight: 800; color: var(--muted); font-size: 11px; }
+
+/* 프로그램 효과 신호 */
+.wow-effect-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.wow-effect-item { position: relative; display: grid; gap: 4px; padding: 13px 14px 16px; border-radius: 14px; background: rgba(248, 250, 252, 0.9); overflow: hidden; }
+.wow-effect-item span { font-size: 11.5px; font-weight: 850; color: var(--muted); }
+.wow-effect-item b { font-size: 24px; font-weight: 950; color: var(--ink-strong, #0b1020); line-height: 1; }
+.wow-effect-item i { position: absolute; left: 0; bottom: 0; height: 4px; border-radius: 0 4px 4px 0; transition: width 0.4s ease; }
+.wow-effect-item.good i { background: linear-gradient(90deg, #10b981, #18b6aa); }
+.wow-effect-item.risk i { background: linear-gradient(90deg, #fb7185, #e11d48); }
+.wow-effect-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+/* 완료·진행중 팀 — 주의 표시 점 */
+.wow-risk-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.wow-risk-dot.risk { background: #f43f5e; }
+.wow-risk-dot.warn { background: #f59e0b; }
+
+@media (max-width: 980px) {
+  .wow-insight-grid { grid-template-columns: 1fr; }
+  .wow-effect-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .wow-hero { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .wow-hero-body { justify-items: center; }
+  .wow-hero-pills, .wow-alert { justify-content: center; }
+  .wow-effect-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* 연간 목표 · 달성률 (대시보드) */
+.wow-goals { border: 1px solid rgba(226, 232, 240, 0.92); border-radius: 22px; background: rgba(255, 255, 255, 0.94); padding: 18px 20px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); }
+.wow-goals-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.wow-goals-head h3 { margin: 4px 0 0; font-size: 16px; font-weight: 950; color: var(--ink-strong, #0b1020); }
+.wow-goals-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.wow-goals-actions .ghost-button { padding: 7px 13px; font-size: 12px; }
+.wow-goals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.wow-goal-card { border: 1px solid rgba(226, 232, 240, 0.9); border-radius: 16px; padding: 15px 16px; background: linear-gradient(135deg, rgba(248, 250, 252, 0.7), #fff); display: grid; gap: 9px; }
+.wow-goal-card.tb { border-top: 3px solid #5f6dee; }
+.wow-goal-card.lead { border-top: 3px solid #18b6aa; }
+.wow-goal-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.wow-goal-top span { font-size: 13px; font-weight: 900; color: #334155; }
+.wow-goal-top b { font-size: 26px; font-weight: 950; color: var(--ink-strong, #0b1020); letter-spacing: -0.02em; }
+.wow-goal-bar { height: 10px; border-radius: 999px; background: #eef2f7; overflow: hidden; }
+.wow-goal-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #5f6dee, #7c3aed); transition: width 0.5s ease; }
+.wow-goal-bar.lead i { background: linear-gradient(90deg, #18b6aa, #10b981); }
+.wow-goal-meta { font-size: 12.5px; color: var(--muted); font-weight: 700; }
+.wow-goal-meta b { color: var(--ink-strong, #0b1020); font-weight: 950; }
+.wow-goal-edit { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(148, 163, 184, 0.4); }
+.wow-goal-edit label { display: grid; gap: 5px; font-size: 11.5px; font-weight: 900; color: var(--muted); }
+.wow-goal-edit input { width: 130px; height: 38px; padding: 0 12px; border: 1px solid rgba(203, 213, 225, 0.95); border-radius: 11px; font-size: 14px; font-weight: 800; }
+.wow-goal-edit .primary-button { height: 38px; }
+@media (max-width: 720px) { .wow-goals-grid { grid-template-columns: 1fr; } }
+
+/* 프로그램운영 — 서브 세그먼트 (Team Building / Leadership) */
+.program-ops { display: grid; gap: 16px; }
+.program-subnav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.program-subtab { display: grid; gap: 2px; text-align: left; padding: 13px 16px; border: 1px solid rgba(203, 213, 225, 0.85); border-radius: 16px; background: rgba(255, 255, 255, 0.85); cursor: pointer; box-shadow: none; transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease; }
+.program-subtab b { font-size: 15px; font-weight: 950; color: var(--ink-strong, #0b1020); }
+.program-subtab small { font-size: 12px; color: var(--muted); font-weight: 800; }
+.program-subtab:hover { transform: translateY(-1px); border-color: rgba(95, 109, 238, 0.4); }
+.program-subtab.active { border-color: transparent; background: linear-gradient(135deg, var(--violet, #5f6dee), var(--cyan, #18b6aa)); box-shadow: 0 14px 30px rgba(79, 70, 229, 0.2); }
+.program-subtab.active b, .program-subtab.active small { color: #fff; }
+.program-subtab.active small { opacity: 0.92; }
+
+/* Leadership — 팀장 협업 세션 */
+.leadership-view { display: grid; gap: 14px; }
+.lead-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.lead-head h3 { margin: 3px 0 2px; font-size: 18px; font-weight: 950; color: var(--ink-strong, #0b1020); }
+.lead-round-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.lead-round-tab { display: grid; gap: 2px; text-align: left; min-width: 116px; padding: 10px 14px; border: 1px solid rgba(203, 213, 225, 0.85); border-radius: 14px; background: rgba(255, 255, 255, 0.9); cursor: pointer; box-shadow: none; }
+.lead-round-tab b { font-size: 14px; font-weight: 950; color: var(--ink-strong, #0b1020); }
+.lead-round-tab small { font-size: 11.5px; color: var(--muted); font-weight: 800; }
+.lead-round-tab:hover { border-color: rgba(95, 109, 238, 0.4); }
+.lead-round-tab.active { border-color: transparent; background: linear-gradient(135deg, #4338ca, #18b6aa); }
+.lead-round-tab.active b, .lead-round-tab.active small { color: #fff; }
+.lead-round-tab.done b::after { content: " ✓"; color: #10b981; font-size: 12px; }
+.lead-round-tab.active.done b::after { color: #d1fae5; }
+.lead-empty-inline { color: var(--muted); font-size: 13px; font-weight: 800; padding: 6px 2px; }
+.lead-round-body { display: grid; gap: 14px; }
+.lead-round-fields { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.lead-round-fields label { display: grid; gap: 5px; font-size: 11.5px; font-weight: 900; color: var(--muted); }
+.lead-round-fields input { height: 38px; padding: 0 12px; border: 1px solid rgba(203, 213, 225, 0.95); border-radius: 11px; font-size: 14px; font-weight: 800; min-width: 150px; }
+.lead-round-fields .ghost-button { height: 38px; }
+.lead-leader-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.lead-leader-tag { display: inline-flex; align-items: center; gap: 6px; padding: 7px 7px 7px 12px; border: 1px solid rgba(95, 109, 238, 0.35); border-radius: 999px; background: rgba(95, 109, 238, 0.08); }
+.lead-leader-tag .llt-name { font-size: 13px; font-weight: 900; color: #312e81; }
+.lead-leader-tag em { font-style: normal; font-size: 11px; font-weight: 800; color: var(--muted); }
+.lead-leader-x { width: 19px; height: 19px; padding: 0; display: inline-grid; place-items: center; border: 0; border-radius: 50%; background: rgba(95, 109, 238, 0.2); color: #4338ca; font-size: 13px; font-weight: 900; cursor: pointer; }
+.lead-leader-x:hover { background: var(--violet, #5f6dee); color: #fff; }
+
 /* WOW 운영 — 팀별수행: 팀 선택 + 세션/불참자 + 중간/최종 서베이 + GPT 분석 */
 .wow-exec { display: grid; gap: 14px; }
 .wow-exec-pick {
@@ -2202,31 +2395,86 @@ input[type="checkbox"] {
 }
 
 /* 빠진 사람(불참자) 복수 선택 — 탭하여 토글하는 칩(여러 명 선택에 최적) */
-.absent-picker { display: grid; gap: 8px; }
+/* 불참자 선택 — 드롭다운으로 한 명씩 추가/저장, 아래에 태그로 누적 표시 */
+.absent-picker { display: grid; gap: 9px; }
 .absent-picker-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .absent-picker-head span { color: var(--muted); font-size: 12px; font-weight: 800; }
 .absent-picker-head strong { font-size: 12px; font-weight: 950; color: #be123c; }
-.absent-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.absent-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 12px 7px 9px;
-  border: 1px solid rgba(203, 213, 225, 0.9);
+.absent-add-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.absent-reason { flex: 0 0 auto; width: 130px; height: 40px; padding: 0 10px; border: 1px solid rgba(203, 213, 225, 0.95); border-radius: 12px; background: #fff; color: var(--ink-strong, #0b1020); font-size: 13px; font-weight: 800; }
+.absent-reason:disabled { background: rgba(248, 250, 252, 0.9); color: var(--muted); }
+.absent-tag-reason { font-size: 11px; font-weight: 800; color: #9a3412; background: rgba(245, 158, 11, 0.16); padding: 2px 7px; border-radius: 999px; }
+.repeat-abs-warn { margin-top: 12px; padding: 12px 14px; border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 14px; background: rgba(245, 158, 11, 0.07); display: grid; gap: 6px; }
+.repeat-abs-warn > strong { font-size: 13px; font-weight: 950; color: #9a3412; }
+.repeat-abs-note { font-size: 12px; color: #7c2d12; line-height: 1.5; }
+.repeat-abs-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.repeat-abs-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; background: #fff; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 12px; font-weight: 900; color: #9a3412; }
+.repeat-abs-chip em { font-style: normal; font-weight: 800; color: var(--muted); font-size: 11px; }
+.repeat-abs-chip.vol { border-color: rgba(244, 63, 94, 0.5); background: rgba(244, 63, 94, 0.08); color: #be123c; }
+.repeat-abs-chip.vol em { color: #be123c; }
+
+/* 이번 주 예정 — 팀장 배지 */
+.wow-up-tag { display: inline-block; font-size: 10px; font-weight: 950; color: #0e7490; background: rgba(24, 182, 170, 0.16); padding: 1px 6px; border-radius: 999px; vertical-align: middle; }
+
+/* 본부별 도달률 — 톤 색 */
+.wow-funnel-bar i.cov-good { background: linear-gradient(90deg, #10b981, #18b6aa); }
+.wow-funnel-bar i.cov-mid { background: linear-gradient(90deg, #5f6dee, #2563eb); }
+.wow-funnel-bar i.cov-low { background: linear-gradient(90deg, #fb7185, #e11d48); }
+
+/* 미착수 팀 — 원클릭 일정 */
+.wow-notstarted { display: grid; gap: 6px; max-height: 320px; overflow: auto; }
+.wow-ns-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 11px; border-radius: 11px; background: rgba(248, 250, 252, 0.85); }
+.wow-ns-main { min-width: 0; display: grid; gap: 1px; }
+.wow-ns-main b { font-size: 13px; font-weight: 900; color: var(--ink-strong, #0b1020); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wow-ns-main small { font-size: 11.5px; color: var(--muted); }
+.wow-ns-go { flex: 0 0 auto; padding: 7px 13px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--violet, #5f6dee), var(--cyan, #18b6aa)); color: #fff; font-size: 12px; font-weight: 900; cursor: pointer; }
+.wow-ns-go:hover { filter: saturate(1.08); transform: translateY(-1px); }
+
+/* 캘린더 — Leadership(팀장) 회차 항목 구분 */
+.session-item.lead { border-left: 3px solid #18b6aa; cursor: pointer; }
+.session-item.lead:hover { background: rgba(24, 182, 170, 0.07); }
+.session-item.compact.lead { border-left: 3px solid #18b6aa; }
+.absent-select {
+  flex: 1; min-width: 0; height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: 12px;
+  background: #fff; color: var(--ink-strong, #0b1020);
+  font-size: 13.5px; font-weight: 800;
+}
+.absent-select:focus { outline: none; border-color: var(--violet, #5f6dee); box-shadow: 0 0 0 3px rgba(95, 109, 238, 0.16); }
+.absent-select:disabled { background: rgba(248, 250, 252, 0.9); color: var(--muted); }
+.absent-add-btn {
+  flex: 0 0 auto; height: 40px;
+  padding: 0 16px;
+  border: 0; border-radius: 12px;
+  background: linear-gradient(135deg, var(--violet, #5f6dee), var(--cyan, #18b6aa));
+  color: #fff; font-size: 12.5px; font-weight: 950; line-height: 1;
+  cursor: pointer; white-space: nowrap;
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.2);
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.absent-add-btn:hover { transform: translateY(-1px); filter: saturate(1.05); }
+.absent-add-btn:disabled { background: rgba(148, 163, 184, 0.4); color: rgba(255, 255, 255, 0.85); box-shadow: none; cursor: not-allowed; transform: none; }
+.absent-selected { display: flex; flex-wrap: wrap; gap: 6px; }
+.absent-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 6px 6px 11px;
+  border: 1px solid rgba(244, 63, 94, 0.4);
   border-radius: 999px;
-  background: #fff; color: #334155;
-  font-size: 12.5px; font-weight: 800; line-height: 1;
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  background: rgba(244, 63, 94, 0.1);
+  color: #be123c; font-size: 12.5px; font-weight: 850; line-height: 1;
 }
-.absent-chip:hover { border-color: rgba(244, 63, 94, 0.55); }
-.absent-chip-mark {
-  width: 15px; height: 15px; border-radius: 50%;
-  border: 1.5px solid rgba(148, 163, 184, 0.85);
+.absent-tag-name { white-space: nowrap; }
+.absent-tag-x {
+  width: 18px; height: 18px; padding: 0;
   display: inline-grid; place-items: center;
-  font-size: 9px; color: transparent;
+  border: 0; border-radius: 50%;
+  background: rgba(244, 63, 94, 0.18); color: #be123c;
+  font-size: 13px; font-weight: 900; line-height: 1; cursor: pointer;
 }
-.absent-chip-mark::before { content: "✓"; }
-.absent-chip.on { background: rgba(244, 63, 94, 0.12); border-color: rgba(244, 63, 94, 0.6); color: #be123c; }
-.absent-chip.on .absent-chip-mark { background: var(--rose, #f43f5e); border-color: var(--rose, #f43f5e); color: #fff; }
+.absent-tag-x:hover { background: var(--rose, #f43f5e); color: #fff; }
+.absent-none { color: var(--muted); font-size: 12.5px; font-weight: 800; padding: 4px 2px; }
 
 .program-empty,
 .program-muted {

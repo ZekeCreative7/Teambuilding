@@ -470,6 +470,7 @@ const ORG_CLOUD_WRITER = `org_${Math.random().toString(36).slice(2)}_${Date.now(
 let state = loadState();
 let activeDragPayload = null;
 let pointerDrag = null;
+let calendarPrefillTeamId = null;
 let suppressNextClick = false;
 let pendingUnitPhotoId = null;
 let pendingPersonPhotoId = null;
@@ -488,6 +489,23 @@ function defaultFilters() {
   return { sessionDone: false, sessionNone: false, healthy: false, watch: false, support: false, review: false };
 }
 
+// 연간 프로그램 목표 (운영자가 설정/변경). 달성률 계산 기준.
+function defaultProgramGoals() {
+  return { year: new Date().getFullYear(), teamBuilding: 15, leadership: 4, leadershipPerSession: 6 };
+}
+
+function normalizeProgramGoals(raw) {
+  const base = defaultProgramGoals();
+  if (!raw || typeof raw !== "object") return base;
+  const num = (value, fallback) => (Number.isFinite(Number(value)) && Number(value) > 0 ? Math.round(Number(value)) : fallback);
+  return {
+    year: num(raw.year, base.year),
+    teamBuilding: num(raw.teamBuilding, base.teamBuilding),
+    leadership: num(raw.leadership, base.leadership),
+    leadershipPerSession: num(raw.leadershipPerSession, base.leadershipPerSession),
+  };
+}
+
 function defaultOrganizationState() {
   return {
     units: clone(seedUnits),
@@ -498,6 +516,11 @@ function defaultOrganizationState() {
     wowTextRows: [],
     wowInterimRows: [],
     sessionAnalysisResults: {},
+    programGoals: defaultProgramGoals(),
+    leadershipSessions: [],
+    leadershipQuantRows: [],
+    leadershipTextRows: [],
+    leadershipAnalysisResults: {},
     selectedUnitId: getDefaultSelectedUnitId(),
     view: "official",
     orgLayout: "horizontal",
@@ -506,7 +529,9 @@ function defaultOrganizationState() {
     calendarView: "month",
     selectedCalendarDate: todayIso(),
     sessionView: "execution",
+    programSubView: "teambuilding",
     selectedSessionAnalysisTeamId: "",
+    selectedLeadershipRoundId: "",
     expandedUnitIds: getDefaultExpandedIds(),
     openCardIds: [],
     detailOpen: false,
@@ -579,6 +604,11 @@ function normalizeOrganizationState(parsed = {}) {
     wowTextRows: Array.isArray(parsed.wowTextRows) ? parsed.wowTextRows : base.wowTextRows,
     wowInterimRows: Array.isArray(parsed.wowInterimRows) ? parsed.wowInterimRows : base.wowInterimRows,
     sessionAnalysisResults: parsed.sessionAnalysisResults && typeof parsed.sessionAnalysisResults === "object" ? parsed.sessionAnalysisResults : base.sessionAnalysisResults,
+    programGoals: normalizeProgramGoals(parsed.programGoals),
+    leadershipSessions: Array.isArray(parsed.leadershipSessions) ? parsed.leadershipSessions : base.leadershipSessions,
+    leadershipQuantRows: Array.isArray(parsed.leadershipQuantRows) ? parsed.leadershipQuantRows : base.leadershipQuantRows,
+    leadershipTextRows: Array.isArray(parsed.leadershipTextRows) ? parsed.leadershipTextRows : base.leadershipTextRows,
+    leadershipAnalysisResults: parsed.leadershipAnalysisResults && typeof parsed.leadershipAnalysisResults === "object" ? parsed.leadershipAnalysisResults : base.leadershipAnalysisResults,
     selectedUnitId: unitIds.has(parsed.selectedUnitId) ? parsed.selectedUnitId : rootId,
     view: "official",
     orgLayout: parsed.orgLayout || base.orgLayout,
@@ -587,7 +617,9 @@ function normalizeOrganizationState(parsed = {}) {
     calendarView: parsed.calendarView || base.calendarView,
     selectedCalendarDate: parsed.selectedCalendarDate || base.selectedCalendarDate,
     sessionView: ["execution", "calendar", "dashboard"].includes(parsed.sessionView) ? parsed.sessionView : base.sessionView,
+    programSubView: ["teambuilding", "leadership"].includes(parsed.programSubView) ? parsed.programSubView : base.programSubView,
     selectedSessionAnalysisTeamId: typeof parsed.selectedSessionAnalysisTeamId === "string" ? parsed.selectedSessionAnalysisTeamId : base.selectedSessionAnalysisTeamId,
+    selectedLeadershipRoundId: typeof parsed.selectedLeadershipRoundId === "string" ? parsed.selectedLeadershipRoundId : base.selectedLeadershipRoundId,
     expandedUnitIds: Array.isArray(parsed.expandedUnitIds) ? parsed.expandedUnitIds : base.expandedUnitIds,
     openCardIds: Array.isArray(parsed.openCardIds) ? parsed.openCardIds : base.openCardIds,
     detailOpen: false,
@@ -628,6 +660,11 @@ function organizationSnapshot() {
     wowTextRows: state.wowTextRows || [],
     wowInterimRows: state.wowInterimRows || [],
     sessionAnalysisResults: state.sessionAnalysisResults || {},
+    programGoals: state.programGoals || defaultProgramGoals(),
+    leadershipSessions: state.leadershipSessions || [],
+    leadershipQuantRows: state.leadershipQuantRows || [],
+    leadershipTextRows: state.leadershipTextRows || [],
+    leadershipAnalysisResults: state.leadershipAnalysisResults || {},
     selectedUnitId: state.selectedUnitId,
     view: "official",
     orgLayout: state.orgLayout,
@@ -636,7 +673,9 @@ function organizationSnapshot() {
     calendarView: state.calendarView,
     selectedCalendarDate: state.selectedCalendarDate,
     sessionView: state.sessionView || "execution",
+    programSubView: state.programSubView || "teambuilding",
     selectedSessionAnalysisTeamId: state.selectedSessionAnalysisTeamId || "",
+    selectedLeadershipRoundId: state.selectedLeadershipRoundId || "",
     expandedUnitIds: state.expandedUnitIds,
     openCardIds: state.openCardIds,
     search: state.search,
@@ -2993,6 +3032,28 @@ function sessionsForDate(iso) {
     .sort((a, b) => `${a.startTime || ""}`.localeCompare(`${b.startTime || ""}`));
 }
 
+// Leadership(팀장 협업) 회차를 캘린더에 함께 노출 — 메인 캘린더 통합
+function leadershipRoundsForDate(iso) {
+  return (state.leadershipSessions || [])
+    .filter((round) => round.date === iso)
+    .sort((a, b) => `${a.startTime || ""}`.localeCompare(`${b.startTime || ""}`));
+}
+function renderLeadershipCalendarItem(round, compact = false) {
+  const title = round.title || "팀장 협업 세션";
+  if (compact) {
+    return `<span class="session-item compact lead"><b>${escapeHtml(round.startTime || "--:--")}</b>${escapeHtml(title)}</span>`;
+  }
+  const present = leadershipPresentCount(round);
+  const total = (round.leaderIds || []).length;
+  return `
+    <article class="session-item lead" data-pick-leadership-round="${escapeHtml(round.id)}" role="button" tabindex="0" title="이 회차 열기">
+      <span class="session-time">${escapeHtml(round.startTime || "--:--")}</span>
+      <strong>${escapeHtml(title)}</strong>
+      <small>Leadership · 팀장 ${present}/${total}명</small>
+    </article>
+  `;
+}
+
 function sessionTimeOptions(selected = "10:00") {
   const times = [];
   for (let hour = 8; hour <= 19; hour += 1) {
@@ -3065,6 +3126,57 @@ function absentPersonNames(session) {
     .filter(Boolean);
 }
 
+// 불참 사유 코드 — 자발적 불참은 이탈/disengagement 신호로 따로 본다.
+const ABSENCE_REASONS = [
+  { code: "sick", label: "병가" },
+  { code: "work", label: "업무" },
+  { code: "personal", label: "개인사정" },
+  { code: "voluntary", label: "자발적 불참" },
+  { code: "other", label: "기타" },
+];
+function absenceReasonLabel(code) {
+  return (ABSENCE_REASONS.find((reason) => reason.code === code) || {}).label || "사유 미입력";
+}
+function absenceReasonOptions(selected = "") {
+  return ABSENCE_REASONS.map((reason) => `<option value="${reason.code}" ${reason.code === selected ? "selected" : ""}>${reason.label}</option>`).join("");
+}
+function sessionAbsentReason(carrier, personId) {
+  return (carrier && carrier.absentReasons && carrier.absentReasons[personId]) || "";
+}
+
+// 반복 불참 집계: 같은 사람이 여러 회 불참하면(특히 자발적) 운영자가 챙겨야 할 이탈 신호.
+// carriers = 한 팀/코호트의 세션(또는 회차) 배열, nameOf = (personId) => 이름
+function repeatAbsenteesFrom(carriers, nameOf, { minCount = 2 } = {}) {
+  const tally = new Map();
+  (carriers || []).forEach((carrier) => {
+    const roster = Array.isArray(carrier.leaderIds) ? new Set(carrier.leaderIds) : null;
+    sessionAbsentIds(carrier).forEach((pid) => {
+      if (roster && !roster.has(pid)) return;
+      const entry = tally.get(pid) || { id: pid, count: 0, voluntary: 0 };
+      entry.count += 1;
+      if (sessionAbsentReason(carrier, pid) === "voluntary") entry.voluntary += 1;
+      tally.set(pid, entry);
+    });
+  });
+  return Array.from(tally.values())
+    .filter((entry) => entry.count >= minCount || entry.voluntary >= 1)
+    .map((entry) => ({ ...entry, name: nameOf(entry.id) || entry.id }))
+    .filter((entry) => entry.name)
+    .sort((a, b) => b.voluntary - a.voluntary || b.count - a.count);
+}
+function renderRepeatAbsenceWarning(items) {
+  if (!items.length) return "";
+  const chips = items
+    .map((item) => `<span class="repeat-abs-chip ${item.voluntary ? "vol" : ""}">${escapeHtml(item.name)} <em>${item.count}회${item.voluntary ? ` · 자발 ${item.voluntary}` : ""}</em></span>`)
+    .join("");
+  return `
+    <div class="repeat-abs-warn">
+      <strong>반복 불참 주의</strong>
+      <span class="repeat-abs-note">2회 이상 또는 자발적 불참이 있는 인원입니다. 이탈 신호일 수 있어 1:1 확인을 권장합니다.</span>
+      <div class="repeat-abs-chips">${chips}</div>
+    </div>`;
+}
+
 function isMobileCalendarLayout() {
   return typeof window !== "undefined" && window.matchMedia("(max-width: 600px)").matches;
 }
@@ -3127,13 +3239,19 @@ function renderMonthCalendar() {
   for (let day = 1; day <= daysInMonth; day += 1) {
     const iso = toIsoDate(new Date(year, month, day));
     const sessions = sessionsForDate(iso);
+    const leads = leadershipRoundsForDate(iso);
+    const totalCount = sessions.length + leads.length;
+    const chips = [
+      ...sessions.map((session) => renderSessionItem(session, true)),
+      ...leads.map((round) => renderLeadershipCalendarItem(round, true)),
+    ];
     const active = iso === state.selectedCalendarDate ? "active" : "";
     cells.push(`
       <button class="calendar-day ${active}" type="button" data-pick-calendar-date="${iso}">
         <span>${day}</span>
-        <div class="calendar-session-summary">${sessions.length ? `${sessions.length}개 일정` : ""}</div>
-        <div class="calendar-session-details">${sessions.slice(0, 3).map((session) => renderSessionItem(session, true)).join("")}</div>
-        ${sessions.length > 3 ? `<em>+${sessions.length - 3}</em>` : ""}
+        <div class="calendar-session-summary">${totalCount ? `${totalCount}개 일정` : ""}</div>
+        <div class="calendar-session-details">${chips.slice(0, 3).join("")}</div>
+        ${totalCount > 3 ? `<em>+${totalCount - 3}</em>` : ""}
       </button>
     `);
   }
@@ -3166,7 +3284,7 @@ function renderWeekCalendar() {
                 <span>${["일", "월", "화", "수", "목", "금", "토"][date.getDay()]}</span>
                 <strong>${date.getDate()}</strong>
               </button>
-              <div>${sessions.map((session) => renderSessionItem(session)).join("") || `<p class="calendar-empty">일정 없음</p>`}</div>
+              <div>${(sessions.map((session) => renderSessionItem(session)).join("") + leadershipRoundsForDate(iso).map((round) => renderLeadershipCalendarItem(round)).join("")) || `<p class="calendar-empty">일정 없음</p>`}</div>
             </section>
           `;
         })
@@ -3177,9 +3295,11 @@ function renderWeekCalendar() {
 
 function renderDayCalendar() {
   const sessions = sessionsForDate(state.selectedCalendarDate);
+  const leads = leadershipRoundsForDate(state.selectedCalendarDate);
+  const body = sessions.map((session) => renderSessionItem(session)).join("") + leads.map((round) => renderLeadershipCalendarItem(round)).join("");
   return `
     <div class="day-board">
-      ${sessions.map((session) => renderSessionItem(session)).join("") || `<div class="empty-state"><strong>오늘 등록된 세션이 없습니다</strong><span>오른쪽 입력 영역에서 WOW x BALANCE 일정을 추가하세요.</span></div>`}
+      ${body || `<div class="empty-state"><strong>오늘 등록된 세션이 없습니다</strong><span>오른쪽 입력 영역에서 WOW x BALANCE 일정을 추가하세요.</span></div>`}
     </div>
   `;
 }
@@ -3188,8 +3308,9 @@ function renderCalendarView(targetId = "viewRoot") {
   const root = document.getElementById(targetId);
   if (!root) return;
   const teams = sessionTeamUnits();
-  const selectedTeam = teams[0]?.id || "";
-  const totalSessions = (state.sessions || []).length;
+  const prefill = calendarPrefillTeamId && teams.some((team) => team.id === calendarPrefillTeamId) ? calendarPrefillTeamId : "";
+  const selectedTeam = prefill || teams[0]?.id || "";
+  const totalSessions = (state.sessions || []).length + (state.leadershipSessions || []).length;
 
   root.innerHTML = `
     <div class="panel-header">
@@ -3255,7 +3376,7 @@ function renderCalendarView(targetId = "viewRoot") {
         </form>
         <div class="session-today-list">
           <h4>선택일 일정</h4>
-          ${sessionsForDate(state.selectedCalendarDate).map((session) => renderSessionItem(session)).join("") || `<p class="calendar-empty">선택한 날짜에 일정이 없습니다.</p>`}
+          ${(sessionsForDate(state.selectedCalendarDate).map((session) => renderSessionItem(session)).join("") + leadershipRoundsForDate(state.selectedCalendarDate).map((round) => renderLeadershipCalendarItem(round)).join("")) || `<p class="calendar-empty">선택한 날짜에 일정이 없습니다.</p>`}
         </div>
       </aside>
     </div>
@@ -3322,26 +3443,46 @@ function renderProgramDateChips(team, track) {
 
 function renderAbsentSelect(session) {
   const people = teamPeopleForSession(session.teamId);
-  const selected = new Set(sessionAbsentIds(session));
+  const selectedIds = new Set(sessionAbsentIds(session));
   if (!people.length) {
-    return `<p class="program-muted">조직도에 등록된 팀원이 없어 결석자를 선택할 수 없습니다.</p>`;
+    return `<p class="program-muted">조직도에 등록된 팀원이 없어 불참자를 선택할 수 없습니다.</p>`;
   }
+  const byId = new Map(people.map((person) => [person.id, person]));
+  const available = people.filter((person) => !selectedIds.has(person.id));
+  const selectedPeople = Array.from(selectedIds).map((id) => byId.get(id)).filter(Boolean);
   return `
     <div class="absent-picker" data-session-absentees="${escapeHtml(session.id)}">
       <div class="absent-picker-head">
-        <span>빠진 사람 (탭하여 복수 선택)</span>
-        <strong>불참 ${selected.size} / ${people.length}명</strong>
+        <span>불참자 추가 · 한 명씩 선택해 추가하세요</span>
+        <strong>불참 ${selectedPeople.length} / ${people.length}명</strong>
       </div>
-      <div class="absent-chips">
-        ${people
-          .map((person) => `
-            <button type="button" class="absent-chip ${selected.has(person.id) ? "on" : ""}" data-absent-toggle="${escapeHtml(person.id)}" aria-pressed="${selected.has(person.id) ? "true" : "false"}" title="${escapeHtml(person.name)}${person.isSyntheticLeader ? " · 조직장" : ""}">
-              <span class="absent-chip-mark" aria-hidden="true"></span>${escapeHtml(person.name)}
-            </button>`)
-          .join("")}
+      <div class="absent-add-row">
+        <select class="absent-select" data-absent-select aria-label="불참자 선택" ${available.length ? "" : "disabled"}>
+          ${available.length
+            ? `<option value="">팀원 선택…</option>` +
+              available
+                .map((person) => `<option value="${escapeHtml(person.id)}">${escapeHtml(person.name)}${person.isSyntheticLeader ? " · 조직장" : ""}</option>`)
+                .join("")
+            : `<option value="">전원 불참 처리됨</option>`}
+        </select>
+        <select class="absent-reason" data-absent-reason aria-label="불참 사유" ${available.length ? "" : "disabled"}>${absenceReasonOptions("other")}</select>
+        <button type="button" class="absent-add-btn" data-absent-add ${available.length ? "" : "disabled"}>＋ 불참 추가</button>
+      </div>
+      <div class="absent-selected">
+        ${selectedPeople.length
+          ? selectedPeople
+              .map((person) => `<span class="absent-tag"><span class="absent-tag-name">${escapeHtml(person.name)}</span><span class="absent-tag-reason">${escapeHtml(absenceReasonLabel(sessionAbsentReason(session, person.id)))}</span><button type="button" class="absent-tag-x" data-absent-remove="${escapeHtml(person.id)}" aria-label="${escapeHtml(person.name)} 불참 취소" title="불참 취소">×</button></span>`)
+              .join("")
+          : `<span class="absent-none">불참자 없음 · 전원 참석</span>`}
       </div>
     </div>
   `;
+}
+
+function teamRepeatAbsenceWarning(team) {
+  const byId = new Map(teamPeopleForSession(team.id).map((person) => [person.id, person]));
+  const items = repeatAbsenteesFrom(teamSessions(team.id), (id) => byId.get(id)?.name);
+  return renderRepeatAbsenceWarning(items);
 }
 
 function renderTeamSessionList(team) {
@@ -3538,7 +3679,8 @@ function renderWowExecutionView() {
 
       <section class="wow-exec-card">
         <h3>세션 일정 · 불참자</h3>
-        <p class="survey-note">세션별로 빠진 사람을 선택하면 참여율에 반영됩니다 (조직도 인원 기준).</p>
+        <p class="survey-note">세션별로 빠진 사람을 사유와 함께 추가하면 참여율에 반영됩니다 (조직도 인원 기준).</p>
+        ${teamRepeatAbsenceWarning(team)}
         ${renderTeamSessionList(team)}
       </section>
 
@@ -3689,26 +3831,366 @@ function copySessionAnalysisPrompt() {
   notifyOrganization("분석 프롬프트를 복사했습니다");
 }
 
+// 운영자 관점의 "지금 챙겨야 할" 신호를 팀별로 도출한다.
+// 단순 숫자가 아니라 "무엇이 문제이고 무엇을 해야 하는지"를 함께 반환한다.
+function wowAttentionReasons(item, today) {
+  const { summary, signal, analysis } = item;
+  const reasons = [];
+  const fatigue = Number(signal?.fatigue || 0);
+  const fatigueText = Number(analysis?.fatigueTextRisk || 0);
+  const trustText = Number(analysis?.trustTextRisk || 0);
+  const hasFuture = summary.sessions.some((s) => s.date && s.date > today);
+
+  if (summary.doneSteps > 0 && summary.completionRate < 100 && !hasFuture) {
+    reasons.push({ sev: 3, tag: "정체", text: `${summary.doneSteps}/${summary.totalSteps}단계 진행 후 다음 일정 없음`, action: "다음 단계 세션 일정을 잡으세요" });
+  }
+  if (summary.doneSteps > 0 && summary.participationRate < 80) {
+    reasons.push({ sev: 4, tag: "참여 저조", text: `평균 참여율 ${summary.participationRate}% · 이탈 신호`, action: "불참 사유 확인 · 시간대/요일 재조정" });
+  }
+  if (fatigue >= 60 || fatigueText >= 60) {
+    reasons.push({ sev: 4, tag: "피로 신호", text: `피로·지원 필요 ${Math.max(fatigue, fatigueText)}%`, action: "팀장 1:1 · 회복/웰니스 세션 우선" });
+  } else if (signal?.supportNeeded) {
+    reasons.push({ sev: 3, tag: "지원 필요", text: `${signal.quadrant || "지원 필요"} · 변화수용 ${Number(signal.changeAcceptance || 0)}%`, action: "세션 톤 조정 · 맞춤 커뮤니케이션" });
+  }
+  if (trustText >= 60) {
+    reasons.push({ sev: 3, tag: "신뢰 저하", text: `설문 신뢰 리스크 ${trustText}%`, action: "리더 메시지 · 후속 면담" });
+  }
+  reasons.sort((a, b) => b.sev - a.sev);
+  return reasons;
+}
+
+function wowDonutSvg(pct) {
+  const p = Math.max(0, Math.min(100, Math.round(pct)));
+  const r = 52;
+  const c = 2 * Math.PI * r;
+  const dash = (p / 100) * c;
+  const tone = p >= 80 ? "good" : p >= 40 ? "mid" : "low";
+  return `
+    <svg class="wow-donut ${tone}" viewBox="0 0 130 130" role="img" aria-label="전체 진행률 ${p}%">
+      <circle cx="65" cy="65" r="${r}" class="wow-donut-track"></circle>
+      <circle cx="65" cy="65" r="${r}" class="wow-donut-fill" stroke-dasharray="${dash.toFixed(1)} ${(c - dash).toFixed(1)}" transform="rotate(-90 65 65)"></circle>
+      <text x="65" y="62" class="wow-donut-num">${p}<tspan class="wow-donut-pct">%</tspan></text>
+      <text x="65" y="84" class="wow-donut-cap">전체 진행률</text>
+    </svg>`;
+}
+
 function renderWowDashboardView() {
   const teams = sessionTeamUnits();
-  const summaries = teams.map((team) => ({ team, summary: teamProgramSummary(team) }));
-  const started = summaries.filter((item) => item.summary.doneSteps > 0);
-  const completed = started.filter((item) => item.summary.completionRate >= 100);
-  const inProgress = started.filter((item) => item.summary.completionRate < 100);
+  if (!teams.length) {
+    return `<div class="program-empty">아직 등록된 팀이 없습니다. People &amp; Organization에서 팀을 만든 뒤 캘린더에서 세션을 추가하세요.</div>`;
+  }
+  const today = todayISO();
+  const weekEnd = toIsoDate((() => { const d = new Date(); d.setDate(d.getDate() + 7); return d; })());
+
+  const items = teams.map((team) => ({
+    team,
+    summary: teamProgramSummary(team),
+    signal: signalForUnit(team),
+    analysis: sessionAnalysisForUnit(team),
+  }));
+  items.forEach((it) => { it.reasons = wowAttentionReasons(it, today); });
+
+  const totalTeams = teams.length;
+  const operating = items.filter((it) => it.summary.sessions.length > 0);
+  const notStarted = items.filter((it) => it.summary.sessions.length === 0);
+  const started = items.filter((it) => it.summary.doneSteps > 0);
+  const completed = items.filter((it) => it.summary.completionRate >= 100);
+  const inProgress = started.filter((it) => it.summary.completionRate < 100);
+  const lowParticipation = started.filter((it) => it.summary.participationRate < 80);
+
+  // 연간 목표 · 달성률
+  const goals = state.programGoals || defaultProgramGoals();
+  const tbDone = completed.length;
+  const tbGoalPct = goals.teamBuilding ? Math.round((tbDone / goals.teamBuilding) * 100) : 0;
+  const leadRounds = leadershipRounds();
+  const leadDone = leadRounds.filter(leadershipRoundDone).length;
+  const leadGoalPct = goals.leadership ? Math.round((leadDone / goals.leadership) * 100) : 0;
+  const distinctLeaders = new Set();
+  leadRounds.forEach((r) => (r.leaderIds || []).forEach((id) => distinctLeaders.add(id)));
+  const leaderTarget = goals.leadership * goals.leadershipPerSession;
+
+  const teamTrack = trackSummary("team");
+  const overallPct = teamTrack.overall;
   const avgParticipation = started.length
-    ? Math.round(started.reduce((sum, item) => sum + item.summary.participationRate, 0) / started.length)
+    ? Math.round(started.reduce((sum, it) => sum + it.summary.participationRate, 0) / started.length)
     : 0;
-  // 완료 → 진행률 높은 순으로 정렬해 나열
-  const listed = started
-    .slice()
-    .sort((a, b) => b.summary.completionRate - a.summary.completionRate);
+  const reachedHeadcount = operating.reduce((sum, it) => sum + participantCountForTeam(it.team.id), 0);
+  const totalHeadcount = teams.reduce((sum, t) => sum + participantCountForTeam(t.id), 0);
+  const coverage = totalTeams ? Math.round((operating.length / totalTeams) * 100) : 0;
+
+  const attention = items
+    .filter((it) => it.reasons.length)
+    .sort((a, b) => {
+      const sa = a.reasons[0]?.sev || 0;
+      const sb = b.reasons[0]?.sev || 0;
+      if (sb !== sa) return sb - sa;
+      return a.summary.completionRate - b.summary.completionRate;
+    });
+
+  const upcomingTeam = (state.sessions || [])
+    .filter((s) => s.date && s.date >= today && s.date <= weekEnd)
+    .map((s) => ({
+      kind: "team",
+      id: s.id,
+      date: s.date,
+      startTime: s.startTime || "",
+      name: s.teamName || getUnit(s.teamId)?.name || "팀 미정",
+      detail: (trackSteps(s.track) || [])[Number(s.step) - 1] || s.sessionName || "WOW x BALANCE 세션",
+      cap: participantCountForTeam(s.teamId),
+    }));
+  const upcomingLead = (state.leadershipSessions || [])
+    .filter((r) => r.date && r.date >= today && r.date <= weekEnd)
+    .map((r) => ({
+      kind: "lead",
+      id: r.id,
+      date: r.date,
+      startTime: r.startTime || "",
+      name: r.title || "팀장 협업 세션",
+      detail: "Leadership · 팀장 세션",
+      cap: (r.leaderIds || []).length,
+    }));
+  const upcoming = [...upcomingTeam, ...upcomingLead]
+    .sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`))
+    .slice(0, 6);
+
+  // 본부(상위 조직)별 도달률 + 미착수 팀
+  const divisionMap = new Map();
+  items.forEach((it) => {
+    const parent = getUnit(it.team.parentId);
+    const key = parent ? parent.id : "__none__";
+    const entry = divisionMap.get(key) || { name: parent ? parent.name : "상위 조직 없음", total: 0, operating: 0 };
+    entry.total += 1;
+    if (it.summary.sessions.length > 0) entry.operating += 1;
+    divisionMap.set(key, entry);
+  });
+  const divisionCoverage = Array.from(divisionMap.values())
+    .map((d) => ({ ...d, pct: d.total ? Math.round((d.operating / d.total) * 100) : 0 }))
+    .sort((a, b) => a.pct - b.pct || b.total - a.total);
+  const notStartedTeams = notStarted.slice().sort((a, b) => a.team.name.localeCompare(b.team.name, "ko"));
+
+  // 프로그램 효과 신호 (GPT 주관식 분석이 저장된 팀 평균)
+  const analyzed = items.filter((it) => it.analysis);
+  const avgOf = (key) => (analyzed.length ? Math.round(analyzed.reduce((sum, it) => sum + Number(it.analysis[key] || 0), 0) / analyzed.length) : null);
+  const posSignal = avgOf("teamPositiveSignal");
+  const efficacy = avgOf("programEfficacySignal");
+  const fatigueRisk = avgOf("fatigueTextRisk");
+  const trustRisk = avgOf("trustTextRisk");
+
+  const narrative = `전체 ${totalTeams}팀 중 <b>${operating.length}팀</b> 운영 중 — 완료 ${completed.length} · 진행 ${inProgress.length} · 미착수 ${notStarted.length}. 평균 참여율 <b>${avgParticipation}%</b>${lowParticipation.length ? `, <b class="warnInk">${lowParticipation.length}팀</b>이 80% 미만으로 점검이 필요합니다.` : "로 안정적으로 유지되고 있습니다."}`;
+  const topAlert = attention.length
+    ? `<span class="wow-alert urgent"><i></i>가장 시급 · ${escapeHtml(attention[0].team.name)} — ${escapeHtml(attention[0].reasons[0].text)}</span>`
+    : `<span class="wow-alert calm"><i></i>현재 위험 신호 없음 · 전 팀 정상 운영</span>`;
+
+  // KPI 카드 (의미·톤 포함)
+  const partTone = avgParticipation >= 85 ? "good" : avgParticipation >= 70 ? "mid" : "low";
+  const attTone = attention.length === 0 ? "good" : attention[0].reasons[0].sev >= 4 ? "low" : "mid";
+  const kpis = [
+    { label: "조직 도달률", value: `${coverage}%`, tone: coverage >= 80 ? "good" : coverage >= 40 ? "mid" : "low", note: `운영 ${operating.length}/${totalTeams}팀 · ${reachedHeadcount}/${totalHeadcount}명 참여 대상` },
+    { label: "프로그램 완료율", value: `${overallPct}%`, tone: overallPct >= 80 ? "good" : overallPct >= 40 ? "mid" : "low", note: `완료 ${teamTrack.finished}팀 · 팀 세션 7단계 기준` },
+    { label: "평균 참여율", value: `${avgParticipation}%`, tone: partTone, note: lowParticipation.length ? `${lowParticipation.length}팀 80% 미만 · 점검 필요` : "전 운영 팀 80% 이상 · 양호" },
+    { label: "주의 필요 팀", value: `${attention.length}`, tone: attTone, note: attention.length ? "아래에서 사유·조치 확인" : "위험 신호 없음 · 안정" },
+  ];
+
+  // 완료·진행중 팀 상세 목록
+  const listed = started.slice().sort((a, b) => b.summary.completionRate - a.summary.completionRate);
+
   return `
     <div class="wow-dashboard">
+      <section class="wow-hero">
+        <div class="wow-hero-ring">${wowDonutSvg(overallPct)}</div>
+        <div class="wow-hero-body">
+          <div class="eyebrow">운영 현황 한눈에</div>
+          <p class="wow-hero-narrative">${narrative}</p>
+          <div class="wow-hero-pills">
+            <span class="wow-pill done">완료 ${completed.length}</span>
+            <span class="wow-pill ing">진행 ${inProgress.length}</span>
+            <span class="wow-pill wait">미착수 ${notStarted.length}</span>
+            <span class="wow-pill cover">도달 ${coverage}%</span>
+          </div>
+          ${topAlert}
+        </div>
+      </section>
+
+      <section class="wow-goals">
+        <div class="wow-goals-head">
+          <div>
+            <div class="eyebrow">${goals.year} 연간 목표 달성률</div>
+            <h3>목표 대비 어디까지 왔나</h3>
+          </div>
+          <div class="wow-goals-actions">
+            <button class="ghost-button" type="button" data-toggle-goal-edit>목표 수정</button>
+            <button class="ghost-button" type="button" data-export-backup title="전체 조직·세션 데이터를 JSON으로 내려받아 백업">데이터 백업</button>
+          </div>
+        </div>
+        <div class="wow-goals-grid">
+          <article class="wow-goal-card tb">
+            <div class="wow-goal-top"><span>Team Building</span><b>${tbGoalPct}%</b></div>
+            <div class="wow-goal-bar"><i style="width:${Math.min(100, tbGoalPct)}%"></i></div>
+            <div class="wow-goal-meta">완료 <b>${tbDone}</b> / 목표 <b>${goals.teamBuilding}</b>팀 · 진행 ${inProgress.length}팀</div>
+          </article>
+          <article class="wow-goal-card lead">
+            <div class="wow-goal-top"><span>Leadership · 팀장 세션</span><b>${leadGoalPct}%</b></div>
+            <div class="wow-goal-bar lead"><i style="width:${Math.min(100, leadGoalPct)}%"></i></div>
+            <div class="wow-goal-meta">완료 <b>${leadDone}</b> / 목표 <b>${goals.leadership}</b>회 · 참여 팀장 ${distinctLeaders.size}/${leaderTarget}명</div>
+          </article>
+        </div>
+        <div class="wow-goal-edit" id="wowGoalEdit" hidden>
+          <label>팀빌딩 목표 (팀)<input id="goalTeamBuilding" type="number" min="1" value="${goals.teamBuilding}"></label>
+          <label>팀장 세션 목표 (회)<input id="goalLeadership" type="number" min="1" value="${goals.leadership}"></label>
+          <label>회당 팀장 수 (명)<input id="goalLeadershipPer" type="number" min="1" value="${goals.leadershipPerSession}"></label>
+          <button class="primary-button" type="button" data-save-goals>목표 저장</button>
+        </div>
+      </section>
+
       <section class="wow-kpi-row">
-        <article><span>총 운영 팀</span><strong>${teams.length}</strong><em>조직도 팀 기준</em></article>
-        <article><span>수행 완료</span><strong>${completed.length}</strong><em>전 단계 완료</em></article>
-        <article><span>진행 중</span><strong>${inProgress.length}</strong><em>일부 단계 진행</em></article>
-        <article><span>평균 참여율</span><strong>${avgParticipation}%</strong><em>불참자 반영 · 수행 팀 기준</em></article>
+        ${kpis
+          .map((k) => `
+            <article class="wow-kpi ${k.tone}">
+              <span>${k.label}</span>
+              <strong>${k.value}</strong>
+              <em>${k.note}</em>
+            </article>`)
+          .join("")}
+      </section>
+
+      <section class="wow-insight-grid">
+        <div class="wow-panel wow-panel-attention">
+          <div class="wow-panel-head">
+            <h3>지금 챙겨야 할 팀</h3>
+            <span class="wow-panel-count">${attention.length}건</span>
+          </div>
+          ${
+            attention.length
+              ? attention
+                  .map((it) => {
+                    const top = it.reasons[0];
+                    const sevClass = top.sev >= 4 ? "urgent" : top.sev >= 3 ? "warn" : "info";
+                    return `
+                      <div class="wow-att ${sevClass}">
+                        <div class="wow-att-top">
+                          <div class="wow-att-team"><b>${escapeHtml(it.team.name)}</b><small>${escapeHtml(getParentName(it.team))} · ${participantCountForTeam(it.team.id)}명 · 수행 ${it.summary.completionRate}%</small></div>
+                          <div class="wow-att-tags">${it.reasons.map((r) => `<span class="wow-att-tag s${r.sev}">${escapeHtml(r.tag)}</span>`).join("")}</div>
+                        </div>
+                        <div class="wow-att-reason">${escapeHtml(top.text)}</div>
+                        <div class="wow-att-foot">
+                          <span class="wow-att-action">→ ${escapeHtml(top.action)}</span>
+                          <button type="button" class="wow-att-go" data-wow-att-go="${escapeHtml(it.team.id)}">프로그램운영 열기</button>
+                        </div>
+                      </div>`;
+                  })
+                  .join("")
+              : `<div class="wow-panel-empty good"><b>모든 팀이 정상 운영 중입니다.</b><span>참여율·진행·신호 모두 기준 이내입니다. 다가오는 세션 준비에 집중하세요.</span></div>`
+          }
+        </div>
+
+        <div class="wow-insight-side">
+          <div class="wow-panel">
+            <div class="wow-panel-head">
+              <h3>이번 주 예정 세션</h3>
+              <button class="ghost-button" type="button" onclick="openWowSessionTab('calendar')">캘린더</button>
+            </div>
+            ${
+              upcoming.length
+                ? `<div class="wow-upcoming">${upcoming
+                    .map((s) => {
+                      const md = String(s.date || "").slice(5).replace("-", "/");
+                      return `
+                        <div class="wow-up-row">
+                          <span class="wow-up-date">${escapeHtml(md)}<em>${escapeHtml(s.startTime || "")}</em></span>
+                          <span class="wow-up-main"><b>${escapeHtml(s.name)}${s.kind === "lead" ? ` <span class="wow-up-tag">팀장</span>` : ""}</b><small>${escapeHtml(s.detail)}</small></span>
+                          <span class="wow-up-cap">${s.cap}명</span>
+                        </div>`;
+                    })
+                    .join("")}</div>`
+                : `<div class="wow-panel-empty"><b>이번 주 예정 세션이 없습니다.</b><span>캘린더에서 다음 세션을 등록하면 여기에 표시됩니다.</span></div>`
+            }
+          </div>
+
+          <div class="wow-panel">
+            <div class="wow-panel-head">
+              <h3>단계별 진행 퍼널</h3>
+              <span class="wow-panel-count">${teamTrack.participating}팀</span>
+            </div>
+            ${
+              teamTrack.participating
+                ? `<div class="wow-funnel">${teamTrack.steps
+                    .map((name, i) => {
+                      const count = teamTrack.stepCounts[i] || 0;
+                      const denom = teamTrack.participating || 1;
+                      const pct = Math.round((count / denom) * 100);
+                      return `
+                        <div class="wow-funnel-row">
+                          <span class="wow-funnel-name">${i + 1}. ${escapeHtml(name)}</span>
+                          <span class="wow-funnel-bar"><i style="width:${pct}%"></i></span>
+                          <span class="wow-funnel-val">${count}<em>/${denom}</em></span>
+                        </div>`;
+                    })
+                    .join("")}</div>`
+                : `<div class="wow-panel-empty"><b>아직 완료된 단계가 없습니다.</b><span>팀 세션이 진행되면 단계별 도달 팀 수가 채워집니다.</span></div>`
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="wow-panel wow-effect">
+        <div class="wow-panel-head">
+          <h3>프로그램 효과 신호</h3>
+          <span class="wow-panel-count">${analyzed.length}팀 분석 반영</span>
+        </div>
+        ${
+          analyzed.length
+            ? `<div class="wow-effect-grid">
+                <div class="wow-effect-item good"><span>팀 긍정 신호</span><b>${posSignal}%</b><i style="width:${posSignal}%"></i></div>
+                <div class="wow-effect-item good"><span>프로그램 효능감</span><b>${efficacy}%</b><i style="width:${efficacy}%"></i></div>
+                <div class="wow-effect-item risk"><span>피로·지원 필요</span><b>${fatigueRisk}%</b><i style="width:${fatigueRisk}%"></i></div>
+                <div class="wow-effect-item risk"><span>신뢰 리스크</span><b>${trustRisk}%</b><i style="width:${trustRisk}%"></i></div>
+              </div>
+              <p class="wow-effect-note">팀별수행 탭에서 중간·최종 주관식을 GPT로 분석해 저장하면 신호가 갱신됩니다. 긍정·효능감은 높을수록, 피로·신뢰 리스크는 낮을수록 좋습니다.</p>`
+            : `<div class="wow-panel-empty"><b>효과 신호를 측정할 분석 데이터가 아직 없습니다.</b><span>팀별수행 탭에서 서베이를 업로드하고 GPT 분석 결과를 저장하면 프로그램이 실제로 신뢰·피로·협업에 어떤 영향을 줬는지 한눈에 보여줍니다.</span></div>`
+        }
+      </section>
+
+      <section class="wow-insight-grid">
+        <div class="wow-panel">
+          <div class="wow-panel-head">
+            <h3>본부별 도달률</h3>
+            <span class="wow-panel-count">${divisionCoverage.length}개 조직</span>
+          </div>
+          ${
+            divisionCoverage.length
+              ? `<div class="wow-funnel">${divisionCoverage
+                  .map((d) => {
+                    const tone = d.pct >= 80 ? "good" : d.pct >= 40 ? "mid" : "low";
+                    return `
+                      <div class="wow-funnel-row">
+                        <span class="wow-funnel-name">${escapeHtml(d.name)}</span>
+                        <span class="wow-funnel-bar"><i class="cov-${tone}" style="width:${d.pct}%"></i></span>
+                        <span class="wow-funnel-val">${d.operating}<em>/${d.total}</em></span>
+                      </div>`;
+                  })
+                  .join("")}</div>
+                 <p class="wow-effect-note">상위 조직(본부/실) 기준, 소속 팀 중 프로그램을 운영 중인 비율입니다. 낮은 조직부터 챙기면 도달 형평성이 올라갑니다.</p>`
+              : `<div class="wow-panel-empty"><b>표시할 조직이 없습니다.</b></div>`
+          }
+        </div>
+
+        <div class="wow-panel">
+          <div class="wow-panel-head">
+            <h3>미착수 팀</h3>
+            <span class="wow-panel-count">${notStartedTeams.length}팀</span>
+          </div>
+          ${
+            notStartedTeams.length
+              ? `<div class="wow-notstarted">${notStartedTeams
+                  .map((it) => `
+                    <div class="wow-ns-row">
+                      <span class="wow-ns-main"><b>${escapeHtml(it.team.name)}</b><small>${escapeHtml(getParentName(it.team))} · ${participantCountForTeam(it.team.id)}명</small></span>
+                      <button type="button" class="wow-ns-go" data-schedule-team="${escapeHtml(it.team.id)}">일정 잡기</button>
+                    </div>`)
+                  .join("")}</div>`
+              : `<div class="wow-panel-empty good"><b>모든 팀이 프로그램을 시작했습니다.</b><span>미착수 팀이 없습니다. 진행·참여 관리에 집중하세요.</span></div>`
+          }
+        </div>
       </section>
 
       <section class="wow-dash-list">
@@ -3718,8 +4200,10 @@ function renderWowDashboardView() {
         </div>
         ${
           listed
-            .map(({ team, summary }) => {
+            .map((it) => {
+              const { team, summary } = it;
               const done = summary.completionRate >= 100;
+              const atRisk = it.reasons.length ? (it.reasons[0].sev >= 4 ? "risk" : "warn") : "";
               const sessions = summary.sessions
                 .slice()
                 .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
@@ -3742,7 +4226,7 @@ function renderWowDashboardView() {
                 <details class="wow-dash-team">
                   <summary>
                     <span class="wow-dash-team-name">
-                      <b>${escapeHtml(team.name)}</b>
+                      <b>${atRisk ? `<span class="wow-risk-dot ${atRisk}" title="주의 필요"></span>` : ""}${escapeHtml(team.name)}</b>
                       <small>${escapeHtml(getParentName(team))} · ${participantCountForTeam(team.id)}명 · 참여 ${summary.participationRate}%</small>
                     </span>
                     <span class="wow-dash-status ${done ? "done" : "ing"}">${done ? "완료" : "진행중"}</span>
@@ -3758,6 +4242,414 @@ function renderWowDashboardView() {
           `<div class="program-empty">아직 수행을 시작한 팀이 없습니다. 캘린더에서 팀 세션 일정을 추가하세요.</div>`
         }
       </section>
+    </div>
+  `;
+}
+
+/* =========================================================
+   Leadership (팀장 협업 세션) — 코호트 회차 모델
+   회차 생성 → 팀장 선택 → 회차별 불참자 → 서베이 업로드 → GPT 분석 반영
+   ========================================================= */
+function leadershipCandidates() {
+  return (state.units || [])
+    .filter((unit) => hasAssignedLeader(unit))
+    .map((unit) => ({
+      id: `leader:${unit.id}`,
+      name: unit.leader.trim(),
+      unitId: unit.id,
+      unitName: unit.name,
+      role: leaderRoleLabel(unit),
+      parent: getParentName(unit),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+}
+function leadershipCandidateById(id) {
+  return leadershipCandidates().find((candidate) => candidate.id === id) || null;
+}
+function leadershipRounds() {
+  return (state.leadershipSessions || [])
+    .slice()
+    .sort((a, b) => (Number(a.round) || 0) - (Number(b.round) || 0) || String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
+}
+function getLeadershipRound(id) {
+  return (state.leadershipSessions || []).find((round) => round.id === id) || null;
+}
+function selectedLeadershipRound() {
+  const rounds = leadershipRounds();
+  return getLeadershipRound(state.selectedLeadershipRoundId) || rounds[0] || null;
+}
+function createLeadershipRound() {
+  const rounds = leadershipRounds();
+  const nextNo = rounds.reduce((max, round) => Math.max(max, Number(round.round) || 0), 0) + 1;
+  const round = {
+    id: `lead-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    round: nextNo,
+    title: `${nextNo}회차 팀장 협업 세션`,
+    date: "",
+    startTime: "",
+    leaderIds: [],
+    absentPersonIds: [],
+    createdAt: new Date().toISOString(),
+  };
+  state.leadershipSessions = [...(state.leadershipSessions || []), round];
+  state.selectedLeadershipRoundId = round.id;
+  return round;
+}
+function leadershipRoundDone(round) {
+  return Boolean(round?.date && round.date <= todayISO());
+}
+function leadershipPresentCount(round) {
+  const absent = new Set(Array.isArray(round?.absentPersonIds) ? round.absentPersonIds : []);
+  return (round?.leaderIds || []).filter((id) => !absent.has(id)).length;
+}
+function leadershipActiveAbsentIds(round) {
+  return (round?.absentPersonIds || []).filter((id) => (round?.leaderIds || []).includes(id));
+}
+function leadershipQuantRowsForRound(roundId) {
+  return (state.leadershipQuantRows || []).filter((row) => row.roundId === roundId);
+}
+function leadershipTextRowsForRound(roundId) {
+  return (state.leadershipTextRows || []).filter((row) => row.roundId === roundId);
+}
+function leadershipAnalysisForRound(roundId) {
+  const raw = state.leadershipAnalysisResults?.[roundId];
+  return raw ? normalizedSessionAnalysis(raw) : null;
+}
+function leadershipSurveyTemplateCsv(round) {
+  const headers = ["roundTitle", "respondentNo", ...WOW_FINAL_QUANT_KEYS, "goodBadText", "moodText", "messageText"];
+  const sample = { roundTitle: round ? round.title : "회차", respondentNo: 1, goodBadText: "", moodText: "", messageText: "" };
+  WOW_FINAL_QUANT_KEYS.forEach((key) => { sample[key] = ""; });
+  return surveyToCsv(headers, [sample]);
+}
+function downloadLeadershipSurveyTemplate() {
+  const round = selectedLeadershipRound();
+  if (!round) { notifyOrganization("먼저 회차를 만들고 선택하세요"); return; }
+  const csv = leadershipSurveyTemplateCsv(round);
+  if (typeof download === "function") download(`팀장세션_${round.round}회차_서베이_템플릿.csv`, csv, "text/csv;charset=utf-8");
+  else notifyOrganization("다운로드를 지원하지 않는 환경입니다.");
+}
+function triggerLeadershipSurveyUpload() {
+  const round = selectedLeadershipRound();
+  if (!round) { notifyOrganization("먼저 회차를 선택하세요"); return; }
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".csv,text/csv";
+  input.addEventListener("change", () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const rows = surveyParseCsv(String(reader.result || ""));
+        const quant = [];
+        const text = [];
+        rows.forEach((row, index) => {
+          const base = { roundId: round.id, roundTitle: row.roundTitle || round.title, respondentNo: row.respondentNo || index + 1 };
+          const quantRow = { ...base };
+          WOW_FINAL_QUANT_KEYS.forEach((key) => { quantRow[key] = row[key] != null && row[key] !== "" ? row[key] : (row[key.toLowerCase()] || ""); });
+          quant.push(quantRow);
+          text.push({ ...base, goodBadText: row.goodBadText || "", moodText: row.moodText || "", messageText: row.messageText || "" });
+        });
+        state.leadershipQuantRows = [...(state.leadershipQuantRows || []).filter((x) => x.roundId !== round.id), ...quant];
+        state.leadershipTextRows = [...(state.leadershipTextRows || []).filter((x) => x.roundId !== round.id), ...text];
+        persist();
+        renderWowSessionWorkspace();
+        notifyOrganization(`${round.title} 서베이 ${rows.length}건 반영됨`);
+      } catch (error) {
+        console.warn("leadership survey upload failed", error);
+        notifyOrganization("업로드 파싱 실패 · CSV 형식을 확인하세요");
+      }
+    };
+    reader.readAsText(file, "utf-8");
+  });
+  input.click();
+}
+function buildLeadershipAnalysisPrompt(round) {
+  if (!round) return "";
+  const present = leadershipPresentCount(round);
+  const total = (round.leaderIds || []).length;
+  const quant = calculateWowQuantScores(leadershipQuantRowsForRound(round.id));
+  const textRows = leadershipTextRowsForRound(round.id);
+  const textSamples = textRows.slice(0, 20).map((row, index) => ({
+    no: row.respondentNo || index + 1,
+    goodBadText: row.goodBadText || "",
+    moodText: row.moodText || "",
+    messageText: row.messageText || "",
+  }));
+  const leaderNames = (round.leaderIds || []).map((id) => leadershipCandidateById(id)?.name).filter(Boolean);
+  return `당신은 조직문화·리더십 진단 전문가입니다. 아래 팀장 협업 세션(리더십 코호트) 데이터를 읽고, 리더 코호트 단위 보정 신호를 JSON만으로 반환하세요.
+
+회차: ${round.title}
+일자: ${round.date || "미정"}
+참여 팀장: ${present}/${total}명
+참여자: ${leaderNames.join(", ") || "미지정"}
+정량 설문 응답 수: ${quant.responseCount}
+정량 요약(100점 환산): ${JSON.stringify(quant.qMeans)}
+
+주관식 응답:
+${JSON.stringify(textSamples, null, 2)}
+
+반환 형식:
+{
+  "summary": "한 문장 진단",
+  "fatigueTextRisk": 0-100,
+  "trustTextRisk": 0-100,
+  "collaborationTextRisk": 0-100,
+  "teamPositiveSignal": 0-100,
+  "programEfficacySignal": 0-100,
+  "keywords": ["키워드1", "키워드2", "키워드3"],
+  "recommendations": ["운영 액션1", "운영 액션2"]
+}
+
+주의:
+- 숫자는 실제 응답 근거가 있을 때만 높게 주세요.
+- 리더십 맥락(소통·협업·네트워킹·회복)을 우선 해석하세요.
+- JSON 외 설명 문장은 쓰지 마세요.`;
+}
+function copyLeadershipPrompt() {
+  const el = document.getElementById("leadershipAnalysisPrompt");
+  if (!el) return;
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(el.value).then(() => notifyOrganization("프롬프트를 복사했습니다")).catch(() => {});
+    return;
+  }
+  el.select();
+  document.execCommand("copy");
+  notifyOrganization("프롬프트를 복사했습니다");
+}
+function saveLeadershipAnalysisResult() {
+  const round = selectedLeadershipRound();
+  const rawText = document.getElementById("leadershipAnalysisInput")?.value || "";
+  if (!round || !rawText.trim()) {
+    notifyOrganization("회차와 GPT 분석 결과를 먼저 입력하세요");
+    return false;
+  }
+  const cleaned = String(rawText).replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (error) {
+    parsed = { summary: cleaned.slice(0, 220) };
+  }
+  const result = normalizedSessionAnalysis({ ...parsed, rawText: cleaned, teamName: round.title, createdAt: new Date().toISOString() });
+  state.leadershipAnalysisResults = { ...(state.leadershipAnalysisResults || {}), [round.id]: result };
+  persist();
+  renderWowSessionWorkspace();
+  notifyOrganization(`${round.title} GPT 분석 결과를 리더십 신호에 반영했습니다`);
+  return true;
+}
+
+function renderLeadershipView() {
+  const goals = state.programGoals || defaultProgramGoals();
+  const rounds = leadershipRounds();
+  const candidates = leadershipCandidates();
+  const round = selectedLeadershipRound();
+  if (round) state.selectedLeadershipRoundId = round.id;
+
+  const roundTabs = rounds.length
+    ? rounds
+        .map((item) => `
+          <button type="button" class="lead-round-tab ${round && item.id === round.id ? "active" : ""} ${leadershipRoundDone(item) ? "done" : ""}" data-pick-leadership-round="${escapeHtml(item.id)}">
+            <b>${escapeHtml(String(item.round))}회차</b>
+            <small>${leadershipPresentCount(item)}명 · ${leadershipRoundDone(item) ? "완료" : (item.date ? escapeHtml(item.date) : "일정 미정")}</small>
+          </button>`)
+        .join("")
+    : `<p class="lead-empty-inline">아직 만든 회차가 없습니다. "회차 추가"로 시작하세요.</p>`;
+
+  const header = `
+    <div class="lead-head">
+      <div>
+        <div class="eyebrow">Leadership · 팀장 협업 세션</div>
+        <h3>팀장 협업 세션 운영</h3>
+        <p class="survey-note">목표 ${goals.leadership}회 · 회당 팀장 ${goals.leadershipPerSession}명 · 현재 ${rounds.length}회차 생성됨</p>
+      </div>
+      <button class="primary-button" type="button" data-add-leadership-round>＋ 회차 추가</button>
+    </div>
+    <div class="lead-round-tabs">${roundTabs}</div>
+  `;
+
+  if (!round) {
+    return `<div class="leadership-view">${header}
+      <div class="program-empty">회차를 추가하면 팀장 선택 · 불참 · 서베이 · GPT 분석을 운영할 수 있습니다.</div>
+    </div>`;
+  }
+
+  if (!candidates.length) {
+    return `<div class="leadership-view">${header}
+      <div class="program-empty">조직도에 리더(팀장)가 지정된 팀이 없습니다. People &amp; Organization에서 팀장을 먼저 지정하세요.</div>
+    </div>`;
+  }
+
+  const inRound = new Set(round.leaderIds || []);
+  const addable = candidates.filter((candidate) => !inRound.has(candidate.id));
+  const leaderTags = (round.leaderIds || [])
+    .map((id) => {
+      const candidate = leadershipCandidateById(id);
+      const name = candidate ? candidate.name : id.replace("leader:", "");
+      const sub = candidate ? candidate.unitName : "";
+      return `<span class="lead-leader-tag"><span class="llt-name">${escapeHtml(name)}</span>${sub ? `<em>${escapeHtml(sub)}</em>` : ""}<button type="button" class="lead-leader-x" data-leadership-leader-remove="${escapeHtml(id)}" aria-label="${escapeHtml(name)} 제외" title="제외">×</button></span>`;
+    })
+    .join("");
+
+  const total = (round.leaderIds || []).length;
+  const present = leadershipPresentCount(round);
+  const activeAbsent = leadershipActiveAbsentIds(round);
+  const presentSelectable = (round.leaderIds || []).filter((id) => !activeAbsent.includes(id));
+  const absentTags = activeAbsent
+    .map((id) => {
+      const candidate = leadershipCandidateById(id);
+      const name = candidate ? candidate.name : id.replace("leader:", "");
+      return `<span class="absent-tag"><span class="absent-tag-name">${escapeHtml(name)}</span><span class="absent-tag-reason">${escapeHtml(absenceReasonLabel(sessionAbsentReason(round, id)))}</span><button type="button" class="absent-tag-x" data-leadership-absent-remove="${escapeHtml(id)}" aria-label="${escapeHtml(name)} 불참 취소" title="불참 취소">×</button></span>`;
+    })
+    .join("");
+  const leadRepeatWarning = renderRepeatAbsenceWarning(repeatAbsenteesFrom(leadershipRounds(), (id) => leadershipCandidateById(id)?.name));
+
+  const quantRows = leadershipQuantRowsForRound(round.id);
+  const textRows = leadershipTextRowsForRound(round.id);
+  const quantScores = calculateWowQuantScores(quantRows);
+  const prompt = buildLeadershipAnalysisPrompt(round);
+  const saved = leadershipAnalysisForRound(round.id);
+  const overTarget = total > goals.leadershipPerSession;
+
+  const finalBody = quantRows.length || textRows.length
+    ? `<div class="survey-quant-grid">${WOW_FINAL_QUANT_KEYS.map((key) => `<span><b>${key}</b>${quantScores.qMeans[key] == null ? "-" : Math.round(quantScores.qMeans[key])}</span>`).join("")}</div>
+       <p class="survey-note">객관식 ${quantRows.length}명 · 주관식 ${textRows.length}명 (100점 환산 평균)</p>`
+    : `<div class="survey-empty">아직 이 회차의 서베이 데이터가 없습니다. 템플릿을 받아 작성 후 업로드하세요.</div>`;
+
+  return `
+    <div class="leadership-view">
+      ${header}
+      <div class="lead-round-body" data-leadership-round="${escapeHtml(round.id)}">
+        <section class="wow-exec-card">
+          <div class="wow-card-head">
+            <h3>${escapeHtml(round.title)} <small>참여 팀장 ${present}/${total}명 · 목표 ${goals.leadershipPerSession}명${overTarget ? " (초과)" : ""}</small></h3>
+            <button class="ghost-button" type="button" data-delete-leadership-round="${escapeHtml(round.id)}">회차 삭제</button>
+          </div>
+          <div class="lead-round-fields">
+            <label>회차명<input id="leadRoundTitle" type="text" value="${escapeHtml(round.title)}"></label>
+            <label>일자<input id="leadRoundDate" type="date" value="${escapeHtml(round.date || "")}"></label>
+            <label>시간<input id="leadRoundTime" type="time" value="${escapeHtml(round.startTime || "")}"></label>
+            <button class="ghost-button" type="button" data-save-leadership-round>일정 저장</button>
+          </div>
+        </section>
+
+        <section class="wow-exec-card">
+          <h3>참여 팀장 선택 <small>한 명씩 추가/저장</small></h3>
+          <p class="survey-note">조직도에서 리더(팀장)를 불러옵니다. 추가한 팀장은 목록에서 자동 제외됩니다.</p>
+          <div class="absent-add-row">
+            <select class="absent-select" data-leadership-leader-select aria-label="팀장 선택" ${addable.length ? "" : "disabled"}>
+              ${addable.length
+                ? `<option value="">팀장 선택…</option>` + addable.map((candidate) => `<option value="${escapeHtml(candidate.id)}">${escapeHtml(candidate.name)} · ${escapeHtml(candidate.unitName)}</option>`).join("")
+                : `<option value="">추가할 팀장이 없습니다</option>`}
+            </select>
+            <button type="button" class="absent-add-btn" data-leadership-leader-add ${addable.length ? "" : "disabled"}>＋ 팀장 추가</button>
+          </div>
+          <div class="lead-leader-tags">${leaderTags || `<span class="absent-none">아직 추가된 팀장이 없습니다</span>`}</div>
+        </section>
+
+        <section class="wow-exec-card">
+          <h3>불참자 <small>참여 팀장 중 결석 · 참여율 반영</small></h3>
+          ${
+            total
+              ? `<div class="absent-picker" data-leadership-round="${escapeHtml(round.id)}">
+                  <div class="absent-picker-head"><span>불참자 추가 · 한 명씩 선택</span><strong>불참 ${activeAbsent.length} / ${total}명</strong></div>
+                  <div class="absent-add-row">
+                    <select class="absent-select" data-leadership-absent-select aria-label="불참 팀장 선택" ${presentSelectable.length ? "" : "disabled"}>
+                      ${presentSelectable.length
+                        ? `<option value="">팀장 선택…</option>` + presentSelectable.map((id) => { const candidate = leadershipCandidateById(id); return `<option value="${escapeHtml(id)}">${escapeHtml(candidate ? candidate.name : id)}</option>`; }).join("")
+                        : `<option value="">전원 불참 처리됨</option>`}
+                    </select>
+                    <select class="absent-reason" data-leadership-absent-reason aria-label="불참 사유" ${presentSelectable.length ? "" : "disabled"}>${absenceReasonOptions("other")}</select>
+                    <button type="button" class="absent-add-btn" data-leadership-absent-add ${presentSelectable.length ? "" : "disabled"}>＋ 불참 추가</button>
+                  </div>
+                  <div class="absent-selected">${absentTags || `<span class="absent-none">불참자 없음 · 전원 참석</span>`}</div>
+                  ${leadRepeatWarning}
+                </div>`
+              : `<p class="program-muted">먼저 위에서 참여 팀장을 추가하세요.</p>`
+          }
+        </section>
+
+        <section class="wow-exec-card">
+          <div class="wow-card-head">
+            <h3>회차 서베이 <small>객관식 10 + 주관식 3</small></h3>
+            <div class="wow-card-actions">
+              <button class="ghost-button" type="button" data-leadership-survey-template>템플릿</button>
+              <button class="primary-button" type="button" data-leadership-survey-upload>업로드</button>
+            </div>
+          </div>
+          ${finalBody}
+        </section>
+
+        <section class="wow-exec-card analysis-card">
+          <div class="wow-card-head">
+            <h3>GPT 분석 <small>→ 리더십 신호 반영</small></h3>
+            ${saved ? `<span class="analysis-state saved">분석 저장됨 · ${escapeHtml((saved.createdAt || "").slice(0, 10))}</span>` : `<span class="analysis-state empty">분석 미저장</span>`}
+          </div>
+          <p class="survey-note">아래 프롬프트를 GPT에 넣고 결과(JSON)를 붙여넣어 저장하면 이 회차 신호(협업·신뢰·피로 등)에 반영됩니다.</p>
+          <label>분석 프롬프트
+            <textarea id="leadershipAnalysisPrompt" readonly rows="8">${escapeHtml(prompt)}</textarea>
+          </label>
+          <button class="ghost-button" type="button" data-copy-leadership-prompt>프롬프트 복사</button>
+          <label>GPT 결과 붙여넣기 (JSON)
+            <textarea id="leadershipAnalysisInput" rows="7" placeholder='{"summary":"...","collaborationTextRisk":30,"teamPositiveSignal":70,...}'>${escapeHtml(saved?.rawText || "")}</textarea>
+          </label>
+          <button class="primary-button wide" type="button" data-save-leadership-analysis>분석 저장 · 리더십 신호 반영</button>
+          ${saved ? `<div class="analysis-saved-note"><strong>${escapeHtml(saved.summary || "저장된 분석")}</strong><span>${(saved.keywords || []).map(escapeHtml).join(" · ")}</span></div>` : ""}
+        </section>
+      </div>
+    </div>
+  `;
+}
+
+function saveProgramGoals() {
+  const cur = state.programGoals || defaultProgramGoals();
+  const pick = (value, fallback) => (Number.isFinite(Number(value)) && Number(value) > 0 ? Math.round(Number(value)) : fallback);
+  state.programGoals = {
+    year: cur.year,
+    teamBuilding: pick(document.getElementById("goalTeamBuilding")?.value, cur.teamBuilding),
+    leadership: pick(document.getElementById("goalLeadership")?.value, cur.leadership),
+    leadershipPerSession: pick(document.getElementById("goalLeadershipPer")?.value, cur.leadershipPerSession),
+  };
+  persist();
+  renderWowSessionWorkspace();
+  notifyOrganization("연간 목표를 저장했습니다");
+}
+
+// P0 — 데이터 안전: 전체 조직/세션/설문 스냅샷을 JSON으로 내려받아 백업
+function downloadOrganizationBackup() {
+  try {
+    const snapshot = organizationSnapshot();
+    if (typeof download === "function") {
+      download(`lina_culture_backup_${todayISO()}.json`, JSON.stringify(snapshot, null, 2), "application/json;charset=utf-8");
+      notifyOrganization("전체 데이터 백업(JSON)을 내려받았습니다");
+    } else {
+      notifyOrganization("다운로드를 지원하지 않는 환경입니다.");
+    }
+  } catch (error) {
+    console.warn("backup export failed", error);
+    notifyOrganization("백업 생성에 실패했습니다");
+  }
+}
+
+// 프로그램운영 = Team Building(기존 팀별수행) + Leadership(팀장 협업 세션) 서브 세그먼트
+function renderProgramOperationsView() {
+  if (!["teambuilding", "leadership"].includes(state.programSubView)) state.programSubView = "teambuilding";
+  const sub = state.programSubView;
+  const tbCount = sessionTeamUnits().filter((team) => teamProgramSummary(team).doneSteps > 0).length;
+  const leadCount = (state.leadershipSessions || []).length;
+  return `
+    <div class="program-ops">
+      <div class="program-subnav" role="tablist" aria-label="프로그램 구분">
+        <button type="button" class="program-subtab ${sub === "teambuilding" ? "active" : ""}" data-program-subview="teambuilding">
+          <b>Team Building</b><small>팀빌딩 세션 · 진행 ${tbCount}팀</small>
+        </button>
+        <button type="button" class="program-subtab ${sub === "leadership" ? "active" : ""}" data-program-subview="leadership">
+          <b>Leadership</b><small>팀장 협업 세션 · ${leadCount}회차</small>
+        </button>
+      </div>
+      <div class="program-sub-body">
+        ${sub === "leadership" ? renderLeadershipView() : renderWowExecutionView()}
+      </div>
     </div>
   `;
 }
@@ -3779,17 +4671,17 @@ function renderWowSessionWorkspace() {
         <div class="wow-session-tabs" role="tablist" aria-label="WOW x BALANCE 운영 보기">
           <button class="${state.sessionView === "dashboard" ? "active" : ""}" type="button" data-wow-session-tab="dashboard">대시보드</button>
           <button class="${state.sessionView === "calendar" ? "active" : ""}" type="button" data-wow-session-tab="calendar">캘린더</button>
-          <button class="${state.sessionView === "execution" ? "active" : ""}" type="button" data-wow-session-tab="execution">팀별수행</button>
+          <button class="${state.sessionView === "execution" ? "active" : ""}" type="button" data-wow-session-tab="execution">프로그램운영</button>
         </div>
       </div>
       <div class="wow-session-summary">
         <article><span>운영 팀</span><strong>${teams.length}</strong></article>
         <article><span>등록 일정</span><strong>${sessions.length}</strong></article>
-        <article><span>정량 설문</span><strong>${(state.wowQuantRows || []).length}</strong></article>
-        <article><span>주관식 설문</span><strong>${(state.wowTextRows || []).length}</strong></article>
+        <article><span>팀장 회차</span><strong>${(state.leadershipSessions || []).length}</strong></article>
+        <article><span>설문 응답</span><strong>${(state.wowQuantRows || []).length + (state.leadershipQuantRows || []).length}</strong></article>
       </div>
       <div id="wowSessionBody" class="wow-session-body">
-        ${state.sessionView === "execution" ? renderWowExecutionView() : state.sessionView === "dashboard" ? renderWowDashboardView() : `<div id="wowCalendarRoot"></div>`}
+        ${state.sessionView === "execution" ? renderProgramOperationsView() : state.sessionView === "dashboard" ? renderWowDashboardView() : `<div id="wowCalendarRoot"></div>`}
       </div>
     </section>
   `;
@@ -5378,20 +6270,197 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  const absentToggle = event.target.closest("[data-absent-toggle]");
-  if (absentToggle) {
-    const container = absentToggle.closest("[data-session-absentees]");
+  const absentAdd = event.target.closest("[data-absent-add]");
+  if (absentAdd) {
+    const container = absentAdd.closest("[data-session-absentees]");
+    const session = (state.sessions || []).find((s) => s.id === container?.dataset.sessionAbsentees);
+    const select = container?.querySelector("[data-absent-select]");
+    const reasonSelect = container?.querySelector("[data-absent-reason]");
+    const pid = select?.value;
+    if (!session) return;
+    if (!pid) {
+      notifyOrganization("추가할 팀원을 먼저 선택하세요");
+      return;
+    }
+    const set = new Set(sessionAbsentIds(session));
+    set.add(pid);
+    session.absentPersonIds = Array.from(set);
+    session.absentReasons = { ...(session.absentReasons || {}), [pid]: reasonSelect?.value || "other" };
+    session.participants = sessionActualParticipants(session);
+    persist();
+    renderWowSessionWorkspace();
+    return;
+  }
+
+  const absentRemove = event.target.closest("[data-absent-remove]");
+  if (absentRemove) {
+    const container = absentRemove.closest("[data-session-absentees]");
     const session = (state.sessions || []).find((s) => s.id === container?.dataset.sessionAbsentees);
     if (session) {
-      const pid = absentToggle.dataset.absentToggle;
+      const pid = absentRemove.dataset.absentRemove;
       const set = new Set(sessionAbsentIds(session));
-      if (set.has(pid)) set.delete(pid);
-      else set.add(pid);
+      set.delete(pid);
       session.absentPersonIds = Array.from(set);
+      if (session.absentReasons) delete session.absentReasons[pid];
       session.participants = sessionActualParticipants(session);
       persist();
       renderWowSessionWorkspace();
     }
+    return;
+  }
+
+  const attGo = event.target.closest("[data-wow-att-go]");
+  if (attGo) {
+    state.selectedSessionAnalysisTeamId = attGo.dataset.wowAttGo;
+    state.sessionView = "execution";
+    state.programSubView = "teambuilding";
+    renderWowSessionWorkspace();
+    persist();
+    return;
+  }
+
+  const scheduleTeam = event.target.closest("[data-schedule-team]");
+  if (scheduleTeam) {
+    calendarPrefillTeamId = scheduleTeam.dataset.scheduleTeam;
+    state.sessionView = "calendar";
+    renderWowSessionWorkspace();
+    persist();
+    return;
+  }
+
+  const subviewBtn = event.target.closest("[data-program-subview]");
+  if (subviewBtn) {
+    state.programSubView = subviewBtn.dataset.programSubview === "leadership" ? "leadership" : "teambuilding";
+    renderWowSessionWorkspace();
+    persist();
+    return;
+  }
+
+  if (event.target.closest("[data-toggle-goal-edit]")) {
+    const box = document.getElementById("wowGoalEdit");
+    if (box) box.hidden = !box.hidden;
+    return;
+  }
+  if (event.target.closest("[data-save-goals]")) {
+    saveProgramGoals();
+    return;
+  }
+  if (event.target.closest("[data-export-backup]")) {
+    downloadOrganizationBackup();
+    return;
+  }
+
+  if (event.target.closest("[data-add-leadership-round]")) {
+    createLeadershipRound();
+    persist();
+    renderWowSessionWorkspace();
+    return;
+  }
+  const pickRound = event.target.closest("[data-pick-leadership-round]");
+  if (pickRound) {
+    state.selectedLeadershipRoundId = pickRound.dataset.pickLeadershipRound;
+    // 캘린더 등 다른 화면에서 눌러도 Leadership 운영 화면으로 진입
+    state.sessionView = "execution";
+    state.programSubView = "leadership";
+    renderWowSessionWorkspace();
+    persist();
+    return;
+  }
+  const delRound = event.target.closest("[data-delete-leadership-round]");
+  if (delRound) {
+    const id = delRound.dataset.deleteLeadershipRound;
+    if (window.confirm("이 회차를 삭제할까요? 회차의 서베이·분석 데이터도 함께 삭제됩니다.")) {
+      state.leadershipSessions = (state.leadershipSessions || []).filter((r) => r.id !== id);
+      state.leadershipQuantRows = (state.leadershipQuantRows || []).filter((r) => r.roundId !== id);
+      state.leadershipTextRows = (state.leadershipTextRows || []).filter((r) => r.roundId !== id);
+      if (state.leadershipAnalysisResults) delete state.leadershipAnalysisResults[id];
+      if (state.selectedLeadershipRoundId === id) state.selectedLeadershipRoundId = "";
+      persist();
+      renderWowSessionWorkspace();
+    }
+    return;
+  }
+  if (event.target.closest("[data-save-leadership-round]")) {
+    const round = selectedLeadershipRound();
+    if (round) {
+      const title = (document.getElementById("leadRoundTitle")?.value || "").trim();
+      round.title = title || round.title;
+      round.date = document.getElementById("leadRoundDate")?.value || "";
+      round.startTime = document.getElementById("leadRoundTime")?.value || "";
+      persist();
+      renderWowSessionWorkspace();
+      notifyOrganization("회차 일정을 저장했습니다");
+    }
+    return;
+  }
+  const leadAdd = event.target.closest("[data-leadership-leader-add]");
+  if (leadAdd) {
+    const round = selectedLeadershipRound();
+    const select = leadAdd.closest(".absent-add-row")?.querySelector("[data-leadership-leader-select]");
+    const pid = select?.value;
+    if (!round) return;
+    if (!pid) { notifyOrganization("추가할 팀장을 먼저 선택하세요"); return; }
+    if (!(round.leaderIds || []).includes(pid)) round.leaderIds = [...(round.leaderIds || []), pid];
+    persist();
+    renderWowSessionWorkspace();
+    return;
+  }
+  const leadRemove = event.target.closest("[data-leadership-leader-remove]");
+  if (leadRemove) {
+    const round = selectedLeadershipRound();
+    if (round) {
+      const pid = leadRemove.dataset.leadershipLeaderRemove;
+      round.leaderIds = (round.leaderIds || []).filter((id) => id !== pid);
+      round.absentPersonIds = (round.absentPersonIds || []).filter((id) => id !== pid);
+      persist();
+      renderWowSessionWorkspace();
+    }
+    return;
+  }
+  const leadAbsentAdd = event.target.closest("[data-leadership-absent-add]");
+  if (leadAbsentAdd) {
+    const round = selectedLeadershipRound();
+    const select = leadAbsentAdd.closest(".absent-add-row")?.querySelector("[data-leadership-absent-select]");
+    const reasonSelect = leadAbsentAdd.closest(".absent-add-row")?.querySelector("[data-leadership-absent-reason]");
+    const pid = select?.value;
+    if (!round) return;
+    if (!pid) { notifyOrganization("불참 처리할 팀장을 먼저 선택하세요"); return; }
+    const set = new Set(round.absentPersonIds || []);
+    set.add(pid);
+    round.absentPersonIds = Array.from(set);
+    round.absentReasons = { ...(round.absentReasons || {}), [pid]: reasonSelect?.value || "other" };
+    persist();
+    renderWowSessionWorkspace();
+    return;
+  }
+  const leadAbsentRemove = event.target.closest("[data-leadership-absent-remove]");
+  if (leadAbsentRemove) {
+    const round = selectedLeadershipRound();
+    if (round) {
+      const pid = leadAbsentRemove.dataset.leadershipAbsentRemove;
+      const set = new Set(round.absentPersonIds || []);
+      set.delete(pid);
+      round.absentPersonIds = Array.from(set);
+      if (round.absentReasons) delete round.absentReasons[pid];
+      persist();
+      renderWowSessionWorkspace();
+    }
+    return;
+  }
+  if (event.target.closest("[data-leadership-survey-template]")) {
+    downloadLeadershipSurveyTemplate();
+    return;
+  }
+  if (event.target.closest("[data-leadership-survey-upload]")) {
+    triggerLeadershipSurveyUpload();
+    return;
+  }
+  if (event.target.closest("[data-copy-leadership-prompt]")) {
+    copyLeadershipPrompt();
+    return;
+  }
+  if (event.target.closest("[data-save-leadership-analysis]")) {
+    saveLeadershipAnalysisResult();
     return;
   }
 
