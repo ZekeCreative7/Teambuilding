@@ -471,6 +471,8 @@ let state = loadState();
 let activeDragPayload = null;
 let pointerDrag = null;
 let calendarPrefillTeamId = null;
+let wowGoalEditOpen = false;
+let wowAttentionExpanded = false;
 let suppressNextClick = false;
 let pendingUnitPhotoId = null;
 let pendingPersonPhotoId = null;
@@ -4017,6 +4019,9 @@ function renderWowDashboardView() {
     ? `<span class="wow-alert urgent"><i></i>가장 시급 · ${escapeHtml(activeAttention[0].team.name)} — ${escapeHtml(activeAttention[0].reasons[0].text)}</span>`
     : `<span class="wow-alert calm"><i></i>현재 위험 신호 없음 · 전 팀 정상 운영</span>`;
   const resolvedCount = attention.length - activeAttention.length;
+  const attentionPreviewLimit = 5;
+  const visibleAttention = wowAttentionExpanded ? attention : attention.slice(0, attentionPreviewLimit);
+  const hiddenAttentionCount = Math.max(0, attention.length - visibleAttention.length);
 
   // KPI 카드 (의미·톤 포함)
   const partTone = avgParticipation >= 85 ? "good" : avgParticipation >= 70 ? "mid" : "low";
@@ -4055,7 +4060,7 @@ function renderWowDashboardView() {
             <h3>목표 대비 어디까지 왔나</h3>
           </div>
           <div class="wow-goals-actions">
-            <button class="ghost-button" type="button" data-toggle-goal-edit>목표 수정</button>
+            <button class="ghost-button" type="button" data-toggle-goal-edit>${wowGoalEditOpen ? "목표 수정 닫기" : "목표 수정"}</button>
             <button class="ghost-button" type="button" data-export-backup title="전체 조직·세션 데이터를 JSON으로 내려받아 백업">데이터 백업</button>
           </div>
         </div>
@@ -4071,7 +4076,7 @@ function renderWowDashboardView() {
             <div class="wow-goal-meta">완료 <b>${leadDone}</b> / 목표 <b>${goals.leadership}</b>회 · 참여 팀장 ${distinctLeaders.size}/${leaderTarget}명</div>
           </article>
         </div>
-        <div class="wow-goal-edit" id="wowGoalEdit" hidden>
+        <div class="wow-goal-edit" id="wowGoalEdit" ${wowGoalEditOpen ? "" : "hidden"}>
           <label>팀빌딩 목표 (팀)<input id="goalTeamBuilding" type="number" min="1" value="${goals.teamBuilding}"></label>
           <label>팀장 세션 목표 (회)<input id="goalLeadership" type="number" min="1" value="${goals.leadership}"></label>
           <label>회당 팀장 수 (명)<input id="goalLeadershipPer" type="number" min="1" value="${goals.leadershipPerSession}"></label>
@@ -4093,12 +4098,19 @@ function renderWowDashboardView() {
       <section class="wow-insight-grid">
         <div class="wow-panel wow-panel-attention">
           <div class="wow-panel-head">
-            <h3>지금 챙겨야 할 팀</h3>
-            <span class="wow-panel-count">미조치 ${activeAttention.length} / 전체 ${attention.length}건</span>
+            <div>
+              <h3>지금 챙겨야 할 팀</h3>
+              <span class="wow-panel-count">${attention.length > attentionPreviewLimit && !wowAttentionExpanded ? `우선순위 ${visibleAttention.length}개만 표시` : `미조치 ${activeAttention.length} / 전체 ${attention.length}건`}</span>
+            </div>
+            ${
+              attention.length > attentionPreviewLimit
+                ? `<button class="ghost-button wow-att-toggle" type="button" data-toggle-attention-list>${wowAttentionExpanded ? "접기" : `전체 ${attention.length}개 보기`}</button>`
+                : ""
+            }
           </div>
           ${
             attention.length
-              ? attention
+              ? visibleAttention
                   .map((it) => {
                     const top = it.reasons[0];
                     const fu = it.followup;
@@ -4122,7 +4134,10 @@ function renderWowDashboardView() {
                         </div>
                       </div>`;
                   })
-                  .join("")
+                  .join("") +
+                (hiddenAttentionCount
+                  ? `<div class="wow-att-more"><b>${hiddenAttentionCount}개 팀은 접어두었습니다.</b><span>위험도와 진행률 기준으로 우선순위가 낮은 항목입니다.</span></div>`
+                  : "")
               : `<div class="wow-panel-empty good"><b>모든 팀이 정상 운영 중입니다.</b><span>참여율·진행·신호 모두 기준 이내입니다. 다가오는 세션 준비에 집중하세요.</span></div>`
           }
         </div>
@@ -4687,6 +4702,7 @@ function saveProgramGoals() {
     leadership: pick(document.getElementById("goalLeadership")?.value, cur.leadership),
     leadershipPerSession: pick(document.getElementById("goalLeadershipPer")?.value, cur.leadershipPerSession),
   };
+  wowGoalEditOpen = false;
   persist();
   renderWowSessionWorkspace();
   notifyOrganization("연간 목표를 저장했습니다");
@@ -4737,6 +4753,17 @@ function renderWowSessionWorkspace() {
   if (!["execution", "calendar", "dashboard"].includes(state.sessionView)) state.sessionView = "dashboard";
   const teams = sessionTeamUnits();
   const sessions = state.sessions || [];
+  const today = todayISO();
+  const currentMonth = today.slice(0, 7);
+  const monthlyTeamSessions = sessions.filter((session) => (session.track || "team") === "team" && String(session.date || "").startsWith(currentMonth));
+  const monthlyTeamIds = new Set(monthlyTeamSessions.map((session) => session.teamId || session.teamName).filter(Boolean));
+  const scheduledLeadership = (state.leadershipSessions || []).filter((round) => round.date);
+  const upcomingLeadership = scheduledLeadership.filter((round) => round.date >= today).length;
+  const surveyCompletedTeamIds = new Set(
+    [...(state.wowQuantRows || []), ...(state.wowTextRows || [])]
+      .map((row) => row.teamId || row.teamName)
+      .filter(Boolean)
+  );
   root.innerHTML = `
     <section class="wow-session-shell">
       <div class="wow-session-hero">
@@ -4752,10 +4779,9 @@ function renderWowSessionWorkspace() {
         </div>
       </div>
       <div class="wow-session-summary">
-        <article><span>운영 팀</span><strong>${teams.length}</strong></article>
-        <article><span>등록 일정</span><strong>${sessions.length}</strong></article>
-        <article><span>팀장 회차</span><strong>${(state.leadershipSessions || []).length}</strong></article>
-        <article><span>설문 응답</span><strong>${(state.wowQuantRows || []).length + (state.leadershipQuantRows || []).length}</strong></article>
+        <article><span>이번달 팀빌딩 운영</span><strong>${monthlyTeamIds.size}</strong><em>등록 일정 ${monthlyTeamSessions.length}개</em></article>
+        <article><span>팀장세션 등록 일정</span><strong>${scheduledLeadership.length}</strong><em>예정 ${upcomingLeadership}회차</em></article>
+        <article><span>설문 완료 팀 수</span><strong>${surveyCompletedTeamIds.size}</strong><em>WOW 설문 업로드 기준</em></article>
       </div>
       <div id="wowSessionBody" class="wow-session-body">
         ${state.sessionView === "execution" ? renderProgramOperationsView() : state.sessionView === "dashboard" ? renderWowDashboardView() : `<div id="wowCalendarRoot"></div>`}
@@ -6423,8 +6449,13 @@ document.addEventListener("click", (event) => {
   }
 
   if (event.target.closest("[data-toggle-goal-edit]")) {
-    const box = document.getElementById("wowGoalEdit");
-    if (box) box.hidden = !box.hidden;
+    wowGoalEditOpen = !wowGoalEditOpen;
+    renderWowSessionWorkspace();
+    return;
+  }
+  if (event.target.closest("[data-toggle-attention-list]")) {
+    wowAttentionExpanded = !wowAttentionExpanded;
+    renderWowSessionWorkspace();
     return;
   }
   if (event.target.closest("[data-save-goals]")) {
