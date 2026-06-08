@@ -604,12 +604,17 @@ button.ghost:hover { background: linear-gradient(135deg, rgba(95, 109, 238, 0.1)
 .smp-line{font-size:13px;font-weight:850;color:var(--ink)}
 .smp-line b{color:#047857}
 
-@media(max-width:960px){
+/* 사이드바가 드로어로 바뀌는 폭(≤1180px)부터 홈 대시보드 그리드도 1단으로 접는다.
+   (예전엔 960px라 960~1180 구간에서 히어로가 2단으로 남아 카피가 좁아지고 오른쪽이 비어 깨졌음) */
+@media(max-width:1180px){
   .dash-hero{grid-template-columns:1fr}
   .pillar-row{grid-template-columns:1fr}
   .sess-grid{grid-template-columns:1fr 1fr}
   .op-loop{flex-direction:column}
   .loop-arrow{transform:rotate(90deg);justify-content:center}
+}
+@media(max-width:760px){
+  .sess-grid{grid-template-columns:1fr}
 }
 
 /* 동력 레이더 차트 */
