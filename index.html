@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="modules.css?v=20260607-home-responsive" />
-    <link rel="stylesheet" href="styles.css?v=20260607-responsive-fix2" />
+    <link rel="stylesheet" href="styles.css?v=20260608-formula-v2" />
   </head>
   <body>
     <div class="app-shell" id="appRoot" style="display:none">
@@ -29,7 +29,7 @@
           <button class="nav-item" data-view="home" type="button" title="Culture Dashboard" onclick="showView('home')"><span class="nav-ico">DB</span><span class="nav-label">Culture Dashboard</span></button>
           <button class="nav-item" data-view="pulse" type="button" title="Culture Intelligence" onclick="showView('pulse')"><span class="nav-ico">CI</span><span class="nav-label">Culture Intelligence</span></button>
           <button class="nav-item active" data-view="people" type="button" title="People &amp; Organization" onclick="showView('people')"><span class="nav-ico">PO</span><span class="nav-label">People &amp; Organization</span></button>
-          <button class="nav-item" data-view="session" type="button" title="Campaign Studio" onclick="showView('session')"><span class="nav-ico">CS</span><span class="nav-label">Campaign Studio</span></button>
+          <button class="nav-item" data-view="session" type="button" title="WOW x BALANCE" onclick="showView('session')"><span class="nav-ico">WB</span><span class="nav-label">WOW x BALANCE</span></button>
           <button class="nav-item" data-view="speech" type="button" title="Message Center" onclick="showView('speech')"><span class="nav-ico">MC</span><span class="nav-label">Message Center</span></button>
           <button class="nav-item" data-view="data" type="button" title="데이터 / Firebase 관리" onclick="showView('data')"><span class="nav-ico">DF</span><span class="nav-label">데이터 / Firebase 관리</span></button>
         </nav>
@@ -113,7 +113,7 @@
           <div id="prioritySupport" class="home-list"></div>
         </div>
         <div class="dashCard">
-          <div class="panelTitle"><div><h3>WOW×BALANCE 세션 현황</h3><p class="sub">팀 세션(7단계) · 팀장 세션(4단계) 참여·완료·진행률</p></div><button class="ghost" onclick="showView('people');if(typeof state!=='undefined'){state.view='calendar';if(typeof render==='function')render();}">캘린더</button></div>
+          <div class="panelTitle"><div><h3>WOW×BALANCE 세션 현황</h3><p class="sub">팀 세션(7단계) · 팀장 세션(4단계) 참여·완료·진행률</p></div><button class="ghost" onclick="if(typeof openWowSessionTab==='function')openWowSessionTab('calendar');else showView('session')">캘린더</button></div>
           <div id="sessionOps"></div>
         </div>
       </div>
@@ -248,7 +248,6 @@
         <div class="segmented" role="tablist" aria-label="보기 방식">
           <button class="segment active" data-view="official" type="button">조직도</button>
           <button class="segment" data-view="network" type="button">조직문화 확산 맵</button>
-          <button class="segment" data-view="calendar" type="button">캘린더</button>
           <button class="segment" data-view="groups" type="button">타겟그룹 설정</button>
         </div>
         <div class="filter-strip" aria-label="세션 · Pulse 필터">
@@ -277,14 +276,7 @@
     </section>
 
     <section id="session" class="view">
-      <div class="toolbar">
-        <div class="grow"><div class="eyebrow">Campaign Studio</div><h2>조직문화 세션 만들기</h2><p class="sub">Pulse Survey 분석 결과를 세션 디자인 스튜디오의 Project Brief로 넘겨 워크숍을 설계합니다.</p></div>
-        <button class="primary" onclick="openSessionDesigner()">세션 디자인 스튜디오 열기</button>
-      </div>
-      <div class="grid2" style="margin-top:14px">
-        <div class="card"><h3>가져올 Pulse 데이터</h3><label>대상</label><select id="sessionScope" onchange="renderSessionContext()"></select><div id="sessionContext" class="analysisBox" style="margin-top:12px"></div><div class="toolbar" style="margin-top:12px"><button class="green" onclick="createSessionFromSelection()">이 데이터 적용 후 열기</button><button class="ghost" onclick="copyText('sessionContextHidden')">맥락 복사</button></div><textarea id="sessionContextHidden" class="hidden"></textarea></div>
-        <div class="card"><h3>연결 방식</h3><div class="note">선택한 조직의 긍정/부정, 약점 문항, 리스크, 저장된 GPT 분석을 세션 생성기의 Project Brief와 Feedback 맥락에 자동 반영합니다. 기존 세션 생성기의 화면과 기능은 그대로 유지됩니다.</div><ul class="sub" style="line-height:1.8"><li>Project Brief: 목적, 조직 맥락, 실패 리스크 자동 입력</li><li>Feedback: Pulse 근거 수치와 GPT 분석 반영</li><li>Decision Log: Pulse Survey 맥락 적용 기록 추가</li></ul></div>
-      </div>
+      <div id="wowSessionRoot"></div>
     </section>
 
     <section id="speech" class="view">
@@ -344,8 +336,8 @@
 - analysis: GPT 분석 결과
 - communications: 커뮤니케이션 솔루션 결과
 
-users/{uid}/organizationStates/default
-- units / people / sessions / groups: 조직도·구성원·캘린더·타겟그룹
+userStates/{uid}
+- units / people / sessions / groups / wowQuantRows / wowTextRows: 조직도·구성원·캘린더·타겟그룹·WOW 설문 응답
 
 users/{uid}/sessionDesigner/default
 - state / board: 세션 디자이너 현재 프로젝트와 저장 보드
@@ -500,7 +492,7 @@ pendingUsers/{uid}    승인 대기 사용자</div>
 
     <script src="firebase-config.js"></script>
     <script src="organization_data.js"></script>
-    <script src="app.js?v=20260607-save-recursion-fix"></script>
-    <script src="platform.js?v=20260606-session-rail"></script>
+    <script src="app.js?v=20260608-wow-ops-menu"></script>
+    <script src="platform.js?v=20260608-wow-ops-menu"></script>
   </body>
 </html>

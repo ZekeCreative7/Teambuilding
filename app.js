@@ -463,6 +463,7 @@ const groupTemplates = [
 const leaderTitleOptions = ["이사", "상무", "전무", "부사장", "사장", "대표이사"];
 const leaderRoleOptions = ["대표이사", "부문장", "본부장", "실장", "센터장", "그룹장", "팀장", "파트장", "챕터리드"];
 const personTitleOptions = ["사장", "부사장", "전무", "상무", "이사", "부장", "차장", "과장", "대리", "사원"];
+const personTitleSortOrder = ["전무", "상무", "이사", "부장", "차장", "과장", "대리", "사원"];
 const ORG_CLOUD_DOC_ID = "default";
 const ORG_CLOUD_WRITER = `org_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 
@@ -493,6 +494,9 @@ function defaultOrganizationState() {
     people: clone(seedPeople),
     groups: clone(seedGroups),
     sessions: clone(seedSessions),
+    wowQuantRows: [],
+    wowTextRows: [],
+    sessionAnalysisResults: {},
     selectedUnitId: getDefaultSelectedUnitId(),
     view: "official",
     orgLayout: "horizontal",
@@ -500,6 +504,8 @@ function defaultOrganizationState() {
     networkLevel: "team",
     calendarView: "month",
     selectedCalendarDate: todayIso(),
+    sessionView: "execution",
+    selectedSessionAnalysisTeamId: "",
     expandedUnitIds: getDefaultExpandedIds(),
     openCardIds: [],
     detailOpen: false,
@@ -568,6 +574,9 @@ function normalizeOrganizationState(parsed = {}) {
     people: Array.isArray(parsed.people) ? parsed.people : base.people,
     groups: Array.isArray(parsed.groups) ? parsed.groups : base.groups,
     sessions: Array.isArray(parsed.sessions) ? parsed.sessions : base.sessions,
+    wowQuantRows: Array.isArray(parsed.wowQuantRows) ? parsed.wowQuantRows : base.wowQuantRows,
+    wowTextRows: Array.isArray(parsed.wowTextRows) ? parsed.wowTextRows : base.wowTextRows,
+    sessionAnalysisResults: parsed.sessionAnalysisResults && typeof parsed.sessionAnalysisResults === "object" ? parsed.sessionAnalysisResults : base.sessionAnalysisResults,
     selectedUnitId: unitIds.has(parsed.selectedUnitId) ? parsed.selectedUnitId : rootId,
     view: "official",
     orgLayout: parsed.orgLayout || base.orgLayout,
@@ -575,6 +584,8 @@ function normalizeOrganizationState(parsed = {}) {
     networkLevel: parsed.networkLevel || base.networkLevel,
     calendarView: parsed.calendarView || base.calendarView,
     selectedCalendarDate: parsed.selectedCalendarDate || base.selectedCalendarDate,
+    sessionView: ["execution", "calendar", "dashboard"].includes(parsed.sessionView) ? parsed.sessionView : base.sessionView,
+    selectedSessionAnalysisTeamId: typeof parsed.selectedSessionAnalysisTeamId === "string" ? parsed.selectedSessionAnalysisTeamId : base.selectedSessionAnalysisTeamId,
     expandedUnitIds: Array.isArray(parsed.expandedUnitIds) ? parsed.expandedUnitIds : base.expandedUnitIds,
     openCardIds: Array.isArray(parsed.openCardIds) ? parsed.openCardIds : base.openCardIds,
     detailOpen: false,
@@ -606,11 +617,14 @@ function loadState() {
 
 function organizationSnapshot() {
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     units: state.units,
     people: state.people,
     groups: state.groups,
     sessions: state.sessions,
+    wowQuantRows: state.wowQuantRows || [],
+    wowTextRows: state.wowTextRows || [],
+    sessionAnalysisResults: state.sessionAnalysisResults || {},
     selectedUnitId: state.selectedUnitId,
     view: "official",
     orgLayout: state.orgLayout,
@@ -618,6 +632,8 @@ function organizationSnapshot() {
     networkLevel: state.networkLevel,
     calendarView: state.calendarView,
     selectedCalendarDate: state.selectedCalendarDate,
+    sessionView: state.sessionView || "execution",
+    selectedSessionAnalysisTeamId: state.selectedSessionAnalysisTeamId || "",
     expandedUnitIds: state.expandedUnitIds,
     openCardIds: state.openCardIds,
     search: state.search,
@@ -719,10 +735,8 @@ function formatOrgSyncTime(value) {
 function organizationCloudRef() {
   if (!organizationCloud.db || !organizationCloud.uid) return null;
   return organizationCloud.db
-    .collection("users")
-    .doc(organizationCloud.uid)
-    .collection("organizationStates")
-    .doc(ORG_CLOUD_DOC_ID);
+    .collection("userStates")
+    .doc(organizationCloud.uid);
 }
 
 async function saveOrganizationCloudNow() {
@@ -731,6 +745,7 @@ async function saveOrganizationCloudNow() {
     setOrganizationCloudStatus("로컬 저장 · Firebase 연결 없음");
     return false;
   }
+  window.clearTimeout(organizationCloud.saveTimer);
   const stamp = Date.now();
   organizationCloud.lastLocalWrite = stamp;
   // 순환 참조를 제거한 순수 데이터만 Firestore로 보낸다 (없으면 그대로 통과).
@@ -918,6 +933,22 @@ function getDescendantUnitIds(unitId) {
 function getPeopleForUnit(unitId, includeDescendants = true) {
   const unitIds = includeDescendants ? getDescendantUnitIds(unitId) : [unitId];
   return state.people.filter((person) => unitIds.includes(person.unitId));
+}
+
+function personTitleRank(person) {
+  const title = leaderTitleLabel(person?.title || person?.position || "");
+  const index = personTitleSortOrder.indexOf(title);
+  return index === -1 ? personTitleSortOrder.length + 1 : index;
+}
+
+function sortPeopleForDisplay(people) {
+  return [...people].sort((a, b) => {
+    const explicitOrder = Number(a.sortOrder ?? 9999) - Number(b.sortOrder ?? 9999);
+    if (explicitOrder) return explicitOrder;
+    const titleOrder = personTitleRank(a) - personTitleRank(b);
+    if (titleOrder) return titleOrder;
+    return String(a.name || "").localeCompare(String(b.name || ""), "ko");
+  });
 }
 
 function getParentName(unit) {
@@ -1198,6 +1229,26 @@ function movePerson(personId, unitId) {
   person.unitId = unitId;
   person.position = person.position === "팀장" ? "실무자" : person.position;
   person.role = `${unit.name} 구성원`;
+  const nextOrder = getPeopleForUnit(unitId, false)
+    .filter((item) => item.id !== personId)
+    .reduce((max, item) => Math.max(max, Number(item.sortOrder || 0)), 0) + 1;
+  person.sortOrder = nextOrder;
+  return true;
+}
+
+function reorderPerson(personId, targetPersonId) {
+  if (!personId || !targetPersonId || personId === targetPersonId) return false;
+  const person = state.people.find((item) => item.id === personId);
+  const target = state.people.find((item) => item.id === targetPersonId);
+  if (!person || !target || person.unitId !== target.unitId) return false;
+
+  const current = sortPeopleForDisplay(getPeopleForUnit(person.unitId, false));
+  const next = current.filter((item) => item.id !== personId);
+  const targetIndex = next.findIndex((item) => item.id === targetPersonId);
+  next.splice(targetIndex < 0 ? next.length : targetIndex, 0, person);
+  next.forEach((item, index) => {
+    item.sortOrder = index + 1;
+  });
   return true;
 }
 
@@ -1479,6 +1530,7 @@ function render(options = {}) {
   syncControls();
   renderMetrics();
   renderView();
+  if (document.getElementById("session")?.classList.contains("active")) renderWowSessionWorkspace();
   renderDetail();
   renderTemplates();
   if (!options.skipHomeRefresh) refreshHomeDashboardFromOrgState();
@@ -1522,12 +1574,14 @@ function syncControls() {
 }
 
 function getOrgMetrics() {
-  const teamUnits = state.units.filter((unit) => unit.level === "team");
+  const teamUnits = state.units.filter((unit) => unit.level === "team" || displayOrgType(unit).includes("팀"));
   const averageReadiness = teamUnits.length ? Math.round(teamUnits.reduce((sum, unit) => sum + signalForUnit(unit).changeAcceptance, 0) / teamUnits.length) : 0;
   const riskCount = state.units.filter((unit) => signalForUnit(unit).supportNeeded).length;
   const peopleAmbassadorCount = state.people.filter((person) => person.tags.includes("앰버서더 후보")).length;
   const ambassadorCount = peopleAmbassadorCount || state.units.filter((unit) => unit.ambassadors > 0).length;
-  const leaderCount = state.people.filter((person) => person.position === "팀장").length;
+  const assignedLeaderKeys = new Set(teamUnits.filter(hasAssignedLeader).map((unit) => `${unit.id}::${unit.leader}`));
+  const peopleLeaderCount = state.people.filter((person) => person.position === "팀장" || assignedLeaderKeys.has(`${person.unitId}::${person.name}`)).length;
+  const leaderCount = Math.max(peopleLeaderCount, assignedLeaderKeys.size);
   const groupCount = state.groups.length;
 
   const metrics = [
@@ -1765,25 +1819,26 @@ const CULTURE_METRIC_FORMULA = {
   ],
 };
 
-function positivePulseScore(question) {
+function positivePulseScore(question, lowPenalty = 0.5) {
   if (!question) return null;
   const fav = Number(question.fav);
   if (!Number.isFinite(fav)) return null;
   const low = Number(question.low);
-  return clamp(Math.round(fav - 0.5 * (Number.isFinite(low) ? low : 0)), 0, 100);
+  return clamp(Math.round(fav - lowPenalty * (Number.isFinite(low) ? low : 0)), 0, 100);
 }
 
 function pulseQuestionMap(pulse) {
   return new Map((pulse?.questions || []).map((question) => [Number(question.no), question]));
 }
 
-function weightedPulseScore(questionMap, mapping, invert = false) {
+function weightedPulseScore(questionMap, mapping, invert = false, options = {}) {
   let totalWeight = 0;
   let total = 0;
   const drivers = [];
+  const lowPenalty = options.lowPenalty ?? 0.5;
   mapping.forEach((item) => {
     const question = questionMap.get(item.no);
-    const positive = positivePulseScore(question);
+    const positive = positivePulseScore(question, lowPenalty);
     if (positive == null) return;
     const value = invert ? 100 - positive : positive;
     total += value * item.weight;
@@ -1842,6 +1897,268 @@ function supportNeededFromSignal(signal) {
   );
 }
 
+const WOW_SCALE = {
+  그렇다: 5,
+  "조금 그렇다": 4,
+  보통이다: 3,
+  "잘 모르겠다": 2,
+  아니다: 1,
+};
+
+const TEXT_SIGNAL_KEYWORDS = {
+  fatigue: ["지쳐", "피로", "무기력", "바빠", "여유", "과중", "벅찬", "힘든", "업무 증가", "고착화", "의욕", "강도", "부담", "답답"],
+  trustRisk: ["단절", "오해", "경영진", "의사결정", "가이드라인", "시켜서", "와닿지", "회사 분위기", "좋은 것 같지", "안 좋은", "장표", "결정자"],
+  collaborationRisk: ["사일로", "개인주의", "각자", "협업하기 어려운", "서로 맞서는", "내팀", "내꺼", "유관부서", "불만"],
+  teamPositive: ["팀 분위기는 괜찮", "팀 분위기는 좋", "화기애애", "편하게", "도움", "좋았습니다", "재밌", "감사", "대화", "팀빌딩"],
+  programEfficacy: ["도움", "확대", "전사", "정기", "계속", "유익", "필요", "실제", "활용", "구체화", "명확화", "소통", "협업"],
+};
+
+function cultureAverage(values) {
+  const valid = values.filter((value) => value != null && value !== "" && Number.isFinite(Number(value))).map(Number);
+  return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : null;
+}
+
+function cultureWeightedAverage(items) {
+  const valid = items.filter(([score]) => score != null && Number.isFinite(Number(score)));
+  const totalWeight = valid.reduce((sum, [, weight]) => sum + weight, 0);
+  if (!totalWeight) return null;
+  return valid.reduce((sum, [score, weight]) => sum + Number(score) * (weight / totalWeight), 0);
+}
+
+function responseConfidence(count, target = 10) {
+  return clamp(Number(count || 0) / target, 0, 1);
+}
+
+function boundedDelta(sourceScore, baseScore, maxDelta = 25) {
+  if (sourceScore == null || baseScore == null) return 0;
+  return clamp(Number(sourceScore) - Number(baseScore), -maxDelta, maxDelta);
+}
+
+function likertTo100(value) {
+  if (value == null || value === "") return null;
+  const raw = String(value).trim();
+  const numeric = Number(raw);
+  if (Number.isFinite(numeric)) {
+    if (numeric > 5) return clamp(numeric, 0, 100);
+    return clamp(((numeric - 1) / 4) * 100, 0, 100);
+  }
+  const scaled = WOW_SCALE[raw];
+  return scaled ? clamp(((scaled - 1) / 4) * 100, 0, 100) : null;
+}
+
+function normalizedTeamName(value) {
+  return String(value || "").replace(/\s+/g, "").toLowerCase();
+}
+
+function rowBelongsToTeam(row, unit) {
+  if (!row || !unit) return false;
+  if (row.teamId && row.teamId === unit.id) return true;
+  return normalizedTeamName(row.teamName || row.team) === normalizedTeamName(unit.name);
+}
+
+function wowQuantRowsForTeam(unit) {
+  return (state.wowQuantRows || []).filter((row) => rowBelongsToTeam(row, unit));
+}
+
+function wowTextRowsForTeam(unit) {
+  return (state.wowTextRows || []).filter((row) => rowBelongsToTeam(row, unit));
+}
+
+function countKeywordHits(text, keywords) {
+  if (!text) return 0;
+  const normalized = String(text).toLowerCase();
+  return keywords.reduce((sum, keyword) => sum + (normalized.includes(String(keyword).toLowerCase()) ? 1 : 0), 0);
+}
+
+function normalizeHits(hitCount, maxHits = 5) {
+  return clamp((Number(hitCount || 0) / maxHits) * 100, 0, 100);
+}
+
+function calculateWowQuantScores(rowsForTeam) {
+  const qMeans = {};
+  for (let i = 1; i <= 10; i += 1) {
+    const key = `WQ${i}`;
+    qMeans[key] = cultureAverage(rowsForTeam.map((row) => likertTo100(row[key] ?? row[key.toLowerCase()])));
+  }
+  return {
+    qMeans,
+    responseCount: rowsForTeam.length,
+    sessionChangeAcceptance: cultureWeightedAverage([[qMeans.WQ1, 0.25], [qMeans.WQ2, 0.25], [qMeans.WQ5, 0.2], [qMeans.WQ6, 0.15], [qMeans.WQ9, 0.15]]),
+    sessionTrust: cultureWeightedAverage([[qMeans.WQ6, 0.2], [qMeans.WQ7, 0.2], [qMeans.WQ9, 0.25], [qMeans.WQ10, 0.25], [qMeans.WQ5, 0.1]]),
+    sessionFatigueProtection: cultureWeightedAverage([[qMeans.WQ3, 0.15], [qMeans.WQ4, 0.25], [qMeans.WQ8, 0.25], [qMeans.WQ10, 0.2], [qMeans.WQ7, 0.15]]),
+    sessionRiskMitigation: cultureWeightedAverage([[qMeans.WQ1, 0.15], [qMeans.WQ2, 0.15], [qMeans.WQ6, 0.15], [qMeans.WQ7, 0.15], [qMeans.WQ9, 0.2], [qMeans.WQ10, 0.2]]),
+  };
+}
+
+function calculateQualitativeSignals(rowsForTeam) {
+  const joined = rowsForTeam.map((row) => [row.goodBadText, row.moodText, row.messageText].join("\n")).join("\n");
+  return {
+    responseCount: rowsForTeam.length,
+    fatigueTextRisk: normalizeHits(countKeywordHits(joined, TEXT_SIGNAL_KEYWORDS.fatigue), 5),
+    trustTextRisk: normalizeHits(countKeywordHits(joined, TEXT_SIGNAL_KEYWORDS.trustRisk), 5),
+    collaborationTextRisk: normalizeHits(countKeywordHits(joined, TEXT_SIGNAL_KEYWORDS.collaborationRisk), 4),
+    teamPositiveSignal: normalizeHits(countKeywordHits(joined, TEXT_SIGNAL_KEYWORDS.teamPositive), 6),
+    programEfficacySignal: normalizeHits(countKeywordHits(joined, TEXT_SIGNAL_KEYWORDS.programEfficacy), 6),
+  };
+}
+
+function normalizedSessionAnalysis(raw = {}, unit = null) {
+  const source = raw && typeof raw === "object" ? raw : {};
+  const getScore = (...keys) => {
+    for (const key of keys) {
+      if (source[key] != null && source[key] !== "") return clamp(Number(source[key]) || 0, 0, 100);
+    }
+    return null;
+  };
+  const keywords = Array.isArray(source.keywords)
+    ? source.keywords
+    : String(source.keywords || "")
+        .split(/[,\n;]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+  const recommendations = Array.isArray(source.recommendations)
+    ? source.recommendations
+    : String(source.recommendations || "")
+        .split(/\n|;/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+  return {
+    teamId: source.teamId || unit?.id || "",
+    teamName: source.teamName || unit?.name || "",
+    createdAt: source.createdAt || new Date().toISOString(),
+    rawText: source.rawText || source.raw || "",
+    fatigueTextRisk: getScore("fatigueTextRisk", "fatigue", "fatigueRisk", "피로도"),
+    trustTextRisk: getScore("trustTextRisk", "trustRisk", "lowTrustRisk", "신뢰리스크"),
+    collaborationTextRisk: getScore("collaborationTextRisk", "collaborationRisk", "siloRisk", "협업리스크"),
+    teamPositiveSignal: getScore("teamPositiveSignal", "positiveSignal", "teamPositive", "긍정신호"),
+    programEfficacySignal: getScore("programEfficacySignal", "programEfficacy", "executionSignal", "실행효과"),
+    summary: source.summary || source.diagnosis || source.진단 || "",
+    keywords,
+    recommendations,
+  };
+}
+
+function sessionAnalysisForUnit(unit) {
+  if (!unit) return null;
+  const direct = state.sessionAnalysisResults?.[unit.id];
+  if (direct) return normalizedSessionAnalysis(direct, unit);
+  const byName = Object.values(state.sessionAnalysisResults || {}).find((item) => normalizedTeamName(item?.teamName) === normalizedTeamName(unit.name));
+  return byName ? normalizedSessionAnalysis(byName, unit) : null;
+}
+
+function mergeSessionAnalysisSignals(text, analysis) {
+  if (!analysis) return text;
+  const merged = { ...text, aiAnalysis: analysis };
+  const mergeScore = (key) => {
+    if (analysis[key] == null) return;
+    const local = Number(text[key] || 0);
+    const ai = Number(analysis[key] || 0);
+    merged[key] = Math.round(local * 0.55 + ai * 0.45);
+  };
+  ["fatigueTextRisk", "trustTextRisk", "collaborationTextRisk", "teamPositiveSignal", "programEfficacySignal"].forEach(mergeScore);
+  merged.responseCount = Number(text.responseCount || 0);
+  merged.aiAdjusted = true;
+  return merged;
+}
+
+function pulseContextForUnit(unit) {
+  if (!unit) return null;
+  const direct = pulseForUnit(unit.id);
+  if (direct) return { pulse: direct, baseSource: unit.level === "team" ? "teamPulse" : "directPulse", inheritedPulse: false, sourceUnit: unit };
+  const ancestors = getAncestorIds(unit.id).map(getUnit).filter(Boolean);
+  for (const ancestor of ancestors) {
+    const pulse = pulseForUnit(ancestor.id);
+    if (pulse) {
+      const baseSource = ancestor.level === "hq" ? "parentHqPulse" : ancestor.level === "division" ? "parentDivisionPulse" : "companyPulse";
+      return { pulse, baseSource, inheritedPulse: true, sourceUnit: ancestor };
+    }
+  }
+  const root = state.units.find((item) => !item.parentId);
+  const companyPulse = root ? pulseForUnit(root.id) : null;
+  return companyPulse ? { pulse: companyPulse, baseSource: "companyPulse", inheritedPulse: unit.id !== root.id, sourceUnit: root } : null;
+}
+
+function baseSourceLabel(signal) {
+  return {
+    teamPulse: "팀 직접 Pulse",
+    directPulse: "조직 직접 Pulse",
+    parentHqPulse: "상위 본부 Pulse 상속",
+    parentDivisionPulse: "상위 부문 Pulse 상속",
+    companyPulse: "전사 Pulse 상속",
+    manual: "수동 설정값",
+  }[signal?.baseSource || "manual"] || "수동 설정값";
+}
+
+function applySessionFormulaV2(unit, baseSignal) {
+  if (!unit || unit.level !== "team") return baseSignal;
+  const quant = calculateWowQuantScores(wowQuantRowsForTeam(unit));
+  const text = mergeSessionAnalysisSignals(calculateQualitativeSignals(wowTextRowsForTeam(unit)), sessionAnalysisForUnit(unit));
+  const sessionConfidence = responseConfidence(quant.responseCount, 10);
+  const qualitativeConfidence = clamp(responseConfidence(text.responseCount, 8) + (text.aiAdjusted ? 0.25 : 0), 0, 1);
+
+  const changeAcceptanceAdjustment = clamp(
+    0.2 * sessionConfidence * boundedDelta(quant.sessionChangeAcceptance, baseSignal.changeAcceptance, 25)
+      + 0.08 * qualitativeConfidence * ((text.programEfficacySignal ?? 50) - 50)
+      - 0.05 * qualitativeConfidence * text.collaborationTextRisk,
+    -12,
+    5,
+  );
+  const changeAcceptance = clamp(Math.round(baseSignal.changeAcceptance + changeAcceptanceAdjustment), 0, 100);
+  const trust = clamp(Math.round(
+    baseSignal.trust
+      + 0.18 * sessionConfidence * boundedDelta(quant.sessionTrust, baseSignal.trust, 25)
+      + 0.05 * qualitativeConfidence * text.teamPositiveSignal
+      - 0.12 * qualitativeConfidence * text.trustTextRisk,
+  ), 0, 100);
+  const riskScore = clamp(Math.round(
+    baseSignal.riskScore
+      - 0.12 * sessionConfidence * ((quant.sessionRiskMitigation ?? 50) - 50)
+      + 0.1 * qualitativeConfidence * text.trustTextRisk
+      + 0.08 * qualitativeConfidence * text.collaborationTextRisk
+      + 0.05 * qualitativeConfidence * text.fatigueTextRisk,
+  ), 0, 100);
+  const fatigue = clamp(Math.round(
+    baseSignal.fatigue
+      - 0.16 * sessionConfidence * ((quant.sessionFatigueProtection ?? 50) - 50)
+      + 0.16 * qualitativeConfidence * text.fatigueTextRisk
+      + 0.05 * qualitativeConfidence * text.trustTextRisk,
+  ), 0, 100);
+  const risk = riskLevelFromScore(riskScore);
+  const coords = cultureMapCoordinates({ changeAcceptance, trust, fatigue, riskScore, risk });
+  const quadrant = cultureQuadrant(coords.x, coords.y);
+  const textSupport = text.fatigueTextRisk >= 60 || text.trustTextRisk >= 60;
+  const supportNeeded = supportNeededFromSignal({ trust, fatigue, riskScore, quadrant }) || textSupport;
+
+  return {
+    ...baseSignal,
+    readiness: changeAcceptance,
+    changeAcceptance,
+    trust,
+    fatigue,
+    risk,
+    riskScore,
+    mapX: coords.x,
+    mapY: coords.y,
+    quadrant,
+    supportNeeded,
+    sessionAdjusted: quant.responseCount > 0 || text.responseCount > 0,
+    sessionConfidence,
+    qualitativeConfidence,
+    sessionQuant: quant,
+    textSignal: text,
+    pulseBase: {
+      changeAcceptance: baseSignal.changeAcceptance,
+      trust: baseSignal.trust,
+      fatigue: baseSignal.fatigue,
+      riskScore: baseSignal.riskScore,
+      mapX: baseSignal.mapX,
+      mapY: baseSignal.mapY,
+      quadrant: baseSignal.quadrant,
+    },
+    tags: [...new Set([...(baseSignal.tags || []), quant.responseCount ? "Session Adjusted" : "", text.responseCount ? "Text Risk Signal" : ""])].filter(Boolean).slice(0, 6),
+  };
+}
+
 function cultureDriverSummary(signal) {
   const drivers = signal.drivers || [];
   if (!drivers.length) return [];
@@ -1870,6 +2187,44 @@ function renderCultureDrivers(signal, compact = false) {
   `;
 }
 
+function signedDelta(value) {
+  const rounded = Math.round(Number(value || 0));
+  if (!rounded) return "0";
+  return `${rounded > 0 ? "+" : ""}${rounded}`;
+}
+
+function renderFormulaV2Breakdown(signal) {
+  const base = signal.pulseBase || signal;
+  const quant = signal.sessionQuant || {};
+  const text = signal.textSignal || {};
+  const hasQuant = Number(quant.responseCount || 0) > 0;
+  const hasText = Number(text.responseCount || 0) > 0;
+  const deltaChange = signal.changeAcceptance - base.changeAcceptance;
+  const deltaTrust = signal.trust - base.trust;
+  const deltaFatigue = signal.fatigue - base.fatigue;
+  const deltaRisk = signal.riskScore - base.riskScore;
+
+  return `
+    <div class="formula-v2-stack" aria-label="Formula v2 진단">
+      <article>
+        <span>Pulse Base</span>
+        <strong>${base.changeAcceptance}% · ${base.trust}% · ${base.fatigue}% · R${base.riskScore}</strong>
+        <small>${escapeHtml(baseSourceLabel(signal))}${signal.baseSourceUnitName ? ` · ${escapeHtml(signal.baseSourceUnitName)}` : ""}</small>
+      </article>
+      <article>
+        <span>Session Adjusted</span>
+        <strong>${hasQuant ? `${quant.responseCount}명 응답 · 신뢰도 ${Math.round((signal.sessionConfidence || 0) * 100)}%` : "응답 없음"}</strong>
+        <small>수용 ${signedDelta(deltaChange)} · 신뢰 ${signedDelta(deltaTrust)} · 피로 ${signedDelta(deltaFatigue)} · 리스크 ${signedDelta(deltaRisk)}</small>
+      </article>
+      <article>
+        <span>Text Risk Signal</span>
+        <strong>${hasText ? `${text.responseCount}건 · 피로 ${Math.round(text.fatigueTextRisk || 0)} · 불신 ${Math.round(text.trustTextRisk || 0)}` : "응답 없음"}</strong>
+        <small>사일로 ${Math.round(text.collaborationTextRisk || 0)} · 팀 긍정 ${Math.round(text.teamPositiveSignal || 0)} · 실행효과 ${Math.round(text.programEfficacySignal || 0)}</small>
+      </article>
+    </div>
+  `;
+}
+
 function recommendationFromCultureSignal(signal, fallback) {
   if (signal.quadrant === "위험") {
     return "Pulse 문항상 신뢰와 수용도가 동시에 약한 위험 구간입니다. 리더 브리핑, 심리적 안전 대화, 후속조치 약속을 먼저 설계하세요.";
@@ -1883,16 +2238,16 @@ function recommendationFromCultureSignal(signal, fallback) {
   return fallback || "안정 구간입니다. 현재 신뢰 자산을 유지하면서 앰버서더와 성공 사례를 확산하세요.";
 }
 
-function signalFromPulse(unit) {
-  const pulse = pulseForUnit(unit.id);
-  if (!pulse || unit.level === "team") return null;
+function signalFromPulse(unit, context = pulseContextForUnit(unit)) {
+  const pulse = context?.pulse;
+  if (!pulse) return null;
 
   const questionMap = pulseQuestionMap(pulse);
-  const changeMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.changeAcceptance);
+  const changeMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.changeAcceptance, false, { lowPenalty: 0.68 });
   const trustMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.trust);
   const fatigueMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.fatigue, true);
   const riskMetric = weightedPulseScore(questionMap, CULTURE_METRIC_FORMULA.risk, true);
-  const changeAcceptance = changeMetric.value ?? clamp(Math.round(pulse.fav), 0, 100);
+  const changeAcceptance = changeMetric.value ?? clamp(Math.round(pulse.fav - 0.68 * (pulse.low || 0)), 0, 100);
   const trust = trustMetric.value ?? clamp(Math.round(pulse.fav * 0.72 + Math.max(0, 100 - pulse.low) * 0.28), 0, 100);
   const fatigue = fatigueMetric.value ?? clamp(Math.round(pulse.low * 1.18 + (pulse.tier === "risk" ? 15 : pulse.tier === "watch" ? 8 : 0)), 0, 100);
   const riskScore = riskMetric.value ?? (pulse.tier === "risk" ? 72 : pulse.tier === "watch" || pulse.reliab ? 52 : 28);
@@ -1927,12 +2282,15 @@ function signalFromPulse(unit) {
     quadrant,
     supportNeeded,
     drivers,
+    inheritedPulse: Boolean(context.inheritedPulse),
+    baseSource: context.baseSource || "directPulse",
+    baseSourceUnitName: context.sourceUnit?.name || unit.name,
     tags: [...new Set([...(unit.tags || []), ...pulseTags])].slice(0, 6),
     recommendation: recommendationFromCultureSignal({ quadrant }, unit.recommendation),
   };
 }
 
-function signalForUnit(unit) {
+function manualSignalForUnit(unit) {
   const fallback = {
     readiness: unit.readiness,
     changeAcceptance: unit.readiness,
@@ -1942,6 +2300,9 @@ function signalForUnit(unit) {
     riskScore: unit.risk === "high" ? 72 : unit.risk === "medium" ? 52 : 28,
     tags: unit.tags || [],
     recommendation: unit.recommendation,
+    inheritedPulse: false,
+    baseSource: "manual",
+    baseSourceUnitName: unit.name,
   };
   const coords = cultureMapCoordinates(fallback);
   fallback.mapX = coords.x;
@@ -1949,7 +2310,24 @@ function signalForUnit(unit) {
   fallback.quadrant = cultureQuadrant(coords.x, coords.y);
   fallback.supportNeeded = supportNeededFromSignal(fallback);
   fallback.drivers = [];
-  return signalFromPulse(unit) || fallback;
+  return fallback;
+}
+
+function signalForUnit(unit) {
+  const base = signalFromPulse(unit) || manualSignalForUnit(unit);
+  const withBase = {
+    ...base,
+    pulseBase: {
+      changeAcceptance: base.changeAcceptance,
+      trust: base.trust,
+      fatigue: base.fatigue,
+      riskScore: base.riskScore,
+      mapX: base.mapX,
+      mapY: base.mapY,
+      quadrant: base.quadrant,
+    },
+  };
+  return applySessionFormulaV2(unit, withBase);
 }
 
 // Pulse Survey 분석 결과로 조직의 상태(state)를 정의한다. 필터/카드에서 공통 사용.
@@ -1961,9 +2339,10 @@ const ORG_STATUS_FILTERS = [
 ];
 
 function pulseStatusDef(unit) {
-  const p = pulseForUnit(unit.id);
+  const context = pulseContextForUnit(unit);
+  const p = context?.pulse;
   if (!p) return null;
-  const signal = signalFromPulse(unit);
+  const signal = signalForUnit(unit);
   if (signal?.supportNeeded) {
     return {
       key: "support",
@@ -2187,7 +2566,9 @@ function renderOrgInspector(unit) {
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
   const directPeople = getPeopleForUnit(unit.id, false);
   const childUnits = getChildren(unit.id);
-  const visibleMembers = directPeople.length ? directPeople : people.slice(0, 20);
+  const sortedPeople = sortPeopleForDisplay(people);
+  const sortedDirectPeople = sortPeopleForDisplay(directPeople);
+  const visibleMembers = sortedDirectPeople.length ? sortedDirectPeople : sortedPeople.slice(0, 20);
   const memberScopeLabel = directPeople.length ? "직접 등록 팀원" : "하위 포함 팀원";
   const memberCountLabel = directPeople.length || people.length <= visibleMembers.length
     ? `${visibleMembers.length}명 표시`
@@ -2219,15 +2600,16 @@ function renderOrgInspector(unit) {
         <p>${escapeHtml(statusNote)}</p>
       </section>
 
-      <div class="inspector-metrics">
-        <article><span>변화 수용도</span><strong>${signal.changeAcceptance}%</strong></article>
-        <article><span>신뢰도</span><strong>${signal.trust}%</strong></article>
-        <article><span>피로도 / 지원 필요</span><strong>${signal.fatigue}%</strong></article>
-        <article><span>문화 리스크</span><strong>${signal.riskScore}%</strong></article>
-        <article><span>범위</span><strong>${people.length || unit.members}명</strong></article>
-      </div>
+	      <div class="inspector-metrics">
+	        <article><span>변화 수용도</span><strong>${signal.changeAcceptance}%</strong></article>
+	        <article><span>신뢰도</span><strong>${signal.trust}%</strong></article>
+	        <article><span>피로도 / 지원 필요</span><strong>${signal.fatigue}%</strong></article>
+	        <article><span>문화 리스크</span><strong>${signal.riskScore}%</strong></article>
+	        <article><span>범위</span><strong>${people.length || unit.members}명</strong></article>
+	      </div>
+		      ${renderFormulaV2Breakdown(signal)}
 
-      <section class="inspector-section">
+	      <section class="inspector-section">
         <div class="inspector-section-title-row">
           <h4>맵 위치 근거</h4>
           <span>${escapeHtml(sourceNote)}</span>
@@ -2296,7 +2678,7 @@ function personAvatar(person, cls = "member-avatar") {
 
 function renderInspectorMemberRow(person) {
   return `
-    <article class="inspector-member-row" draggable="true" data-drag-person-id="${escapeHtml(person.id)}" title="드래그해서 다른 팀으로 이동">
+    <article class="inspector-member-row" draggable="true" data-drag-person-id="${escapeHtml(person.id)}" data-person-row-unit="${escapeHtml(person.unitId)}" title="드래그해서 순서를 바꾸거나 다른 팀으로 이동">
       <div class="member-line-main">
         <span class="drag-grip" aria-hidden="true">⠿</span>
         ${personAvatar(person)}
@@ -2419,7 +2801,7 @@ function renderNetworkView() {
       <div>
         <p class="eyebrow">Culture Propagation Map</p>
         <h3>조직문화 확산 맵</h3>
-        <p>Pulse 22개 문항을 변화 수용도, 신뢰도, 문화 리스크, 피로도 / 지원 필요 지표로 환산해 분포를 읽습니다.</p>
+	        <p>Pulse Base를 유지하고, 팀 단위 WOW x BALANCE 정량·주관식 신호를 보정값으로 반영해 분포를 읽습니다.</p>
       </div>
       <div class="panel-actions">
         <div class="segmented compact" aria-label="문화지도 레벨">
@@ -2505,7 +2887,7 @@ function renderNetworkNode(unit, index) {
       <button type="button" data-open-detail="${escapeHtml(unit.id)}" aria-label="${escapeHtml(unit.name)} 상세 정보 열기">
         <span class="network-dot"></span>
         <strong>${escapeHtml(unit.name)}</strong>
-        <small>${escapeHtml(signal.quadrant || networkLabel(kind))} · X ${signal.mapX} · Y ${signal.mapY}<br>수용 ${signal.changeAcceptance} · 신뢰 ${signal.trust} · 리스크 ${signal.riskScore} · 피로 ${signal.fatigue}${drivers.length ? `<br>${drivers.map((driver) => `Q${driver.no} ${driver.label}`).join(" / ")}` : ""}</small>
+	        <small>${escapeHtml(signal.quadrant || networkLabel(kind))} · X ${signal.mapX} · Y ${signal.mapY}<br>Pulse Base ${signal.pulseBase?.changeAcceptance ?? signal.changeAcceptance}/${signal.pulseBase?.trust ?? signal.trust} · Session ${signal.sessionQuant?.responseCount || 0} · Text ${signal.textSignal?.responseCount || 0}<br>수용 ${signal.changeAcceptance} · 신뢰 ${signal.trust} · 리스크 ${signal.riskScore} · 피로 ${signal.fatigue}${drivers.length ? `<br>${drivers.map((driver) => `Q${driver.no} ${driver.label}`).join(" / ")}` : ""}</small>
       </button>
     </article>
   `;
@@ -2556,16 +2938,123 @@ function sessionsForDate(iso) {
     .sort((a, b) => `${a.startTime || ""}`.localeCompare(`${b.startTime || ""}`));
 }
 
+function sessionTimeOptions(selected = "10:00") {
+  const times = [];
+  for (let hour = 8; hour <= 19; hour += 1) {
+    times.push(`${String(hour).padStart(2, "0")}:00`);
+    times.push(`${String(hour).padStart(2, "0")}:30`);
+  }
+  return times.map((time) => `<option value="${time}" ${time === selected ? "selected" : ""}>${time}</option>`).join("");
+}
+
+function participantCountForTeam(teamId) {
+  const team = getUnit(teamId);
+  if (!team) return 1;
+  const directPeople = getPeopleForUnit(teamId, false);
+  const hasLeaderPerson = hasAssignedLeader(team) && directPeople.some((person) => person.name === team.leader);
+  return Math.max(1, directPeople.length + (hasAssignedLeader(team) && !hasLeaderPerson ? 1 : 0));
+}
+
+function renderSessionParticipantNote(teamId) {
+  const count = participantCountForTeam(teamId);
+  return `
+    <div class="session-participant-note" id="sessionParticipantsPreview">
+      <strong>${count}명</strong>
+      <span>조직도 기준 자동 계산 · 팀장 포함</span>
+    </div>
+  `;
+}
+
+function sessionTeamUnits() {
+  return state.units
+    .filter((unit) => unit.level === "team" || displayOrgType(unit).includes("팀"))
+    .sort((a, b) => (a.sourcePath || a.name).localeCompare(b.sourcePath || b.name, "ko"));
+}
+
+function teamPeopleForSession(teamId) {
+  const team = getUnit(teamId);
+  const direct = sortPeopleForDisplay(getPeopleForUnit(teamId, false));
+  if (!team || !hasAssignedLeader(team)) return direct;
+  const hasLeaderPerson = direct.some((person) => person.name === team.leader);
+  if (hasLeaderPerson) return direct;
+  return sortPeopleForDisplay([
+    {
+      id: `leader:${team.id}`,
+      name: team.leader,
+      title: team.leaderTitle || "",
+      position: leaderRoleLabel(team),
+      role: `${team.name} ${leaderRoleLabel(team)}`,
+      unitId: team.id,
+      sortOrder: -1,
+      isSyntheticLeader: true,
+    },
+    ...direct,
+  ]);
+}
+
+function sessionAbsentIds(session) {
+  return Array.isArray(session?.absentPersonIds) ? session.absentPersonIds.filter(Boolean) : [];
+}
+
+function sessionActualParticipants(session) {
+  const capacity = participantCountForTeam(session?.teamId);
+  const validIds = new Set(teamPeopleForSession(session?.teamId).map((person) => person.id));
+  const absentCount = sessionAbsentIds(session).filter((id) => validIds.has(id)).length;
+  return Math.max(0, capacity - absentCount);
+}
+
+function absentPersonNames(session) {
+  const byId = new Map(teamPeopleForSession(session?.teamId).map((person) => [person.id, person]));
+  return sessionAbsentIds(session)
+    .map((id) => byId.get(id)?.name)
+    .filter(Boolean);
+}
+
+function isMobileCalendarLayout() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 600px)").matches;
+}
+
+function closeCalendarDayPopup() {
+  const popup = document.getElementById("calendarDayPopup");
+  if (popup) popup.remove();
+}
+
+function showCalendarDayPopup(iso) {
+  const sessions = sessionsForDate(iso);
+  closeCalendarDayPopup();
+  if (!sessions.length) return;
+  const popup = document.createElement("div");
+  popup.id = "calendarDayPopup";
+  popup.className = "calendar-day-popup";
+  popup.innerHTML = `
+    <div class="calendar-day-popup-card" role="dialog" aria-modal="true" aria-label="선택일 일정">
+      <div class="calendar-day-popup-head">
+        <div>
+          <span>WOW x BALANCE</span>
+          <strong>${escapeHtml(iso)} 일정</strong>
+        </div>
+        <button class="icon-button" type="button" data-close-calendar-popup aria-label="닫기">×</button>
+      </div>
+      <div class="calendar-day-popup-list">
+        ${sessions.map((session) => renderSessionItem(session)).join("")}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(popup);
+}
+
 function renderSessionItem(session, compact = false) {
   if (compact) {
     return `<span class="session-item compact"><b>${escapeHtml(session.startTime || "--:--")}</b>${escapeHtml(session.teamName || getUnit(session.teamId)?.name || "팀 미정")}</span>`;
   }
+  const actual = sessionActualParticipants(session);
+  const capacity = participantCountForTeam(session.teamId);
 
   return `
     <article class="session-item">
       <span class="session-time">${escapeHtml(session.startTime || "--:--")}</span>
       <strong>${escapeHtml(session.sessionName || "WOW x BALANCE 세션")}</strong>
-      <small>${escapeHtml(session.teamName || getUnit(session.teamId)?.name || "팀 미정")} · ${Number(session.participants || 0)}명</small>
+      <small>${escapeHtml(session.teamName || getUnit(session.teamId)?.name || "팀 미정")} · ${actual}/${capacity}명</small>
       <button type="button" data-delete-session="${escapeHtml(session.id)}" aria-label="일정 삭제">삭제</button>
     </article>
   `;
@@ -2587,7 +3076,8 @@ function renderMonthCalendar() {
     cells.push(`
       <button class="calendar-day ${active}" type="button" data-pick-calendar-date="${iso}">
         <span>${day}</span>
-        <div>${sessions.slice(0, 3).map((session) => renderSessionItem(session, true)).join("")}</div>
+        <div class="calendar-session-summary">${sessions.length ? `${sessions.length}개 일정` : ""}</div>
+        <div class="calendar-session-details">${sessions.slice(0, 3).map((session) => renderSessionItem(session, true)).join("")}</div>
         ${sessions.length > 3 ? `<em>+${sessions.length - 3}</em>` : ""}
       </button>
     `);
@@ -2639,12 +3129,14 @@ function renderDayCalendar() {
   `;
 }
 
-function renderCalendarView() {
-  const teams = state.units.filter((unit) => unit.level === "team").sort((a, b) => a.name.localeCompare(b.name, "ko"));
+function renderCalendarView(targetId = "viewRoot") {
+  const root = document.getElementById(targetId);
+  if (!root) return;
+  const teams = sessionTeamUnits();
   const selectedTeam = teams[0]?.id || "";
   const totalSessions = (state.sessions || []).length;
 
-  document.getElementById("viewRoot").innerHTML = `
+  root.innerHTML = `
     <div class="panel-header">
       <div>
         <p class="eyebrow">WOW x BALANCE Calendar</p>
@@ -2680,7 +3172,11 @@ function renderCalendarView() {
         <h4>세션 스케줄 추가</h4>
         <form id="sessionForm" class="session-form">
           <label>날짜<input id="sessionDateInput" type="date" value="${escapeHtml(state.selectedCalendarDate)}" required /></label>
-          <label>시간<input id="sessionTimeInput" type="time" value="10:00" required /></label>
+          <label>시간
+            <select id="sessionTimeInput" required>
+              ${sessionTimeOptions("10:00")}
+            </select>
+          </label>
           <label>트랙
             <select id="sessionTrackInput" onchange="onSessionTrackChange()">
               <option value="team">팀 세션 (7단계)</option>
@@ -2697,7 +3193,9 @@ function renderCalendarView() {
               ${teams.map((team) => `<option value="${escapeHtml(team.id)}" ${team.id === selectedTeam ? "selected" : ""}>${escapeHtml(team.name)}</option>`).join("")}
             </select>
           </label>
-          <label>참여인원<input id="sessionParticipantsInput" type="number" min="1" value="12" required /></label>
+          <label>참여인원</label>
+          ${renderSessionParticipantNote(selectedTeam)}
+          <input id="sessionParticipantsInput" type="hidden" value="${participantCountForTeam(selectedTeam)}" />
           <button class="primary-button wide" type="submit">일정 추가</button>
         </form>
         <div class="session-today-list">
@@ -2708,6 +3206,367 @@ function renderCalendarView() {
     </div>
   `;
 }
+
+function teamSessions(teamId) {
+  return (state.sessions || [])
+    .filter((session) => session.teamId === teamId)
+    .sort((a, b) => `${a.date || ""} ${a.startTime || ""}`.localeCompare(`${b.date || ""} ${b.startTime || ""}`));
+}
+
+function findTeamStepSession(teamId, track, step) {
+  return teamSessions(teamId)
+    .filter((session) => session.track === track && Number(session.step) === Number(step))
+    .sort((a, b) => `${a.date || ""} ${a.startTime || ""}`.localeCompare(`${b.date || ""} ${b.startTime || ""}`))[0];
+}
+
+function isSessionDone(session) {
+  return Boolean(session?.date && session.date <= todayISO());
+}
+
+function teamProgramSummary(team) {
+  const sessions = teamSessions(team.id);
+  const totalSteps = Object.keys(WOW_TRACKS).reduce((sum, track) => sum + trackSteps(track).length, 0);
+  const doneSteps = Object.keys(WOW_TRACKS).reduce((sum, track) => sum + teamTrackDoneSteps(team.id, track).size, 0);
+  const scheduledSteps = new Set(sessions.filter((session) => session.track && session.step).map((session) => `${session.track}:${session.step}`)).size;
+  const completionRate = totalSteps ? Math.round((doneSteps / totalSteps) * 100) : 0;
+  const participationRate = sessions.length
+    ? Math.round(
+        sessions.reduce((sum, session) => {
+          const capacity = participantCountForTeam(session.teamId);
+          return sum + (capacity ? sessionActualParticipants(session) / capacity : 0);
+        }, 0) / sessions.length * 100,
+      )
+    : 0;
+  return {
+    sessions,
+    totalSteps,
+    doneSteps,
+    scheduledSteps,
+    completionRate,
+    participationRate,
+  };
+}
+
+function renderProgramDateChips(team, track) {
+  return trackSteps(track)
+    .map((stepName, index) => {
+      const step = index + 1;
+      const session = findTeamStepSession(team.id, track, step);
+      const stateClass = session ? (isSessionDone(session) ? "done" : "planned") : "empty";
+      const label = session ? `${session.date || "날짜 미정"} ${session.startTime || ""}`.trim() : "미등록";
+      return `
+        <div class="program-step ${stateClass}">
+          <span>${step}. ${escapeHtml(stepName)}</span>
+          <strong>${escapeHtml(label)}</strong>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderAbsentSelect(session) {
+  const people = teamPeopleForSession(session.teamId);
+  const selected = new Set(sessionAbsentIds(session));
+  if (!people.length) {
+    return `<p class="program-muted">조직도에 등록된 팀원이 없어 결석자를 선택할 수 없습니다.</p>`;
+  }
+  return `
+    <label class="absent-select">
+      <span>빠진 사람</span>
+      <select multiple data-session-absentees="${escapeHtml(session.id)}" size="${Math.min(5, Math.max(2, people.length))}">
+        ${people
+          .map((person) => `
+            <option value="${escapeHtml(person.id)}" ${selected.has(person.id) ? "selected" : ""}>
+              ${escapeHtml(person.name)} · ${escapeHtml(leaderTitleLabel(person.title))}${person.isSyntheticLeader ? " · 조직장" : ""}
+            </option>
+          `)
+          .join("")}
+      </select>
+    </label>
+  `;
+}
+
+function renderTeamSessionList(team) {
+  const sessions = teamSessions(team.id);
+  if (!sessions.length) {
+    return `<div class="program-empty">아직 등록된 WOW x BALANCE 일정이 없습니다. 캘린더 탭에서 팀 일정을 먼저 추가하세요.</div>`;
+  }
+  return sessions
+    .map((session) => {
+      const absentNames = absentPersonNames(session);
+      const capacity = participantCountForTeam(session.teamId);
+      const actual = sessionActualParticipants(session);
+      return `
+        <article class="team-session-row">
+          <div>
+            <strong>${escapeHtml(session.sessionName || "WOW x BALANCE 세션")}</strong>
+            <span>${escapeHtml(session.date || "날짜 미정")} · ${escapeHtml(session.startTime || "--:--")} · ${actual}/${capacity}명 참여</span>
+            <em>${absentNames.length ? `불참: ${escapeHtml(absentNames.join(", "))}` : "불참자 없음"}</em>
+          </div>
+          ${renderAbsentSelect(session)}
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function renderWowExecutionView() {
+  const teams = sessionTeamUnits();
+  if (!teams.length) {
+    return `<div class="empty-state"><strong>팀 조직이 없습니다</strong><span>People & Organization에서 팀을 먼저 등록하면 WOW x BALANCE 수행 현황이 팀 기준으로 정리됩니다.</span></div>`;
+  }
+  return `
+    <div class="wow-team-board">
+      ${teams
+        .map((team) => {
+          const summary = teamProgramSummary(team);
+          const signal = signalForUnit(team);
+          return `
+            <article class="wow-team-card">
+              <header>
+                <div>
+                  <p>${escapeHtml(getParentName(team))}</p>
+                  <h3>${escapeHtml(team.name)}</h3>
+                  <span>${escapeHtml(leaderRoleLabel(team))} ${escapeHtml(leaderNameLabel(team))} · ${participantCountForTeam(team.id)}명 기준</span>
+                </div>
+                <div class="wow-team-score">
+                  <strong>${summary.completionRate}%</strong>
+                  <span>수행률</span>
+                </div>
+              </header>
+              <div class="wow-team-metrics">
+                <span><b>${summary.doneSteps}/${summary.totalSteps}</b> 완료 단계</span>
+                <span><b>${summary.participationRate}%</b> 참여율</span>
+                <span><b>${signal.changeAcceptance}%</b> 변화 수용도</span>
+                <span><b>${summary.sessions.length}</b> 등록 일정</span>
+              </div>
+              <div class="program-track-grid">
+                <section>
+                  <h4>팀 프로그램 수행 날짜</h4>
+                  ${renderProgramDateChips(team, "team")}
+                </section>
+                <section>
+                  <h4>팀장 프로그램 수행 날짜</h4>
+                  ${renderProgramDateChips(team, "lead")}
+                </section>
+              </div>
+              <div class="team-session-list">
+                <h4>일정별 빠진 사람</h4>
+                ${renderTeamSessionList(team)}
+              </div>
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderSessionAnalysisStatus(team) {
+  const analysis = sessionAnalysisForUnit(team);
+  if (!analysis) return `<span class="analysis-state empty">GPT 분석 미저장</span>`;
+  return `<span class="analysis-state saved">GPT 분석 저장됨 · ${escapeHtml((analysis.createdAt || "").slice(0, 10))}</span>`;
+}
+
+function buildTeamSessionAnalysisPrompt(teamId) {
+  const team = getUnit(teamId) || sessionTeamUnits()[0];
+  if (!team) return "";
+  const summary = teamProgramSummary(team);
+  const quant = calculateWowQuantScores(wowQuantRowsForTeam(team));
+  const textRows = wowTextRowsForTeam(team);
+  const current = signalForUnit(team);
+  const textSamples = textRows
+    .slice(0, 20)
+    .map((row, index) => ({
+      no: row.respondentNo || index + 1,
+      goodBadText: row.goodBadText || "",
+      moodText: row.moodText || "",
+      messageText: row.messageText || "",
+    }));
+  return `당신은 조직문화 진단 전문가입니다. 아래 WOW x BALANCE 세션 데이터와 주관식 응답을 읽고 팀 단위 보정 신호를 JSON만으로 반환하세요.
+
+팀: ${team.name}
+상위 조직: ${getParentName(team)}
+조직도 기준 인원: ${participantCountForTeam(team.id)}명
+프로그램 수행률: ${summary.completionRate}%
+프로그램 참여율: ${summary.participationRate}%
+현재 팀 신호: 변화수용도 ${current.changeAcceptance}, 신뢰도 ${current.trust}, 피로도/지원필요 ${current.fatigue}, 리스크 ${current.riskScore}
+정량 설문 응답 수: ${quant.responseCount}
+정량 요약: ${JSON.stringify(quant.qMeans)}
+
+주관식 응답:
+${JSON.stringify(textSamples, null, 2)}
+
+반환 형식:
+{
+  "summary": "한 문장 진단",
+  "fatigueTextRisk": 0-100,
+  "trustTextRisk": 0-100,
+  "collaborationTextRisk": 0-100,
+  "teamPositiveSignal": 0-100,
+  "programEfficacySignal": 0-100,
+  "keywords": ["키워드1", "키워드2", "키워드3"],
+  "recommendations": ["운영 액션1", "운영 액션2"]
+}
+
+주의:
+- 숫자는 실제 응답 근거가 있을 때만 높게 주세요.
+- 피로도는 번아웃 확정값이 아니라 피로 가능성/지원 필요 신호로 해석하세요.
+- JSON 외 설명 문장은 쓰지 마세요.`;
+}
+
+function parseSessionAnalysisResult(rawText, team) {
+  const cleaned = String(rawText || "").replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+  if (!cleaned) return null;
+  try {
+    const parsed = JSON.parse(cleaned);
+    return normalizedSessionAnalysis({ ...parsed, rawText: cleaned, teamId: team.id, teamName: team.name, createdAt: new Date().toISOString() }, team);
+  } catch (error) {
+    return normalizedSessionAnalysis({ rawText: cleaned, summary: cleaned.slice(0, 220), teamId: team.id, teamName: team.name, createdAt: new Date().toISOString() }, team);
+  }
+}
+
+function saveSelectedSessionAnalysisResult() {
+  const teamId = document.getElementById("sessionAnalysisTeamSelect")?.value || state.selectedSessionAnalysisTeamId || sessionTeamUnits()[0]?.id;
+  const team = getUnit(teamId);
+  const rawText = document.getElementById("sessionAnalysisResultInput")?.value || "";
+  if (!team || !rawText.trim()) {
+    notifyOrganization("저장할 팀과 GPT 분석 결과를 먼저 입력하세요");
+    return false;
+  }
+  const result = parseSessionAnalysisResult(rawText, team);
+  if (!result) return false;
+  state.sessionAnalysisResults = { ...(state.sessionAnalysisResults || {}), [team.id]: result };
+  state.selectedSessionAnalysisTeamId = team.id;
+  render();
+  notifyOrganization(`${team.name} GPT 분석 결과를 팀 신호에 반영했습니다`);
+  return true;
+}
+
+function copySessionAnalysisPrompt() {
+  const prompt = document.getElementById("sessionAnalysisPrompt")?.value || "";
+  if (!prompt) return;
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(prompt).then(() => notifyOrganization("분석 프롬프트를 복사했습니다")).catch(() => {});
+    return;
+  }
+  const textarea = document.getElementById("sessionAnalysisPrompt");
+  textarea?.select();
+  document.execCommand("copy");
+  notifyOrganization("분석 프롬프트를 복사했습니다");
+}
+
+function renderWowDashboardView() {
+  const teams = sessionTeamUnits();
+  const summaries = teams.map((team) => ({ team, summary: teamProgramSummary(team), signal: signalForUnit(team) }));
+  const avgCompletion = summaries.length ? Math.round(summaries.reduce((sum, item) => sum + item.summary.completionRate, 0) / summaries.length) : 0;
+  const avgParticipation = summaries.length ? Math.round(summaries.reduce((sum, item) => sum + item.summary.participationRate, 0) / summaries.length) : 0;
+  const selectedTeamId = getUnit(state.selectedSessionAnalysisTeamId)?.id || teams[0]?.id || "";
+  state.selectedSessionAnalysisTeamId = selectedTeamId;
+  const selectedTeam = getUnit(selectedTeamId);
+  const prompt = selectedTeam ? buildTeamSessionAnalysisPrompt(selectedTeam.id) : "";
+  const saved = selectedTeam ? sessionAnalysisForUnit(selectedTeam) : null;
+  return `
+    <div class="wow-dashboard">
+      <section class="wow-kpi-row">
+        <article><span>운영 팀</span><strong>${teams.length}</strong><em>조직도 팀 기준</em></article>
+        <article><span>평균 수행률</span><strong>${avgCompletion}%</strong><em>11개 프로그램 기준</em></article>
+        <article><span>평균 참여율</span><strong>${avgParticipation}%</strong><em>불참자 반영</em></article>
+        <article><span>설문 응답</span><strong>${(state.wowQuantRows || []).length}/${(state.wowTextRows || []).length}</strong><em>정량 / 주관식</em></article>
+      </section>
+
+      <section class="wow-dashboard-grid">
+        <div class="wow-dashboard-table">
+          <div class="wow-table-head">
+            <h3>팀별 수행 대시보드</h3>
+            <button class="ghost-button" type="button" data-session-survey-upload>세션 설문 업로드</button>
+          </div>
+          ${summaries
+            .map(({ team, summary, signal }) => `
+              <article class="wow-dashboard-row">
+                <div>
+                  <strong>${escapeHtml(team.name)}</strong>
+                  <span>${escapeHtml(getParentName(team))} · ${participantCountForTeam(team.id)}명</span>
+                  ${renderSessionAnalysisStatus(team)}
+                </div>
+                <b>${summary.completionRate}% 수행</b>
+                <b>${summary.participationRate}% 참여</b>
+                <b>${signal.changeAcceptance}% 수용</b>
+              </article>
+            `)
+            .join("") || `<div class="program-empty">표시할 팀이 없습니다.</div>`}
+        </div>
+
+        <aside class="analysis-workbench">
+          <div class="wow-table-head">
+            <h3>GPT 분석 연결</h3>
+            <button class="ghost-button" type="button" data-refresh-session-prompt>프롬프트 갱신</button>
+          </div>
+          <label>분석 대상 팀
+            <select id="sessionAnalysisTeamSelect">
+              ${teams.map((team) => `<option value="${escapeHtml(team.id)}" ${team.id === selectedTeamId ? "selected" : ""}>${escapeHtml(team.name)}</option>`).join("")}
+            </select>
+          </label>
+          <label>분석 프롬프트
+            <textarea id="sessionAnalysisPrompt" readonly rows="12">${escapeHtml(prompt)}</textarea>
+          </label>
+          <button class="primary-button wide" type="button" data-copy-session-prompt>프롬프트 복사</button>
+          <label>GPT 분석 결과 붙여넣기
+            <textarea id="sessionAnalysisResultInput" rows="9" placeholder='{"summary":"...","fatigueTextRisk":40,"trustTextRisk":35,...}'>${escapeHtml(saved?.rawText || "")}</textarea>
+          </label>
+          <button class="primary-button wide" type="button" data-save-session-analysis>분석 결과 저장 · 팀 신호 반영</button>
+          ${saved ? `<div class="analysis-saved-note"><strong>${escapeHtml(saved.summary || "저장된 분석")}</strong><span>${(saved.keywords || []).map(escapeHtml).join(" · ")}</span></div>` : ""}
+        </aside>
+      </section>
+    </div>
+  `;
+}
+
+function renderWowSessionWorkspace() {
+  const root = document.getElementById("wowSessionRoot");
+  if (!root) return;
+  if (!["execution", "calendar", "dashboard"].includes(state.sessionView)) state.sessionView = "execution";
+  const teams = sessionTeamUnits();
+  const sessions = state.sessions || [];
+  root.innerHTML = `
+    <section class="wow-session-shell">
+      <div class="wow-session-hero">
+        <div>
+          <p class="eyebrow">WOW x BALANCE Operations</p>
+          <h2>WOW x BALANCE 운영</h2>
+          <p class="sub">팀별 프로그램 수행, 일정, 참여율, 설문 분석을 한 곳에서 운영합니다.</p>
+        </div>
+        <div class="wow-session-tabs" role="tablist" aria-label="WOW x BALANCE 운영 보기">
+          <button class="${state.sessionView === "execution" ? "active" : ""}" type="button" data-wow-session-tab="execution">팀별 프로그램 수행</button>
+          <button class="${state.sessionView === "calendar" ? "active" : ""}" type="button" data-wow-session-tab="calendar">캘린더</button>
+          <button class="${state.sessionView === "dashboard" ? "active" : ""}" type="button" data-wow-session-tab="dashboard">수행 대시보드</button>
+        </div>
+      </div>
+      <div class="wow-session-summary">
+        <article><span>운영 팀</span><strong>${teams.length}</strong></article>
+        <article><span>등록 일정</span><strong>${sessions.length}</strong></article>
+        <article><span>정량 설문</span><strong>${(state.wowQuantRows || []).length}</strong></article>
+        <article><span>주관식 설문</span><strong>${(state.wowTextRows || []).length}</strong></article>
+      </div>
+      <div id="wowSessionBody" class="wow-session-body">
+        ${state.sessionView === "execution" ? renderWowExecutionView() : state.sessionView === "dashboard" ? renderWowDashboardView() : `<div id="wowCalendarRoot"></div>`}
+      </div>
+    </section>
+  `;
+  if (state.sessionView === "calendar") {
+    renderCalendarView("wowCalendarRoot");
+  }
+}
+
+function openWowSessionTab(tab = "execution") {
+  state.sessionView = ["execution", "calendar", "dashboard"].includes(tab) ? tab : "execution";
+  if (typeof showView === "function") showView("session");
+  renderWowSessionWorkspace();
+  persist();
+}
+
+window.openWowSessionTab = openWowSessionTab;
+window.renderWowSessionWorkspace = renderWowSessionWorkspace;
 
 function organizationTemplateRows() {
   const headers = [
@@ -2740,6 +3599,20 @@ function organizationTemplateRows() {
     "teamId",
     "teamName",
     "participants",
+    "absentPersonIds",
+    "WQ1",
+    "WQ2",
+    "WQ3",
+    "WQ4",
+    "WQ5",
+    "WQ6",
+    "WQ7",
+    "WQ8",
+    "WQ9",
+    "WQ10",
+    "goodBadText",
+    "moodText",
+    "messageText",
     "groupId",
     "groupName",
     "description",
@@ -2747,7 +3620,11 @@ function organizationTemplateRows() {
     "recommendation",
     "memberIds",
     "unitIds",
+    "respondentNo",
+    "sourceFileName",
+    "sourceSheetName",
   ];
+  const rowFromObject = (record) => headers.map((header) => record[header] ?? "");
   const unitRows = state.units
     .slice()
     .sort((a, b) => (a.sourcePath || a.name).localeCompare(b.sourcePath || b.name, "ko"))
@@ -2831,44 +3708,51 @@ function organizationTemplateRows() {
       "",
     ]);
 
-  const sessionRows = (state.sessions || []).map((session) => [
-    "session",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    session.id,
-    session.date || "",
-    session.startTime || "",
-    session.sessionName || "",
-    session.track ? `${session.track}:${session.step || 1}` : session.category || "",
-    session.teamId || "",
-    session.teamName || "",
-    session.participants || "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-  ]);
+  const sessionRows = (state.sessions || []).map((session) => rowFromObject({
+    recordType: "session",
+    sessionId: session.id || "",
+    date: session.date || "",
+    startTime: session.startTime || "",
+    sessionName: session.sessionName || "",
+    category: session.track ? `${session.track}:${session.step || 1}` : session.category || "",
+    teamId: session.teamId || "",
+    teamName: session.teamName || "",
+    participants: sessionActualParticipants(session),
+    absentPersonIds: sessionAbsentIds(session).join(";"),
+  }));
+
+  const wowQuantRows = (state.wowQuantRows || []).map((row) => rowFromObject({
+    recordType: "wowquant",
+    id: row.id || "",
+    teamId: row.teamId || "",
+    teamName: row.teamName || "",
+    respondentNo: row.respondentNo || "",
+    sourceFileName: row.sourceFileName || "",
+    sourceSheetName: row.sourceSheetName || "",
+    WQ1: row.WQ1 || "",
+    WQ2: row.WQ2 || "",
+    WQ3: row.WQ3 || "",
+    WQ4: row.WQ4 || "",
+    WQ5: row.WQ5 || "",
+    WQ6: row.WQ6 || "",
+    WQ7: row.WQ7 || "",
+    WQ8: row.WQ8 || "",
+    WQ9: row.WQ9 || "",
+    WQ10: row.WQ10 || "",
+  }));
+
+  const wowTextRows = (state.wowTextRows || []).map((row) => rowFromObject({
+    recordType: "wowtext",
+    id: row.id || "",
+    teamId: row.teamId || "",
+    teamName: row.teamName || "",
+    respondentNo: row.respondentNo || "",
+    sourceFileName: row.sourceFileName || "",
+    sourceSheetName: row.sourceSheetName || "",
+    goodBadText: row.goodBadText || "",
+    moodText: row.moodText || "",
+    messageText: row.messageText || "",
+  }));
 
   const groupRows = (state.groups || []).map((group) => [
     "group",
@@ -2909,7 +3793,7 @@ function organizationTemplateRows() {
     (group.unitIds || []).join(";"),
   ]);
 
-  const bodyRows = [...unitRows, ...personRows, ...sessionRows, ...groupRows].map((row) => {
+  const bodyRows = [...unitRows, ...personRows, ...sessionRows, ...wowQuantRows, ...wowTextRows, ...groupRows].map((row) => {
     if (row.length === headers.length) return row;
     if (row.length > headers.length) return row.slice(0, headers.length);
     return [...row, ...Array.from({ length: headers.length - row.length }, () => "")];
@@ -3213,17 +4097,21 @@ async function readXlsxEntries(arrayBuffer) {
   return entries;
 }
 
-function getFirstWorksheetPath(entries) {
+function getWorksheetRefs(entries) {
   const parser = new DOMParser();
   const workbook = parser.parseFromString(entries["xl/workbook.xml"], "application/xml");
   const rels = parser.parseFromString(entries["xl/_rels/workbook.xml.rels"], "application/xml");
-  const firstSheet = xmlFirst(workbook, "sheet");
-  const relId =
-    firstSheet?.getAttribute("r:id") ||
-    firstSheet?.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
-  const rel = xmlElements(rels, "Relationship").find((item) => item.getAttribute("Id") === relId);
-  const target = rel?.getAttribute("Target") || "worksheets/sheet1.xml";
-  return normalizeXlsxPath("xl", target);
+  return xmlElements(workbook, "sheet").map((sheet, index) => {
+    const relId =
+      sheet?.getAttribute("r:id") ||
+      sheet?.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+    const rel = xmlElements(rels, "Relationship").find((item) => item.getAttribute("Id") === relId);
+    const target = rel?.getAttribute("Target") || `worksheets/sheet${index + 1}.xml`;
+    return {
+      name: sheet.getAttribute("name") || `Sheet${index + 1}`,
+      path: normalizeXlsxPath("xl", target),
+    };
+  });
 }
 
 function parseSharedStrings(xmlText) {
@@ -3241,13 +4129,7 @@ function textFromInlineString(cell) {
   return xmlElements(cell, "t").map((node) => node.textContent || "").join("");
 }
 
-async function parseXlsxRows(file) {
-  const entries = await readXlsxEntries(await file.arrayBuffer());
-  const worksheetPath = getFirstWorksheetPath(entries);
-  const worksheetXml = entries[worksheetPath] || entries["xl/worksheets/sheet1.xml"];
-  if (!worksheetXml) throw new Error("엑셀 첫 시트를 찾을 수 없습니다.");
-
-  const sharedStrings = parseSharedStrings(entries["xl/sharedStrings.xml"]);
+function parseWorksheetRows(worksheetXml, sharedStrings, sheetName = "") {
   const xml = new DOMParser().parseFromString(worksheetXml, "application/xml");
   const rowArrays = xmlElements(xml, "row").map((row) => {
     const cells = [];
@@ -3268,14 +4150,35 @@ async function parseXlsxRows(file) {
   return rowArrays
     .slice(headerIndex + 1)
     .filter((row) => row.some((value) => String(value || "").trim()))
-    .map((row) => Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""])));
+    .map((row) => ({
+      __sheetName: sheetName,
+      ...Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""])),
+    }));
+}
+
+async function parseXlsxRows(file) {
+  const entries = await readXlsxEntries(await file.arrayBuffer());
+  const sharedStrings = parseSharedStrings(entries["xl/sharedStrings.xml"]);
+  const refs = getWorksheetRefs(entries);
+  const fallback = entries["xl/worksheets/sheet1.xml"] ? [{ name: "Sheet1", path: "xl/worksheets/sheet1.xml" }] : [];
+  const sheetRefs = refs.length ? refs : fallback;
+  const preferredSurveyRefs = sheetRefs.filter((sheet) => ["전체응답", "전사본"].includes(String(sheet.name || "").trim()));
+  const refsToParse = preferredSurveyRefs.length ? preferredSurveyRefs : sheetRefs;
+  const rows = refsToParse.flatMap((sheet) => {
+    const worksheetXml = entries[sheet.path];
+    return worksheetXml ? parseWorksheetRows(worksheetXml, sharedStrings, sheet.name) : [];
+  });
+  if (!rows.length) throw new Error("엑셀에서 읽을 수 있는 데이터 행을 찾지 못했습니다.");
+  return rows;
 }
 
 async function parseOrganizationUpload(file) {
   const name = file.name.toLowerCase();
-  if (name.endsWith(".xlsx")) return parseXlsxRows(file);
-  if (name.endsWith(".csv") || file.type.includes("csv")) return parseCsvRows(await file.text());
-  throw new Error("xlsx 또는 csv 파일만 업로드할 수 있습니다.");
+  let rows = [];
+  if (name.endsWith(".xlsx")) rows = await parseXlsxRows(file);
+  else if (name.endsWith(".csv") || file.type.includes("csv")) rows = parseCsvRows(await file.text());
+  else throw new Error("xlsx 또는 csv 파일만 업로드할 수 있습니다.");
+  return rows.map((row) => ({ __sourceFileName: file.name, ...row }));
 }
 
 const uploadAliases = {
@@ -3306,8 +4209,23 @@ const uploadAliases = {
   sessionName: ["sessionName", "세션명"],
   category: ["category", "유형"],
   teamId: ["teamId", "팀ID"],
-  teamName: ["teamName", "팀명"],
+  teamName: ["teamName", "팀명", "팀"],
+  respondentNo: ["respondentNo", "respondentId", "참여자", "번호", "응답번호"],
   participants: ["participants", "참여인원"],
+  absentPersonIds: ["absentPersonIds", "불참자ID", "빠진사람ID", "결석자ID"],
+  WQ1: ["WQ1", "Q1", "이번 프로그램을 통해 WOW 조직문화가 왜 필요한지 다시 생각해보게 되었다."],
+  WQ2: ["WQ2", "Q2", "이번 프로그램을 통해 우리팀의 역할과 일하는 방식에 대해 다시 돌아보게 되었다."],
+  WQ3: ["WQ3", "Q3", "명상과 심호흡 세션에서 배운 방법을 한 번이라도 직접 해봤다."],
+  WQ4: ["WQ4", "Q4", "나는 피로하거나 감정이 올라올 때, 잠시 멈추고 나를 가라앉히는 방법을 이전보다 더 의식하게 되었다."],
+  WQ5: ["WQ5", "Q5", "이번 프로그램을 통해 커뮤니케이션이 왜 어려운지 좀 더 이해하게 되었다."],
+  WQ6: ["WQ6", "Q6", "나는 팀과의 대화에서 잘 전달하기 위해 한 번 더 생각하고 표현해 보려는 의식을 갖게 되었다."],
+  WQ7: ["WQ7", "Q7", "BALANCE 세션은 서로를 조금 더 편하게 느끼는 데 도움이 되었다.", "민원과 장기한 BALANCE 세션(스트레칭 파트너 운동 등)은 서로를 조금 더 편하게 느끼는 데 도움이 되었다."],
+  WQ8: ["WQ8", "Q8", "이번 프로그램에서 다룬 에너지 회복 방법은 사무실이나 일상에서 실제로 활용할 수 있다.", "이번 프로그램에서 다룬 에너지 회복 방법(명상, 심호흡 등)은 사무실이나 일상에서 실제로 활용할 수 있다."],
+  WQ9: ["WQ9", "Q9", "전반적으로 이번 프로그램은 우리 팀이 더 건강하게 소통하고 협업하는 데 도움이 되었다고 느낀다."],
+  WQ10: ["WQ10", "Q10", "나는 우리 회사가 나를 케어하고 있다고 느낀다."],
+  goodBadText: ["goodBadText", "좋았던점아쉬웠던점", "WOW X BALANCE 프로그램 관련 활동 중 좋았던 점이나, 아쉬웠던 점", "WOW X BALANCE 프로그램 관련 활동 중 좋았던 점이나, '이건 좀 아쉽다'하는 것을 가감 없이 적어주세요."],
+  moodText: ["moodText", "팀분위기회사분위기", "요즘 팀 분위기나 회사 분위기 솔직히 어떤가요?"],
+  messageText: ["messageText", "운영진에게하고싶은말", "WOW X BALANCE 운영진에게 하고 싶은 말", "WOW X BALANCE 운영진에게 하고 싶은 말!"],
   groupId: ["groupId", "그룹ID"],
   groupName: ["groupName", "그룹명"],
   description: ["description", "설명"],
@@ -3315,7 +4233,15 @@ const uploadAliases = {
   recommendation: ["recommendation", "추천액션"],
   memberIds: ["memberIds", "구성원ID목록"],
   unitIds: ["unitIds", "조직ID목록"],
+  sourceFileName: ["sourceFileName", "원본파일", "출처파일"],
+  sourceSheetName: ["sourceSheetName", "원본시트", "출처시트"],
 };
+
+function normalizeUploadHeader(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^0-9a-z가-힣]/g, "");
+}
 
 function uploadValue(row, field) {
   const aliases = uploadAliases[field] || [field];
@@ -3324,6 +4250,9 @@ function uploadValue(row, field) {
     if (Object.prototype.hasOwnProperty.call(row, alias)) return String(row[alias] ?? "").trim();
     const found = keys.find((key) => key.toLowerCase() === alias.toLowerCase());
     if (found) return String(row[found] ?? "").trim();
+    const normalizedAlias = normalizeUploadHeader(alias);
+    const normalizedFound = keys.find((key) => normalizeUploadHeader(key) === normalizedAlias);
+    if (normalizedFound) return String(row[normalizedFound] ?? "").trim();
   }
   return "";
 }
@@ -3335,18 +4264,36 @@ function splitUploadList(value) {
     .filter(Boolean);
 }
 
+function uploadTeamFromRow(row) {
+  const teamId = uploadValue(row, "teamId");
+  if (teamId && getUnit(teamId)) return getUnit(teamId);
+  const teamName = uploadValue(row, "teamName");
+  return state.units.find((unit) => unit.level === "team" && normalizedTeamName(unit.name) === normalizedTeamName(teamName)) || null;
+}
+
+function uploadSurveyRowId(row, prefix, index, teamName) {
+  const source = normalizeUploadHeader(uploadValue(row, "sourceFileName") || row.__sourceFileName || "manual");
+  const sheet = normalizeUploadHeader(uploadValue(row, "sourceSheetName") || row.__sheetName || "sheet");
+  const team = normalizedTeamName(teamName) || "team";
+  const respondent = normalizeUploadHeader(uploadValue(row, "respondentNo")) || String(index + 1);
+  return `${prefix}-${source}-${sheet}-${team}-${respondent}`;
+}
+
 function uploadRecordType(row) {
   const explicit = uploadValue(row, "recordType").toLowerCase();
-  if (["unit", "person", "session", "group"].includes(explicit)) return explicit;
+  if (["unit", "person", "session", "group", "wowquant", "wowtext"].includes(explicit)) return explicit;
+  const sheetName = String(row.__sheetName || "").toLowerCase();
   if (uploadValue(row, "level") || uploadValue(row, "parentId") || uploadValue(row, "leader")) return "unit";
   if (uploadValue(row, "personName") || uploadValue(row, "position")) return "person";
+  if (sheetName.includes("전체응답") || uploadValue(row, "WQ1") || uploadValue(row, "WQ2") || uploadValue(row, "WQ10")) return "wowquant";
+  if (sheetName.includes("전사본") || uploadValue(row, "goodBadText") || uploadValue(row, "moodText") || uploadValue(row, "messageText")) return "wowtext";
   if (uploadValue(row, "sessionName") || uploadValue(row, "date")) return "session";
   if (uploadValue(row, "groupName") || uploadValue(row, "memberIds")) return "group";
   return "unknown";
 }
 
 function analyzeOrganizationUpload(rows) {
-  const report = { unit: 0, person: 0, session: 0, group: 0, unknown: 0, issues: [] };
+  const report = { unit: 0, person: 0, session: 0, group: 0, wowquant: 0, wowtext: 0, unknown: 0, issues: [] };
   const uploadedUnitIds = new Set(state.units.map((unit) => unit.id));
   rows.forEach((row, index) => {
     const type = uploadRecordType(row);
@@ -3366,6 +4313,8 @@ function analyzeOrganizationUpload(rows) {
     } else if (type === "session") {
       if (!uploadValue(row, "sessionName")) report.issues.push(`${rowNo}행: 세션명이 비어 있습니다.`);
       if (!uploadValue(row, "date")) report.issues.push(`${rowNo}행: 일정 날짜가 비어 있습니다.`);
+    } else if (type === "wowquant" || type === "wowtext") {
+      if (!uploadValue(row, "teamId") && !uploadValue(row, "teamName")) report.issues.push(`${rowNo}행: WOW 서베이 팀ID 또는 팀명이 필요합니다.`);
     } else if (type === "group") {
       if (!uploadValue(row, "groupName")) report.issues.push(`${rowNo}행: 그룹명이 비어 있습니다.`);
     } else {
@@ -3377,7 +4326,7 @@ function analyzeOrganizationUpload(rows) {
 
 function confirmOrganizationUpload(rows) {
   const report = analyzeOrganizationUpload(rows);
-  const recognized = report.unit + report.person + report.session + report.group;
+  const recognized = report.unit + report.person + report.session + report.group + report.wowquant + report.wowtext;
   if (!recognized) {
     window.alert("업로드할 수 있는 조직/구성원/일정/그룹 행을 찾지 못했습니다.");
     return false;
@@ -3385,7 +4334,7 @@ function confirmOrganizationUpload(rows) {
   const warnings = report.issues.slice(0, 8).join("\n");
   const more = report.issues.length > 8 ? `\n외 ${report.issues.length - 8}개 경고` : "";
   return window.confirm(
-    `업로드 내용을 적용할까요?\n\n조직 ${report.unit}개 · 구성원 ${report.person}명 · 일정 ${report.session}개 · 타겟그룹 ${report.group}개\n\n기존 데이터는 먼저 백업되고, 업로드된 행은 기존 데이터에 업데이트됩니다. 업로드에 없는 데이터는 삭제하지 않습니다.${
+    `업로드 내용을 적용할까요?\n\n조직 ${report.unit}개 · 구성원 ${report.person}명 · 일정 ${report.session}개 · 타겟그룹 ${report.group}개 · WOW 정량 ${report.wowquant}건 · WOW 주관식 ${report.wowtext}건\n\n기존 데이터는 먼저 백업되고, 업로드된 행은 기존 데이터에 업데이트됩니다. 업로드에 없는 데이터는 삭제하지 않습니다.${
       warnings ? `\n\n확인할 점:\n${warnings}${more}` : ""
     }`,
   );
@@ -3493,7 +4442,8 @@ function applyOrganizationTemplate(rows) {
   rows.filter((row) => uploadRecordType(row) === "session").forEach((row, index) => {
     const id = uploadValue(row, "sessionId") || `session-uploaded-${Date.now()}-${index}`;
     const existing = (state.sessions || []).find((session) => session.id === id);
-    const teamId = uploadValue(row, "teamId") || existing?.teamId || "";
+    const uploadTeam = uploadTeamFromRow(row);
+    const teamId = uploadTeam?.id || uploadValue(row, "teamId") || existing?.teamId || "";
     const session = existing || { id };
     session.date = uploadValue(row, "date") || session.date || todayIso();
     session.startTime = uploadValue(row, "startTime") || session.startTime || "10:00";
@@ -3509,8 +4459,42 @@ function applyOrganizationTemplate(rows) {
     }
     session.teamId = getUnit(teamId) ? teamId : session.teamId || "";
     session.teamName = uploadValue(row, "teamName") || getUnit(session.teamId)?.name || session.teamName || "팀 미정";
-    session.participants = Math.max(1, Number(uploadValue(row, "participants") || session.participants || 1));
+    const absentIds = splitUploadList(uploadValue(row, "absentPersonIds"));
+    session.absentPersonIds = absentIds.length ? absentIds : Array.isArray(session.absentPersonIds) ? session.absentPersonIds : [];
+    session.participants = sessionActualParticipants(session);
     if (!existing) state.sessions = [...(state.sessions || []), session];
+  });
+
+  rows.filter((row) => uploadRecordType(row) === "wowquant").forEach((row, index) => {
+    const uploadTeam = uploadTeamFromRow(row);
+    const teamName = uploadValue(row, "teamName") || uploadTeam?.name || "팀 미정";
+    const id = uploadValue(row, "id") || uploadSurveyRowId(row, "wow-quant", index, teamName);
+    const existing = (state.wowQuantRows || []).find((item) => item.id === id);
+    const item = existing || { id };
+    item.teamId = uploadTeam?.id || uploadValue(row, "teamId") || item.teamId || "";
+    item.teamName = teamName;
+    item.sourceFileName = uploadValue(row, "sourceFileName") || row.__sourceFileName || item.sourceFileName || "";
+    item.sourceSheetName = uploadValue(row, "sourceSheetName") || row.__sheetName || item.sourceSheetName || "";
+    item.respondentNo = uploadValue(row, "respondentNo") || item.respondentNo || "";
+    for (let i = 1; i <= 10; i += 1) item[`WQ${i}`] = uploadValue(row, `WQ${i}`) || item[`WQ${i}`] || "";
+    if (!existing) state.wowQuantRows = [...(state.wowQuantRows || []), item];
+  });
+
+  rows.filter((row) => uploadRecordType(row) === "wowtext").forEach((row, index) => {
+    const uploadTeam = uploadTeamFromRow(row);
+    const teamName = uploadValue(row, "teamName") || uploadTeam?.name || "팀 미정";
+    const id = uploadValue(row, "id") || uploadSurveyRowId(row, "wow-text", index, teamName);
+    const existing = (state.wowTextRows || []).find((item) => item.id === id);
+    const item = existing || { id };
+    item.teamId = uploadTeam?.id || uploadValue(row, "teamId") || item.teamId || "";
+    item.teamName = teamName;
+    item.sourceFileName = uploadValue(row, "sourceFileName") || row.__sourceFileName || item.sourceFileName || "";
+    item.sourceSheetName = uploadValue(row, "sourceSheetName") || row.__sheetName || item.sourceSheetName || "";
+    item.respondentNo = uploadValue(row, "respondentNo") || item.respondentNo || "";
+    item.goodBadText = uploadValue(row, "goodBadText") || item.goodBadText || "";
+    item.moodText = uploadValue(row, "moodText") || item.moodText || "";
+    item.messageText = uploadValue(row, "messageText") || item.messageText || "";
+    if (!existing) state.wowTextRows = [...(state.wowTextRows || []), item];
   });
 
   rows.filter((row) => uploadRecordType(row) === "group").forEach((row, index) => {
@@ -3642,12 +4626,13 @@ function renderOverviewModal(unit) {
         ${renderBar("피로도 / 지원 필요", signal.fatigue, "fatigue")}
         ${renderBar("문화 리스크", signal.riskScore, "fatigue")}
       </div>
-      <div class="culture-map-readout">
-        <article><span>사분면</span><strong>${escapeHtml(signal.quadrant)}</strong></article>
-        <article><span>X 좌표</span><strong>${signal.mapX}</strong></article>
-        <article><span>Y 좌표</span><strong>${signal.mapY}</strong></article>
-      </div>
-      <div class="tag-list">${signal.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>
+	      <div class="culture-map-readout">
+	        <article><span>사분면</span><strong>${escapeHtml(signal.quadrant)}</strong></article>
+	        <article><span>X 좌표</span><strong>${signal.mapX}</strong></article>
+	        <article><span>Y 좌표</span><strong>${signal.mapY}</strong></article>
+	      </div>
+	      ${renderFormulaV2Breakdown(signal)}
+	      <div class="tag-list">${signal.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div>
     </section>
 
     ${
@@ -3683,9 +4668,11 @@ function renderOverviewModal(unit) {
 function renderSettingsModal(unit) {
   const people = getPeopleForUnit(unit.id, unit.level !== "team");
   const directPeople = getPeopleForUnit(unit.id, false);
+  const sortedPeople = sortPeopleForDisplay(people);
+  const sortedDirectPeople = sortPeopleForDisplay(directPeople);
   const childUnits = getChildren(unit.id);
   const signal = signalForUnit(unit);
-  const settingsPeople = directPeople.length ? directPeople : people.slice(0, 5);
+  const settingsPeople = sortedDirectPeople.length ? sortedDirectPeople : sortedPeople.slice(0, 5);
   const settingsPeopleLabel = directPeople.length
     ? `${directPeople.length}명 직접 등록`
     : people.length
@@ -3714,7 +4701,7 @@ function renderSettingsModal(unit) {
                     구성원 중 ${escapeHtml(roleLabel)} 선택
                     <select id="teamLeaderSelect">
                       <option value="">${escapeHtml(roleLabel)} 미정</option>
-                      ${directPeople
+                      ${sortedDirectPeople
                         .map((person) => `<option value="${escapeHtml(person.id)}" ${person.name === unit.leader ? "selected" : ""}>${escapeHtml(person.name)} · ${escapeHtml(leaderTitleLabel(person.title))}</option>`)
                         .join("")}
                     </select>
@@ -4100,7 +5087,42 @@ document.addEventListener("click", (event) => {
   const calendarDateButton = event.target.closest("[data-pick-calendar-date]");
   if (calendarDateButton) {
     state.selectedCalendarDate = calendarDateButton.dataset.pickCalendarDate;
+    const shouldPopup = isMobileCalendarLayout() && sessionsForDate(state.selectedCalendarDate).length > 0;
     render();
+    if (shouldPopup) requestAnimationFrame(() => showCalendarDayPopup(state.selectedCalendarDate));
+    return;
+  }
+
+  if (event.target.closest("[data-close-calendar-popup]") || event.target.id === "calendarDayPopup") {
+    closeCalendarDayPopup();
+    return;
+  }
+
+  const wowSessionTabButton = event.target.closest("[data-wow-session-tab]");
+  if (wowSessionTabButton) {
+    state.sessionView = wowSessionTabButton.dataset.wowSessionTab || "execution";
+    renderWowSessionWorkspace();
+    persist();
+    return;
+  }
+
+  if (event.target.closest("[data-session-survey-upload]")) {
+    document.getElementById("orgUploadInput")?.click();
+    return;
+  }
+
+  if (event.target.closest("[data-refresh-session-prompt]")) {
+    renderWowSessionWorkspace();
+    return;
+  }
+
+  if (event.target.closest("[data-copy-session-prompt]")) {
+    copySessionAnalysisPrompt();
+    return;
+  }
+
+  if (event.target.closest("[data-save-session-analysis]")) {
+    saveSelectedSessionAnalysisResult();
     return;
   }
 
@@ -4141,6 +5163,7 @@ document.addEventListener("click", (event) => {
   const deleteSessionButton = event.target.closest("[data-delete-session]");
   if (deleteSessionButton) {
     state.sessions = (state.sessions || []).filter((session) => session.id !== deleteSessionButton.dataset.deleteSession);
+    closeCalendarDayPopup();
     render();
     return;
   }
@@ -4301,10 +5324,17 @@ document.addEventListener("change", (event) => {
 
   if (event.target.id === "orgUploadInput" && event.target.files && event.target.files[0]) {
     parseOrganizationUpload(event.target.files[0])
-      .then((rows) => {
+      .then(async (rows) => {
         if (confirmOrganizationUpload(rows) && applyOrganizationTemplate(rows)) {
           render();
-          notifyOrganization("조직 마스터 업로드를 적용했습니다");
+          try {
+            const saved = await saveOrganizationCloudNow();
+            notifyOrganization(saved ? "조직/설문 업로드 적용 및 Firebase 저장 완료" : "조직/설문 업로드 적용 · Firebase 연결 없음");
+          } catch (saveError) {
+            console.warn("Could not save uploaded organization survey data.", saveError);
+            setOrganizationCloudError("저장", saveError);
+            notifyOrganization("조직/설문 업로드 적용 · Firebase 저장 실패");
+          }
         }
       })
       .catch((error) => {
@@ -4319,6 +5349,35 @@ document.addEventListener("change", (event) => {
   if (event.target.id === "calendarDateInput") {
     state.selectedCalendarDate = event.target.value || todayIso();
     render();
+    return;
+  }
+
+  if (event.target.id === "sessionTeamInput") {
+    const input = document.getElementById("sessionParticipantsInput");
+    const preview = document.getElementById("sessionParticipantsPreview");
+    const count = participantCountForTeam(event.target.value);
+    if (input) input.value = String(count);
+    if (preview) {
+      preview.innerHTML = `<strong>${count}명</strong><span>조직도 기준 자동 계산 · 팀장 포함</span>`;
+    }
+    return;
+  }
+
+  if (event.target.id === "sessionAnalysisTeamSelect") {
+    state.selectedSessionAnalysisTeamId = event.target.value;
+    renderWowSessionWorkspace();
+    persist();
+    return;
+  }
+
+  const absentSelect = event.target.closest("[data-session-absentees]");
+  if (absentSelect) {
+    const session = (state.sessions || []).find((item) => item.id === absentSelect.dataset.sessionAbsentees);
+    if (session) {
+      session.absentPersonIds = Array.from(absentSelect.selectedOptions || []).map((option) => option.value);
+      session.participants = sessionActualParticipants(session);
+      render();
+    }
     return;
   }
 
@@ -4393,7 +5452,8 @@ document.addEventListener("submit", (event) => {
       sessionName: `${(WOW_TRACKS[track] || {}).label || "세션"} ${step}. ${stepName}`,
       teamId: team?.id || "",
       teamName: team?.name || "팀 미정",
-      participants: Math.max(1, Number(document.getElementById("sessionParticipantsInput").value || 1)),
+      participants: participantCountForTeam(team?.id),
+      absentPersonIds: [],
     };
     state.sessions = [...(state.sessions || []), session];
     state.selectedCalendarDate = session.date;
@@ -4569,11 +5629,18 @@ document.addEventListener("dragend", () => {
 });
 
 document.addEventListener("dragover", (event) => {
+  const rowTarget = event.target.closest(".inspector-member-row[data-drag-person-id]");
+  const payload = getDragPayload(event);
+  if (rowTarget && payload?.action === "move-person" && rowTarget.dataset.dragPersonId !== payload.personId) {
+    event.preventDefault();
+    rowTarget.classList.add("drop-ready");
+    return;
+  }
+
   const dropTarget = event.target.closest("[data-drop-unit-id]");
   if (!dropTarget) return;
 
   const parent = getUnit(dropTarget.dataset.dropUnitId);
-  const payload = getDragPayload(event);
   if (!payload) return;
 
   const allowed =
@@ -4589,11 +5656,31 @@ document.addEventListener("dragover", (event) => {
 });
 
 document.addEventListener("dragleave", (event) => {
+  const rowTarget = event.target.closest(".inspector-member-row[data-drag-person-id]");
+  if (rowTarget) rowTarget.classList.remove("drop-ready");
+
   const dropTarget = event.target.closest("[data-drop-unit-id]");
   if (dropTarget) dropTarget.classList.remove("drop-ready");
 });
 
 document.addEventListener("drop", (event) => {
+  const rowTarget = event.target.closest(".inspector-member-row[data-drag-person-id]");
+  const rowPayload = getDragPayload(event);
+  if (rowTarget && rowPayload?.action === "move-person" && rowTarget.dataset.dragPersonId !== rowPayload.personId) {
+    event.preventDefault();
+    rowTarget.classList.remove("drop-ready");
+    const targetPerson = state.people.find((person) => person.id === rowTarget.dataset.dragPersonId);
+    let changed = false;
+    if (targetPerson) {
+      const source = state.people.find((person) => person.id === rowPayload.personId);
+      if (source && source.unitId !== targetPerson.unitId) changed = movePerson(rowPayload.personId, targetPerson.unitId);
+      changed = reorderPerson(rowPayload.personId, rowTarget.dataset.dragPersonId) || changed;
+    }
+    if (changed) render();
+    activeDragPayload = null;
+    return;
+  }
+
   const dropTarget = event.target.closest("[data-drop-unit-id]");
   if (!dropTarget) return;
 

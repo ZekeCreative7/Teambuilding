@@ -1585,6 +1585,94 @@ input[type="checkbox"] {
   font-weight: 950;
 }
 
+.calendar-session-summary {
+  display: none;
+  min-height: 22px;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(109, 93, 252, 0.16), rgba(20, 184, 166, 0.14));
+  color: #4338ca;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.calendar-session-details {
+  display: grid;
+  gap: 4px;
+}
+
+.session-participant-note {
+  display: grid;
+  gap: 4px;
+  padding: 11px;
+  border: 1px solid rgba(109, 93, 252, 0.2);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.86), rgba(236, 253, 245, 0.72));
+}
+
+.session-participant-note strong {
+  color: var(--ink-strong);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.session-participant-note span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.calendar-day-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: end center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: blur(8px);
+}
+
+.calendar-day-popup-card {
+  width: min(100%, 420px);
+  max-height: min(72vh, 560px);
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(203, 213, 225, 0.84);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.22);
+}
+
+.calendar-day-popup-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.calendar-day-popup-head span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.calendar-day-popup-head strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-strong);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.calendar-day-popup-list {
+  display: grid;
+  gap: 8px;
+}
+
 .week-board {
   display: grid;
   grid-template-columns: repeat(7, minmax(132px, 1fr));
@@ -1654,6 +1742,428 @@ input[type="checkbox"] {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.wow-session-shell {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+}
+
+.wow-session-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(109, 93, 252, 0.16), transparent 32%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(236, 253, 245, 0.72));
+  box-shadow: var(--shadow);
+}
+
+.wow-session-hero h2 {
+  margin: 4px 0 8px;
+  color: var(--ink-strong);
+  font-size: clamp(30px, 4vw, 52px);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.wow-session-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid rgba(203, 213, 225, 0.78);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+}
+
+.wow-session-tabs button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 13px;
+  padding: 0 14px;
+  background: transparent;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: none;
+}
+
+.wow-session-tabs button.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--violet), var(--cyan));
+  box-shadow: 0 12px 26px rgba(79, 70, 229, 0.22);
+}
+
+.wow-session-summary,
+.wow-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wow-session-summary article,
+.wow-kpi-row article {
+  min-height: 86px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.055);
+}
+
+.wow-session-summary span,
+.wow-kpi-row span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.wow-session-summary strong,
+.wow-kpi-row strong {
+  color: var(--ink-strong);
+  font-size: 30px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.wow-kpi-row em {
+  color: #64748b;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.wow-session-body {
+  min-width: 0;
+}
+
+.wow-team-board,
+.wow-dashboard {
+  display: grid;
+  gap: 16px;
+}
+
+.wow-team-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 26px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.82)),
+    radial-gradient(circle at 92% 0%, rgba(20, 184, 166, 0.13), transparent 28%);
+  box-shadow: var(--shadow);
+}
+
+.wow-team-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.wow-team-card p,
+.wow-team-card h3,
+.wow-team-card span,
+.wow-team-card h4 {
+  margin: 0;
+}
+
+.wow-team-card p {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.wow-team-card h3 {
+  margin-top: 4px;
+  color: var(--ink-strong);
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.wow-team-card header span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.wow-team-score {
+  min-width: 88px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(109, 93, 252, 0.12), rgba(20, 184, 166, 0.14));
+}
+
+.wow-team-score strong {
+  color: #4338ca;
+  font-size: 26px;
+  font-weight: 950;
+}
+
+.wow-team-score span {
+  margin: 0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.wow-team-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wow-team-metrics span {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.74);
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.wow-team-metrics b {
+  color: var(--ink-strong);
+  font-size: 18px;
+}
+
+.program-track-grid,
+.wow-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.program-track-grid section,
+.team-session-list,
+.wow-dashboard-table,
+.analysis-workbench {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.82);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.program-track-grid h4,
+.team-session-list h4 {
+  color: var(--ink-strong);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.program-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.86);
+  background: rgba(248, 250, 252, 0.86);
+}
+
+.program-step span {
+  min-width: 0;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.program-step strong {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.program-step.done {
+  background: linear-gradient(135deg, rgba(220, 252, 231, 0.76), rgba(236, 253, 245, 0.72));
+  border-color: rgba(34, 197, 94, 0.28);
+}
+
+.program-step.done strong {
+  color: #047857;
+}
+
+.program-step.planned {
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.86), rgba(224, 242, 254, 0.66));
+  border-color: rgba(99, 102, 241, 0.24);
+}
+
+.program-step.planned strong {
+  color: #4f46e5;
+}
+
+.team-session-row,
+.wow-dashboard-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.86);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.team-session-row strong,
+.wow-dashboard-row strong {
+  display: block;
+  color: var(--ink-strong);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.team-session-row span,
+.team-session-row em,
+.wow-dashboard-row span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.absent-select {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.absent-select select,
+.analysis-workbench select,
+.analysis-workbench textarea {
+  width: 100%;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+}
+
+.absent-select select {
+  min-height: 88px;
+  padding: 8px;
+}
+
+.program-empty,
+.program-muted {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed rgba(148, 163, 184, 0.46);
+  border-radius: 14px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.wow-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wow-table-head h3 {
+  margin: 0;
+  color: var(--ink-strong);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.wow-dashboard-row {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+}
+
+.wow-dashboard-row b {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.92);
+  color: #334155;
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.analysis-state {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 7px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.analysis-state.saved {
+  color: #047857;
+  background: rgba(220, 252, 231, 0.8);
+}
+
+.analysis-state.empty {
+  color: #64748b;
+  background: rgba(241, 245, 249, 0.9);
+}
+
+.analysis-workbench label {
+  display: grid;
+  gap: 7px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.analysis-workbench textarea {
+  min-height: 140px;
+  padding: 12px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.analysis-saved-note {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.72), rgba(236, 253, 245, 0.72));
+}
+
+.analysis-saved-note strong {
+  color: var(--ink-strong);
+  font-size: 13px;
+}
+
+.analysis-saved-note span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
 }
 
 .detail-drawer,
@@ -2298,6 +2808,49 @@ input[type="checkbox"] {
   font-weight: 950;
 }
 
+.formula-v2-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.formula-v2-stack article {
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+  border: 1px solid rgba(203, 213, 225, 0.72);
+  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(239, 246, 255, 0.62));
+}
+
+.formula-v2-stack article:nth-child(2) {
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.84), rgba(236, 253, 245, 0.68));
+}
+
+.formula-v2-stack article:nth-child(3) {
+  background: linear-gradient(135deg, rgba(255, 251, 235, 0.82), rgba(255, 241, 242, 0.6));
+}
+
+.formula-v2-stack span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.formula-v2-stack strong {
+  color: var(--ink-strong);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 950;
+}
+
+.formula-v2-stack small {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
 .inspector-section {
   display: grid;
   gap: 8px;
@@ -2749,6 +3302,11 @@ input[type="checkbox"] {
 .inspector-member-row[draggable="true"] { cursor: grab; }
 .inspector-member-row[draggable="true"]:active { cursor: grabbing; }
 .inspector-member-row.dragging { opacity: 0.5; }
+.inspector-member-row.drop-ready {
+  border-color: rgba(109, 93, 252, 0.5);
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.92), rgba(236, 253, 245, 0.68));
+  box-shadow: 0 0 0 3px rgba(109, 93, 252, 0.12);
+}
 .drag-grip { flex: 0 0 auto; color: var(--muted-2); font-size: 14px; line-height: 1; letter-spacing: -3px; cursor: grab; }
 
 /* ====================================================================
@@ -3439,7 +3997,11 @@ select:focus {
   .metric-row { grid-template-columns: 1fr 1fr; }
   .calendar-grid, .calendar-weekdays { gap: 3px; }
   .calendar-day { min-height: 50px; }
-  .calendar-day em { font-size: 10px; }
+  .calendar-day em { display: none; }
+  .calendar-session-details { display: none; }
+  .calendar-session-summary { display: grid; }
+  .week-board { grid-template-columns: 1fr; overflow: visible; }
+  .week-day { min-height: auto; }
   .folder-row { padding-left: calc(10px + var(--depth, 0) * 16px); }
   .topbar h2 { font-size: clamp(24px, 7vw, 32px); }
   .workspace { padding: 66px 12px 36px; }
@@ -3674,6 +4236,70 @@ select:focus {
     border-radius: 20px;
     padding-left: 16px;
     padding-right: 16px;
+  }
+}
+
+@media (max-width: 860px) {
+  .wow-session-shell {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .wow-session-hero {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .wow-session-hero h2 {
+    font-size: 34px;
+  }
+
+  .wow-session-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .wow-session-tabs button {
+    width: 100%;
+  }
+
+  .wow-session-summary,
+  .wow-kpi-row,
+  .wow-team-metrics,
+  .program-track-grid,
+  .wow-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wow-team-card {
+    padding: 14px;
+    border-radius: 22px;
+  }
+
+  .wow-team-card > header {
+    flex-direction: column;
+  }
+
+  .wow-team-score {
+    width: 100%;
+  }
+
+  .program-step,
+  .team-session-row,
+  .wow-dashboard-row {
+    grid-template-columns: 1fr;
+  }
+
+  .program-step strong {
+    white-space: normal;
+  }
+
+  .wow-dashboard-row b {
+    width: 100%;
+    text-align: center;
   }
 }
 
