@@ -2029,6 +2029,24 @@ input[type="checkbox"] {
 .wow-att-go { padding: 7px 13px; border: 0; border-radius: 10px; background: var(--ink-strong, #0b1020); color: #fff; font-size: 12px; font-weight: 900; cursor: pointer; white-space: nowrap; }
 .wow-att-go:hover { background: #1f2937; }
 
+/* 운영 루프 — 후속조치(상태/담당/마감) */
+.wow-att-loop { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 4px; }
+.wow-att-status { padding: 6px 12px; border: 0; border-radius: 999px; font-size: 11.5px; font-weight: 950; cursor: pointer; white-space: nowrap; }
+.wow-att-status.s-open { background: rgba(148, 163, 184, 0.2); color: #475569; }
+.wow-att-status.s-doing { background: rgba(95, 109, 238, 0.16); color: #4338ca; }
+.wow-att-status.s-done { background: rgba(16, 185, 129, 0.18); color: #0f766e; }
+.wow-att-status::before { content: "● "; font-size: 9px; vertical-align: middle; }
+.wow-att-owner { flex: 1 1 96px; min-width: 80px; height: 32px; padding: 0 10px; border: 1px solid rgba(203, 213, 225, 0.9); border-radius: 9px; font-size: 12.5px; font-weight: 700; background: #fff; }
+.wow-att-due { flex: 0 0 auto; height: 32px; padding: 0 8px; border: 1px solid rgba(203, 213, 225, 0.9); border-radius: 9px; font-size: 12px; font-weight: 700; background: #fff; color: #334155; }
+.wow-att-due.overdue { border-color: rgba(244, 63, 94, 0.6); color: #be123c; background: rgba(244, 63, 94, 0.05); }
+.wow-att-loop .wow-att-go { padding: 6px 12px; }
+.wow-att.resolved { opacity: 0.62; border-left-color: #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), #fff 60%); }
+.wow-att.resolved .wow-att-reason, .wow-att.resolved .wow-att-action { text-decoration: line-through; text-decoration-color: rgba(148, 163, 184, 0.6); }
+
+/* 캘린더 폼 — 팀장 세션 안내 */
+.session-form-hint { margin: 4px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.session-form-hint b { color: #4338ca; }
+
 /* 이번 주 예정 세션 */
 .wow-upcoming { display: grid; gap: 6px; }
 .wow-up-row { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 11px; border-radius: 11px; background: rgba(248, 250, 252, 0.85); }
@@ -2429,6 +2447,39 @@ input[type="checkbox"] {
 .wow-ns-main small { font-size: 11.5px; color: var(--muted); }
 .wow-ns-go { flex: 0 0 auto; padding: 7px 13px; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--violet, #5f6dee), var(--cyan, #18b6aa)); color: #fff; font-size: 12px; font-weight: 900; cursor: pointer; }
 .wow-ns-go:hover { filter: saturate(1.08); transform: translateY(-1px); }
+
+/* 프로그램 효과 증명 — 변화 민첩성 기준선→현재 */
+.wow-impact-tag { display: inline-block; margin-left: 6px; font-size: 10.5px; font-weight: 950; color: #4338ca; background: rgba(95, 109, 238, 0.14); padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
+.wow-impact-prepost { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; padding: 6px 0 4px; }
+.wow-impact-col { display: grid; gap: 3px; justify-items: center; text-align: center; padding: 14px; border-radius: 16px; background: rgba(248, 250, 252, 0.85); }
+.wow-impact-col.end { background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(24, 182, 170, 0.06)); border: 1px solid rgba(16, 185, 129, 0.22); }
+.wow-impact-col span { font-size: 12px; font-weight: 900; color: var(--muted); }
+.wow-impact-col b { font-size: 38px; font-weight: 950; color: var(--ink-strong, #0b1020); line-height: 1; letter-spacing: -0.03em; }
+.wow-impact-col small { font-size: 11px; color: var(--muted-2, #94a3b8); font-weight: 700; }
+.wow-impact-arrow { display: grid; justify-items: center; gap: 4px; }
+.wow-impact-arrow i { font-style: normal; font-size: 22px; color: var(--muted-2, #94a3b8); }
+.wow-impact-delta { font-size: 17px; font-weight: 950; padding: 3px 11px; border-radius: 999px; background: rgba(148, 163, 184, 0.18); color: #475569; }
+.wow-impact-delta.up { background: rgba(16, 185, 129, 0.16); color: #0f766e; }
+.wow-impact-delta.down { background: rgba(244, 63, 94, 0.14); color: #be123c; }
+.wow-impact-drivers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+.wow-impact-driver { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 11px 14px; border-radius: 13px; background: rgba(248, 250, 252, 0.9); }
+.wow-impact-driver span { font-size: 12px; font-weight: 850; color: #334155; }
+.wow-impact-driver b { font-size: 20px; font-weight: 950; }
+.wow-impact-driver.good b { color: #0f766e; }
+.wow-impact-driver.bad b { color: #be123c; }
+.wow-impact-compare { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 12px; }
+.wow-impact-cmp { display: grid; gap: 3px; justify-items: center; text-align: center; padding: 11px; border-radius: 13px; background: rgba(248, 250, 252, 0.9); }
+.wow-impact-cmp span { font-size: 11.5px; font-weight: 850; color: var(--muted); }
+.wow-impact-cmp b { font-size: 22px; font-weight: 950; color: var(--ink-strong, #0b1020); }
+.wow-impact-cmp.gap { background: rgba(95, 109, 238, 0.08); border: 1px solid rgba(95, 109, 238, 0.2); }
+.wow-impact-cmp b.up { color: #0f766e; }
+.wow-impact-cmp b.down { color: #be123c; }
+.wow-impact-sub { margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(148, 163, 184, 0.4); }
+@media (max-width: 620px) {
+  .wow-impact-prepost { grid-template-columns: 1fr; }
+  .wow-impact-arrow i { transform: rotate(90deg); }
+  .wow-impact-drivers, .wow-impact-compare { grid-template-columns: 1fr; }
+}
 
 /* 캘린더 — Leadership(팀장) 회차 항목 구분 */
 .session-item.lead { border-left: 3px solid #18b6aa; cursor: pointer; }

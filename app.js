@@ -521,6 +521,7 @@ function defaultOrganizationState() {
     leadershipQuantRows: [],
     leadershipTextRows: [],
     leadershipAnalysisResults: {},
+    teamFollowups: {},
     selectedUnitId: getDefaultSelectedUnitId(),
     view: "official",
     orgLayout: "horizontal",
@@ -609,6 +610,7 @@ function normalizeOrganizationState(parsed = {}) {
     leadershipQuantRows: Array.isArray(parsed.leadershipQuantRows) ? parsed.leadershipQuantRows : base.leadershipQuantRows,
     leadershipTextRows: Array.isArray(parsed.leadershipTextRows) ? parsed.leadershipTextRows : base.leadershipTextRows,
     leadershipAnalysisResults: parsed.leadershipAnalysisResults && typeof parsed.leadershipAnalysisResults === "object" ? parsed.leadershipAnalysisResults : base.leadershipAnalysisResults,
+    teamFollowups: parsed.teamFollowups && typeof parsed.teamFollowups === "object" ? parsed.teamFollowups : base.teamFollowups,
     selectedUnitId: unitIds.has(parsed.selectedUnitId) ? parsed.selectedUnitId : rootId,
     view: "official",
     orgLayout: parsed.orgLayout || base.orgLayout,
@@ -665,6 +667,7 @@ function organizationSnapshot() {
     leadershipQuantRows: state.leadershipQuantRows || [],
     leadershipTextRows: state.leadershipTextRows || [],
     leadershipAnalysisResults: state.leadershipAnalysisResults || {},
+    teamFollowups: state.teamFollowups || {},
     selectedUnitId: state.selectedUnitId,
     view: "official",
     orgLayout: state.orgLayout,
@@ -2542,11 +2545,13 @@ function renderStatusChips(unit, opts = {}) {
   const pulse = pulseForUnit(unit.id);
   const pOn = Boolean(pulse) || Boolean(unit.pulseSurvey);
   const team = teamTrackDoneSteps(unit.id, "team").size, teamTot = trackSteps("team").length;
-  const lead = teamTrackDoneSteps(unit.id, "lead").size, leadTot = trackSteps("lead").length;
+  // 팀장 칩: 새 Leadership 코호트 기준 — 이 조직의 리더가 참여(불참 제외)한 회차 수
+  const leaderId = `leader:${unit.id}`;
+  const leadAttended = (state.leadershipSessions || []).filter((round) => (round.leaderIds || []).includes(leaderId) && !(round.absentPersonIds || []).includes(leaderId)).length;
   const items = [
     { key: "pulse", txt: "Pulse", on: pOn, hint: `Pulse ${pOn ? "완료" : "미연동"}` },
     { key: "team", txt: `팀 ${team}/${teamTot}`, on: team > 0, hint: `팀 세션 ${team}/${teamTot} 단계 완료` },
-    { key: "lead", txt: `팀장 ${lead}/${leadTot}`, on: lead > 0, hint: `팀장 세션 ${lead}/${leadTot} 단계 완료` },
+    { key: "lead", txt: `팀장 ${leadAttended}회`, on: leadAttended > 0, hint: `팀장 협업 세션 ${leadAttended}회 참여 (Leadership)` },
   ];
   const shown = opts.sessionsOnly ? items.filter((i) => i.key !== "pulse") : items;
   return shown.map((c) => `<span class="${cls} ${c.on ? "on" : ""}" title="${escapeHtml(c.hint)}">${escapeHtml(c.txt)}</span>`).join("");
@@ -3353,17 +3358,13 @@ function renderCalendarView(targetId = "viewRoot") {
               ${sessionTimeOptions("10:00")}
             </select>
           </label>
-          <label>트랙
-            <select id="sessionTrackInput" onchange="onSessionTrackChange()">
-              <option value="team">팀 세션 (7단계)</option>
-              <option value="lead">팀장 세션 (4단계)</option>
-            </select>
-          </label>
+          <input id="sessionTrackInput" type="hidden" value="team" />
           <label>단계
             <select id="sessionStepInput">
               ${trackSteps("team").map((s, i) => `<option value="${i + 1}">${i + 1}. ${escapeHtml(s)}</option>`).join("")}
             </select>
           </label>
+          <p class="session-form-hint">팀장 협업 세션은 <b>프로그램운영 → Leadership</b> 탭에서 회차로 관리합니다.</p>
           <label>대상 팀
             <select id="sessionTeamInput" required>
               ${teams.map((team) => `<option value="${escapeHtml(team.id)}" ${team.id === selectedTeam ? "selected" : ""}>${escapeHtml(team.name)}</option>`).join("")}
@@ -3859,6 +3860,20 @@ function wowAttentionReasons(item, today) {
   return reasons;
 }
 
+// 운영 루프 닫기 — 주의 팀별 후속조치(담당자/마감/상태) 영속
+const FOLLOWUP_STATUS = { open: "조치 전", doing: "조치 중", done: "완료" };
+function getTeamFollowup(teamId) {
+  const f = state.teamFollowups?.[teamId];
+  return { status: f?.status || "open", owner: f?.owner || "", due: f?.due || "", updatedAt: f?.updatedAt || "" };
+}
+function setTeamFollowup(teamId, patch) {
+  const next = { ...getTeamFollowup(teamId), ...patch, updatedAt: new Date().toISOString() };
+  state.teamFollowups = { ...(state.teamFollowups || {}), [teamId]: next };
+}
+function cycleFollowupStatus(status) {
+  return status === "open" ? "doing" : status === "doing" ? "done" : "open";
+}
+
 function wowDonutSvg(pct) {
   const p = Math.max(0, Math.min(100, Math.round(pct)));
   const r = 52;
@@ -3920,12 +3935,17 @@ function renderWowDashboardView() {
 
   const attention = items
     .filter((it) => it.reasons.length)
+    .map((it) => ({ ...it, followup: getTeamFollowup(it.team.id) }))
     .sort((a, b) => {
+      const ad = a.followup.status === "done" ? 1 : 0;
+      const bd = b.followup.status === "done" ? 1 : 0;
+      if (ad !== bd) return ad - bd; // 조치 완료 항목은 맨 아래로
       const sa = a.reasons[0]?.sev || 0;
       const sb = b.reasons[0]?.sev || 0;
       if (sb !== sa) return sb - sa;
       return a.summary.completionRate - b.summary.completionRate;
     });
+  const activeAttention = attention.filter((it) => it.followup.status !== "done");
 
   const upcomingTeam = (state.sessions || [])
     .filter((s) => s.date && s.date >= today && s.date <= weekEnd)
@@ -3976,19 +3996,36 @@ function renderWowDashboardView() {
   const fatigueRisk = avgOf("fatigueTextRisk");
   const trustRisk = avgOf("trustTextRisk");
 
+  // 효과 증명 — 변화 민첩성 지수 (대시보드와 동일 산식) 기준선(Pulse) → 프로그램 반영(endline)
+  const agilityFrom = (sig) => Math.round(0.4 * Number(sig?.changeAcceptance || 0) + 0.35 * Number(sig?.trust || 0) + 0.25 * (100 - Number(sig?.fatigue || 0)));
+  const avgBy = (arr, fn) => (arr.length ? Math.round(arr.reduce((sum, x) => sum + fn(x), 0) / arr.length) : 0);
+  const adjustedTeams = items.filter((it) => it.signal && it.signal.sessionAdjusted && it.signal.pulseBase);
+  const baseAgility = avgBy(adjustedTeams, (it) => agilityFrom(it.signal.pulseBase));
+  const endAgility = avgBy(adjustedTeams, (it) => agilityFrom(it.signal));
+  const deltaAgility = endAgility - baseAgility;
+  const deltaChange = avgBy(adjustedTeams, (it) => it.signal.changeAcceptance - it.signal.pulseBase.changeAcceptance);
+  const deltaTrust = avgBy(adjustedTeams, (it) => it.signal.trust - it.signal.pulseBase.trust);
+  const deltaFatigue = avgBy(adjustedTeams, (it) => it.signal.fatigue - it.signal.pulseBase.fatigue);
+  const completedAgility = avgBy(completed, (it) => agilityFrom(it.signal));
+  const notCompletedTeams = items.filter((it) => it.summary.completionRate < 100);
+  const notCompletedAgility = avgBy(notCompletedTeams, (it) => agilityFrom(it.signal));
+  const agilityGap = completedAgility - notCompletedAgility;
+  const signedNum = (n) => `${n > 0 ? "+" : ""}${n}`;
+
   const narrative = `전체 ${totalTeams}팀 중 <b>${operating.length}팀</b> 운영 중 — 완료 ${completed.length} · 진행 ${inProgress.length} · 미착수 ${notStarted.length}. 평균 참여율 <b>${avgParticipation}%</b>${lowParticipation.length ? `, <b class="warnInk">${lowParticipation.length}팀</b>이 80% 미만으로 점검이 필요합니다.` : "로 안정적으로 유지되고 있습니다."}`;
-  const topAlert = attention.length
-    ? `<span class="wow-alert urgent"><i></i>가장 시급 · ${escapeHtml(attention[0].team.name)} — ${escapeHtml(attention[0].reasons[0].text)}</span>`
+  const topAlert = activeAttention.length
+    ? `<span class="wow-alert urgent"><i></i>가장 시급 · ${escapeHtml(activeAttention[0].team.name)} — ${escapeHtml(activeAttention[0].reasons[0].text)}</span>`
     : `<span class="wow-alert calm"><i></i>현재 위험 신호 없음 · 전 팀 정상 운영</span>`;
+  const resolvedCount = attention.length - activeAttention.length;
 
   // KPI 카드 (의미·톤 포함)
   const partTone = avgParticipation >= 85 ? "good" : avgParticipation >= 70 ? "mid" : "low";
-  const attTone = attention.length === 0 ? "good" : attention[0].reasons[0].sev >= 4 ? "low" : "mid";
+  const attTone = activeAttention.length === 0 ? "good" : activeAttention[0].reasons[0].sev >= 4 ? "low" : "mid";
   const kpis = [
     { label: "조직 도달률", value: `${coverage}%`, tone: coverage >= 80 ? "good" : coverage >= 40 ? "mid" : "low", note: `운영 ${operating.length}/${totalTeams}팀 · ${reachedHeadcount}/${totalHeadcount}명 참여 대상` },
     { label: "프로그램 완료율", value: `${overallPct}%`, tone: overallPct >= 80 ? "good" : overallPct >= 40 ? "mid" : "low", note: `완료 ${teamTrack.finished}팀 · 팀 세션 7단계 기준` },
     { label: "평균 참여율", value: `${avgParticipation}%`, tone: partTone, note: lowParticipation.length ? `${lowParticipation.length}팀 80% 미만 · 점검 필요` : "전 운영 팀 80% 이상 · 양호" },
-    { label: "주의 필요 팀", value: `${attention.length}`, tone: attTone, note: attention.length ? "아래에서 사유·조치 확인" : "위험 신호 없음 · 안정" },
+    { label: "주의 필요 팀", value: `${activeAttention.length}`, tone: attTone, note: activeAttention.length ? `미조치 ${activeAttention.length} · 조치완료 ${resolvedCount}` : (resolvedCount ? `전건 조치 완료 (${resolvedCount})` : "위험 신호 없음 · 안정") },
   ];
 
   // 완료·진행중 팀 상세 목록
@@ -4057,14 +4094,18 @@ function renderWowDashboardView() {
         <div class="wow-panel wow-panel-attention">
           <div class="wow-panel-head">
             <h3>지금 챙겨야 할 팀</h3>
-            <span class="wow-panel-count">${attention.length}건</span>
+            <span class="wow-panel-count">미조치 ${activeAttention.length} / 전체 ${attention.length}건</span>
           </div>
           ${
             attention.length
               ? attention
                   .map((it) => {
                     const top = it.reasons[0];
-                    const sevClass = top.sev >= 4 ? "urgent" : top.sev >= 3 ? "warn" : "info";
+                    const fu = it.followup;
+                    const sevClass = fu.status === "done" ? "resolved" : top.sev >= 4 ? "urgent" : top.sev >= 3 ? "warn" : "info";
+                    const statusLabel = FOLLOWUP_STATUS[fu.status] || "조치 전";
+                    const due = fu.due || "";
+                    const overdue = due && fu.status !== "done" && due < today;
                     return `
                       <div class="wow-att ${sevClass}">
                         <div class="wow-att-top">
@@ -4072,9 +4113,12 @@ function renderWowDashboardView() {
                           <div class="wow-att-tags">${it.reasons.map((r) => `<span class="wow-att-tag s${r.sev}">${escapeHtml(r.tag)}</span>`).join("")}</div>
                         </div>
                         <div class="wow-att-reason">${escapeHtml(top.text)}</div>
-                        <div class="wow-att-foot">
-                          <span class="wow-att-action">→ ${escapeHtml(top.action)}</span>
-                          <button type="button" class="wow-att-go" data-wow-att-go="${escapeHtml(it.team.id)}">프로그램운영 열기</button>
+                        <div class="wow-att-action">→ ${escapeHtml(top.action)}</div>
+                        <div class="wow-att-loop">
+                          <button type="button" class="wow-att-status s-${fu.status}" data-followup-cycle="${escapeHtml(it.team.id)}" title="상태 전환: 조치 전 → 조치 중 → 완료">${escapeHtml(statusLabel)}</button>
+                          <input type="text" class="wow-att-owner" data-followup-owner="${escapeHtml(it.team.id)}" value="${escapeHtml(fu.owner)}" placeholder="담당자" aria-label="담당자">
+                          <input type="date" class="wow-att-due ${overdue ? "overdue" : ""}" data-followup-due="${escapeHtml(it.team.id)}" value="${escapeHtml(due)}" aria-label="마감일">
+                          <button type="button" class="wow-att-go" data-wow-att-go="${escapeHtml(it.team.id)}">열기</button>
                         </div>
                       </div>`;
                   })
@@ -4132,21 +4176,54 @@ function renderWowDashboardView() {
         </div>
       </section>
 
-      <section class="wow-panel wow-effect">
+      <section class="wow-panel wow-impact">
         <div class="wow-panel-head">
-          <h3>프로그램 효과 신호</h3>
-          <span class="wow-panel-count">${analyzed.length}팀 분석 반영</span>
+          <div><h3>프로그램 효과 증명 <span class="wow-impact-tag">변화 민첩성 지수</span></h3></div>
+          <span class="wow-panel-count">${adjustedTeams.length}팀 반영</span>
         </div>
         ${
-          analyzed.length
-            ? `<div class="wow-effect-grid">
-                <div class="wow-effect-item good"><span>팀 긍정 신호</span><b>${posSignal}%</b><i style="width:${posSignal}%"></i></div>
-                <div class="wow-effect-item good"><span>프로그램 효능감</span><b>${efficacy}%</b><i style="width:${efficacy}%"></i></div>
-                <div class="wow-effect-item risk"><span>피로·지원 필요</span><b>${fatigueRisk}%</b><i style="width:${fatigueRisk}%"></i></div>
-                <div class="wow-effect-item risk"><span>신뢰 리스크</span><b>${trustRisk}%</b><i style="width:${trustRisk}%"></i></div>
+          adjustedTeams.length
+            ? `<div class="wow-impact-prepost">
+                <div class="wow-impact-col base">
+                  <span>기준선 (Pulse)</span>
+                  <b>${baseAgility}</b>
+                  <small>프로그램 전 진단</small>
+                </div>
+                <div class="wow-impact-arrow">
+                  <span class="wow-impact-delta ${deltaAgility > 0 ? "up" : deltaAgility < 0 ? "down" : ""}">${signedNum(deltaAgility)}</span>
+                  <i>→</i>
+                </div>
+                <div class="wow-impact-col end">
+                  <span>현재 (프로그램 반영)</span>
+                  <b>${endAgility}</b>
+                  <small>WOW 설문 반영 endline</small>
+                </div>
               </div>
-              <p class="wow-effect-note">팀별수행 탭에서 중간·최종 주관식을 GPT로 분석해 저장하면 신호가 갱신됩니다. 긍정·효능감은 높을수록, 피로·신뢰 리스크는 낮을수록 좋습니다.</p>`
-            : `<div class="wow-panel-empty"><b>효과 신호를 측정할 분석 데이터가 아직 없습니다.</b><span>팀별수행 탭에서 서베이를 업로드하고 GPT 분석 결과를 저장하면 프로그램이 실제로 신뢰·피로·협업에 어떤 영향을 줬는지 한눈에 보여줍니다.</span></div>`
+              <div class="wow-impact-drivers">
+                <div class="wow-impact-driver ${deltaChange >= 0 ? "good" : "bad"}"><span>변화 수용</span><b>${signedNum(deltaChange)}</b></div>
+                <div class="wow-impact-driver ${deltaTrust >= 0 ? "good" : "bad"}"><span>신뢰</span><b>${signedNum(deltaTrust)}</b></div>
+                <div class="wow-impact-driver ${deltaFatigue <= 0 ? "good" : "bad"}"><span>피로 ${deltaFatigue <= 0 ? "완화" : "증가"}</span><b>${signedNum(deltaFatigue)}</b></div>
+              </div>
+              <div class="wow-impact-compare">
+                <div class="wow-impact-cmp"><span>완료 팀 평균</span><b>${completedAgility}</b></div>
+                <div class="wow-impact-cmp"><span>미완료 팀 평균</span><b>${notCompletedAgility}</b></div>
+                <div class="wow-impact-cmp gap"><span>격차</span><b class="${agilityGap > 0 ? "up" : agilityGap < 0 ? "down" : ""}">${signedNum(agilityGap)}</b></div>
+              </div>
+              <p class="wow-effect-note">변화 민첩성 = 변화수용 40% + 신뢰 35% + 낮은 피로 25% (대시보드와 동일 산식). 기준선→현재는 WOW 설문이 지수에 반영된 <b>측정 변화</b>이며, 완료/미완료 비교는 횡단 비교라 <b>선택편향</b>이 있을 수 있습니다 — 인과 단정은 피하고 경향으로 읽으세요.</p>`
+            : `<div class="wow-panel-empty"><b>효과를 증명할 프로그램 반영 데이터가 아직 없습니다.</b><span>프로그램운영 → 팀별수행에서 서베이를 업로드하면, 각 팀의 변화 민첩성 지수가 Pulse 기준선 대비 얼마나 움직였는지 여기서 before→after로 증명됩니다.</span></div>`
+        }
+        ${
+          analyzed.length
+            ? `<div class="wow-impact-sub">
+                <div class="wow-effect-grid">
+                  <div class="wow-effect-item good"><span>팀 긍정 신호</span><b>${posSignal}%</b><i style="width:${posSignal}%"></i></div>
+                  <div class="wow-effect-item good"><span>프로그램 효능감</span><b>${efficacy}%</b><i style="width:${efficacy}%"></i></div>
+                  <div class="wow-effect-item risk"><span>피로·지원 필요</span><b>${fatigueRisk}%</b><i style="width:${fatigueRisk}%"></i></div>
+                  <div class="wow-effect-item risk"><span>신뢰 리스크</span><b>${trustRisk}%</b><i style="width:${trustRisk}%"></i></div>
+                </div>
+                <p class="wow-effect-note">GPT 주관식 분석 ${analyzed.length}팀 반영 · 긍정·효능감은 높을수록, 피로·신뢰 리스크는 낮을수록 좋습니다.</p>
+              </div>`
+            : ""
         }
       </section>
 
@@ -6319,6 +6396,15 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const fuCycle = event.target.closest("[data-followup-cycle]");
+  if (fuCycle) {
+    const teamId = fuCycle.dataset.followupCycle;
+    setTeamFollowup(teamId, { status: cycleFollowupStatus(getTeamFollowup(teamId).status) });
+    persist();
+    renderWowSessionWorkspace();
+    return;
+  }
+
   const scheduleTeam = event.target.closest("[data-schedule-team]");
   if (scheduleTeam) {
     calendarPrefillTeamId = scheduleTeam.dataset.scheduleTeam;
@@ -6701,6 +6787,20 @@ document.addEventListener("change", (event) => {
     state.selectedSessionAnalysisTeamId = event.target.value;
     renderWowSessionWorkspace();
     persist();
+    return;
+  }
+
+  const fuOwner = event.target.closest("[data-followup-owner]");
+  if (fuOwner) {
+    setTeamFollowup(fuOwner.dataset.followupOwner, { owner: fuOwner.value.trim() });
+    persist();
+    return;
+  }
+  const fuDue = event.target.closest("[data-followup-due]");
+  if (fuDue) {
+    setTeamFollowup(fuDue.dataset.followupDue, { due: fuDue.value });
+    persist();
+    renderWowSessionWorkspace();
     return;
   }
 
